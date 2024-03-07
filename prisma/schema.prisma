@@ -1,0 +1,129 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["cloud", "member", "public", "temp"]
+}
+
+model external_access {
+  id              BigInt           @id(map: "pk_external_access") @default(autoincrement())
+  folder_id       BigInt           @unique(map: "uni_external_access")
+  enabled         Boolean          @default(false)
+  access_key_id   BigInt?
+  temp_access_key temp_access_key? @relation(fields: [access_key_id], references: [id], map: "fk_access_key_id")
+  folders         folders          @relation(fields: [folder_id], references: [id], onDelete: Cascade, map: "fk_folder_id")
+
+  @@schema("cloud")
+}
+
+model file_info {
+  id          BigInt   @id(map: "pk_file_info") @default(autoincrement())
+  file_id     BigInt   @unique(map: "uni_file_info")
+  uploader_id Int
+  create_date DateTime @db.Timestamptz(6)
+  update_date DateTime @db.Timestamptz(6)
+  byte_size   Int
+  files       files    @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  users       users    @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uploader_id")
+
+  @@schema("cloud")
+}
+
+model files {
+  id               BigInt     @id(map: "pk_files") @default(autoincrement())
+  parent_folder_id BigInt
+  file_key         String     @unique(map: "uni_file_key") @db.Uuid
+  file_name        String     @db.VarChar(256)
+  enabled          Boolean    @default(true)
+  file_info        file_info?
+  folders          folders    @relation(fields: [parent_folder_id], references: [id], onDelete: Cascade, map: "fk_parent_folder_id")
+
+  @@unique([file_name, parent_folder_id], map: "uni_child_file_name")
+  @@schema("cloud")
+}
+
+model folder_info {
+  id          BigInt   @id(map: "pk_folder_info") @default(autoincrement())
+  folder_id   BigInt   @unique(map: "uni_folder_info")
+  create_date DateTime @default(now()) @db.Timestamptz(6)
+  update_date DateTime @default(now()) @db.Timestamptz(6)
+  owner_id    Int
+  folders     folders  @relation(fields: [folder_id], references: [id], onDelete: Cascade, map: "fk_folder_id")
+  users       users    @relation(fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_owner_id")
+
+  @@schema("cloud")
+}
+
+model folders {
+  id               BigInt           @id(map: "pk_folders") @default(autoincrement())
+  parent_folder_id BigInt?
+  folder_name      String           @db.VarChar(256)
+  folder_key       String           @unique(map: "uni_folder_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  external_access  external_access?
+  files            files[]
+  folder_info      folder_info?
+  folders          folders?         @relation("foldersTofolders", fields: [parent_folder_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_parent_folder_id")
+  other_folders    folders[]        @relation("foldersTofolders")
+  user_role        user_role[]
+
+  @@unique([parent_folder_id, folder_name], map: "uni_child_folder_name")
+  @@schema("cloud")
+}
+
+model user_role {
+  user_id   Int
+  folder_id BigInt
+  role      access_role[]
+  folders   folders       @relation(fields: [folder_id], references: [id], onDelete: Cascade, map: "fk_folder_id")
+  users     users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_id")
+
+  @@id([user_id, folder_id], map: "pk_user_role")
+  @@schema("cloud")
+}
+
+model users {
+  id          Int           @id(map: "pk_users") @default(autoincrement())
+  uuid_key    String        @unique(map: "uni_users") @db.Uuid
+  file_info   file_info[]
+  folder_info folder_info[]
+  user_role   user_role[]
+  temp_files  temp_files[]
+
+  @@schema("member")
+}
+
+model temp_access_key {
+  id              BigInt            @id(map: "pk_temp_access_key") @default(autoincrement())
+  access_key      String            @unique(map: "uni_access_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  create_date     DateTime          @default(now()) @db.Timestamptz(6)
+  expiry_date     DateTime          @db.Timestamptz(6)
+  default_role    access_role[]     @default([read])
+  external_access external_access[]
+
+  @@schema("temp")
+}
+
+model temp_files {
+  id             BigInt   @id(map: "pk_temp_files") @default(autoincrement())
+  uploader_id    Int
+  temp_file_name String   @db.VarChar(256)
+  file_key       String   @unique(map: "uni_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  create_date    DateTime @default(now()) @db.Timestamptz(6)
+  total_chunks   Int
+  users          users    @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uploader_id")
+
+  @@schema("temp")
+}
+
+enum access_role {
+  create
+  read
+  update
+  delete
+
+  @@schema("public")
+}

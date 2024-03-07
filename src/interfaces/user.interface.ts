@@ -1,0 +1,18 @@
+import typia, { tags } from 'typia';
+import { IVerifiedRequestBody } from './request.interface';
+
+export interface IUser extends IUserUUID {
+  id: number & tags.Type<'uint32'>;
+}
+
+export interface IUserUUID {
+  uuidKey: string & tags.Format<'uuid'>;
+}
+
+export interface ICreateUserServiceInput extends IUserUUID {}
+export interface ICreateUserServiceOutput extends IUser {}
+
+export interface ICreateUserRequestBody extends IVerifiedRequestBody {}
+
+export const validateCreateUserRequestBody =
+  typia.createValidate<ICreateUserRequestBody>();
