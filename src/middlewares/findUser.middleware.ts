@@ -1,6 +1,7 @@
 import { UserService } from './../services/user.service';
 import {
   BadRequestException,
+  HttpException,
   Injectable,
   NestMiddleware,
 } from '@nestjs/common';
@@ -21,6 +22,9 @@ export class FindUserMiddleware implements NestMiddleware {
       };
       next();
     } catch (error) {
+      if (error instanceof HttpException) {
+        return next(error);
+      }
       next(new BadRequestException('Invalid token'));
     }
   }

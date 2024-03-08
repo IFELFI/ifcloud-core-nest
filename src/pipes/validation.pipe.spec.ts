@@ -6,6 +6,7 @@ interface ITest {
   name: string & tags.Pattern<'^[a-zA-Z]+$'>;
   age: number & tags.Type<'uint32'>;
   email: string & tags.Format<'email'>;
+  bigId: bigint;
 }
 
 const validateTest = typia.createValidate<ITest>();
@@ -31,6 +32,7 @@ describe('ValidationPipe', () => {
       name: 'John',
       age: 30,
       email: 'test@test.com',
+      bigId: BigInt(1),
     };
     expect(pipe.transform(data)).toEqual(data);
   });
@@ -44,6 +46,7 @@ describe('ValidationPipe', () => {
       name: 'John1',
       age: 30,
       email: 'wrong-email',
+      bigId: BigInt(1),
     };
     try {
       await pipe.transform(data);
@@ -63,6 +66,7 @@ describe('ValidationPipe', () => {
       name: 'John',
       age: 30,
       email: 'test@test.com',
+      bigId: BigInt(1),
     };
     const pipe = new TypiaValidationPipe(wrongValidator);
     try {
