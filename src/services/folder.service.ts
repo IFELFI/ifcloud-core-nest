@@ -3,6 +3,7 @@ import {
   ICreateFolderServiceOutput,
 } from './../interfaces/folder.interface';
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   InternalServerErrorException,
@@ -16,8 +17,20 @@ export class FolderService {
   async create(
     data: ICreateFolderServiceInput,
   ): Promise<ICreateFolderServiceOutput> {
-    const { folderName, parentFolderId, userId } = data;
+    const { folderName, parentFolderKey, userId } = data;
     return this.prisma.$transaction(async (tx) => {
+      let parentFolderId: bigint | null = null;
+      if (parentFolderKey) {
+        const parentFolder = await tx.folders.findUnique({
+          where: {
+            folder_key: parentFolderKey,
+          },
+        });
+        if (!parentFolder) {
+          throw new BadRequestException('Parent folder does not exist');
+        }
+        parentFolderId = parentFolder.id;
+      }
       const createFolder = await tx.folders
         .create({
           data: {

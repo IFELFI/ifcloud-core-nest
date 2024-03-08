@@ -17,11 +17,11 @@ export class FolderController {
     createFolder: ICreateFolderRequestBody,
   ): Promise<string> {
     const userId = createFolder.userId;
-    const { folderName, parentFolderId } = createFolder.data;
+    const { folderName, parentFolderKey } = createFolder.data;
 
     await this.folderService.create({
       folderName,
-      parentFolderId,
+      parentFolderKey,
       userId,
     });
 
