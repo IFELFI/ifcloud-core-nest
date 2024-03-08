@@ -2,6 +2,8 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
+import { expiredUserToken, prismaService, testUserToken } from './setup-e2e';
+import { PrismaService } from 'src/services/prisma.service';
 
 describe('User', () => {
   let app: INestApplication;
@@ -9,7 +11,10 @@ describe('User', () => {
   beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(PrismaService)
+      .useValue(prismaService)
+      .compile();
 
     app = module.createNestApplication();
     await app.init();
@@ -19,11 +24,38 @@ describe('User', () => {
     await app.close();
   });
 
-  it('should create a user', () => {
-    return request(app.getHttpServer())
+  /**
+   * Success handling
+   */
+  it('should create a user', async () => {
+    const response = await request(app.getHttpServer())
       .post('/user/enroll')
-      .send({ uuidKey: '1234' })
-      .expect(201)
-      .expect('User created');
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .send({});
+
+    expect(response.status).toBe(201);
+    expect(response.text).toBe('User created');
+  });
+
+  /**
+   * Error handling
+   */
+  it('should not create a user if Authorization header is not given', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/user/enroll')
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Authorization header is missing');
+  });
+
+  it('should not create a user if Token is expired', async () => {
+    const response = await request(app.getHttpServer())
+      .post('/user/enroll')
+      .set('Authorization', `Bearer ${expiredUserToken}`)
+      .send({});
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Invalid token');
   });
 });
