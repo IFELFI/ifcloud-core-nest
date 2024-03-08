@@ -1,4 +1,4 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, ConflictException } from '@nestjs/common';
 import { TestingModule, Test } from '@nestjs/testing';
 import httpMocks from 'node-mocks-http';
 import { IVerifiedRequest } from 'src/interfaces/request.interface';
@@ -68,5 +68,14 @@ describe('FindUserMiddleware', () => {
     userService.read = read;
     await middleware.use(req, res, next);
     expect(next).toHaveBeenCalledWith(new BadRequestException('Invalid token'));
+  });
+
+  it('should throw error if userService.read is throwing nest error', async () => {
+    const read = jest
+      .fn()
+      .mockRejectedValue(new ConflictException('User not found'));
+    userService.read = read;
+    await middleware.use(req, res, next);
+    expect(next).toHaveBeenCalledWith(new ConflictException('User not found'));
   });
 });

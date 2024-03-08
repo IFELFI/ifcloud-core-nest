@@ -6,6 +6,7 @@ import { PrismaClient, users } from '@prisma/client';
 import {
   ConflictException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 
 describe('UserService', () => {
@@ -85,10 +86,10 @@ describe('UserService', () => {
     );
   });
 
-  it('should throw an conflict error when reading a user', async () => {
+  it('should throw an error when reading a user that is not exist', async () => {
     const uuidKey = '1234';
-    prismaService.users.findUniqueOrThrow.mockRejectedValue({ code: 'P2002' });
-    await expect(service.read(uuidKey)).rejects.toThrow(ConflictException);
+    prismaService.users.findUniqueOrThrow.mockRejectedValue({ code: 'P2025' });
+    await expect(service.read(uuidKey)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw an internal server error when reading a user', async () => {
@@ -99,10 +100,10 @@ describe('UserService', () => {
     );
   });
 
-  it('should throw an conflict error when deleting a user', async () => {
+  it('should throw an conflict error when deleting a user that is not exist', async () => {
     const uuidKey = '1234';
-    prismaService.users.delete.mockRejectedValue({ code: 'P2002' });
-    await expect(service.delete(uuidKey)).rejects.toThrow(ConflictException);
+    prismaService.users.delete.mockRejectedValue({ code: 'P2025' });
+    await expect(service.delete(uuidKey)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw an internal server error when deleting a user', async () => {

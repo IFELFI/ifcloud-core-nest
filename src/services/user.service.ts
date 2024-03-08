@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { ICreateUserServiceOutput } from 'src/interfaces/user.interface';
@@ -40,10 +41,11 @@ export class UserService {
         },
       })
       .catch((error) => {
-        if (error.code === 'P2002') {
-          throw new ConflictException('User does not exist');
+        if (error.code === 'P2025') {
+          throw new NotFoundException('User does not exist');
         }
-        throw new InternalServerErrorException('Failed to read user');
+        throw new InternalServerErrorException(`Failed to read user`);
+        // throw new InternalServerErrorException('Failed to read user');
       });
     return user.id;
   }
@@ -56,8 +58,8 @@ export class UserService {
         },
       })
       .catch((error) => {
-        if (error.code === 'P2002') {
-          throw new ConflictException('User does not exist');
+        if (error.code === 'P2025') {
+          throw new NotFoundException('User does not exist');
         }
         throw new InternalServerErrorException('Failed to delete user');
       });

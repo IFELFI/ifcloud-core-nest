@@ -17,6 +17,6 @@ export class UserModule implements NestModule {
   public configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(ParseTokenMiddleware)
-      .forRoutes({ path: 'user/create', method: RequestMethod.POST });
+      .forRoutes({ path: '/user/enroll', method: RequestMethod.POST });
   }
 }
