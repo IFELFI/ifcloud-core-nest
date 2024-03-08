@@ -6,6 +6,7 @@ import {
 import { FolderService } from 'src/services/folder.service';
 import { PrismaService } from 'src/services/prisma.service';
 import { FolderController } from './folder.controller';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('FolderController', () => {
   let controller: FolderController;
@@ -39,11 +40,11 @@ describe('FolderController', () => {
       },
       data: {
         folderName: 'test',
-        parentFolderId: BigInt(1),
+        parentFolderKey: uuidv4(),
       },
     };
     const createFolderOutput: ICreateFolderServiceOutput = {
-      folderKey: '1234',
+      folderKey: createFolderRequestBody.data.parentFolderKey || uuidv4(),
     };
     folderService.create = jest.fn().mockResolvedValue(createFolderOutput);
     expect(await controller.createFolder(createFolderRequestBody)).toEqual(

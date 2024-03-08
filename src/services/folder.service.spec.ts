@@ -14,6 +14,7 @@ import {
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('FolderService', () => {
   let service: FolderService;
@@ -43,12 +44,19 @@ describe('FolderService', () => {
   it('should create a folder', async () => {
     const folderName = 'test';
     const parentFolderId = BigInt(1);
+    const parentFolderKey = uuidv4();
     const userId = 1;
+    const parentFolder: folders = {
+      id: parentFolderId,
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    };
     const createFolder: folders = {
       id: BigInt(1),
       folder_name: folderName,
       parent_folder_id: parentFolderId,
-      folder_key: '1234',
+      folder_key: parentFolderKey,
     };
     const createFolderInfo: folder_info = {
       id: BigInt(1),
@@ -76,6 +84,7 @@ describe('FolderService', () => {
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
+    prismaService.folders.findUnique.mockResolvedValue(parentFolder);
     prismaService.folders.create.mockResolvedValue(createFolder);
     prismaService.folder_info.create.mockResolvedValue(createFolderInfo);
     prismaService.external_access.create.mockResolvedValue(
@@ -85,7 +94,7 @@ describe('FolderService', () => {
     expect(
       await service.create({
         folderName,
-        parentFolderId,
+        parentFolderKey,
         userId,
       }),
     ).toEqual(output);
@@ -97,16 +106,22 @@ describe('FolderService', () => {
    */
   it('should throw an conflict error when creating a same folder', async () => {
     const folderName = 'test';
-    const parentFolderId = BigInt(1);
+    const parentFolderKey = uuidv4();
     const userId = 1;
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
+    prismaService.folders.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    });
     prismaService.folders.create.mockRejectedValue({ code: 'P2002' });
     await expect(
       service.create({
         folderName,
-        parentFolderId,
+        parentFolderKey,
         userId,
       }),
     ).rejects.toThrow(ConflictException);
@@ -114,16 +129,22 @@ describe('FolderService', () => {
 
   it('should throw an internal server error when creating a folder', async () => {
     const folderName = 'test';
-    const parentFolderId = BigInt(1);
+    const parentFolderKey = uuidv4();
     const userId = 1;
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
+    prismaService.folders.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    });
     prismaService.folders.create.mockRejectedValue({ code: 'P2003' });
     await expect(
       service.create({
         folderName,
-        parentFolderId,
+        parentFolderKey,
         userId,
       }),
     ).rejects.toThrow(InternalServerErrorException);
