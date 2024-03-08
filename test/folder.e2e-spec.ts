@@ -12,8 +12,7 @@ import {
 } from './setup-e2e';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { ICreateFolderRequestBody, ICreateFolderRequestBodyData } from 'src/interfaces/folder.interface';
-import { log } from 'console';
+import { ICreateFolderRequestBodyData } from 'src/interfaces/folder.interface';
 
 describe('Folder', () => {
   let app: INestApplication;
@@ -138,20 +137,18 @@ describe('Folder', () => {
 
     const createFolderRequestBodyData: ICreateFolderRequestBodyData = {
       folderName: 'test_folder',
-      parentFolderId: baseFolderId,
+      parentFolderKey: baseFolderKey,
     };
 
     // Create a folder first
-
-    // await request(app.getHttpServer())
-    //   .post('/folder/create')
-    //   .set('Authorization', `Bearer ${testUserToken}`)
-    //   .send({
-    //     data: { folderName: 'test_folder', parentFolderId: BigInt(123) },
-    //   });
+    await request(app.getHttpServer())
+      .post('/folder/create')
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .send({
+        data: createFolderRequestBodyData,
+      });
 
     // Try to create the same folder again
-
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${testUserToken}`)
@@ -159,7 +156,7 @@ describe('Folder', () => {
         data: createFolderRequestBodyData,
       });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect(response.body.message).toBe('Folder already exists');
   });
 });
