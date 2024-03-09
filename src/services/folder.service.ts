@@ -1,6 +1,8 @@
 import {
   ICreateFolderServiceInput,
   ICreateFolderServiceOutput,
+  IDeleteFolderServiceInput,
+  IDeleteFolderServiceOutput,
 } from './../interfaces/folder.interface';
 import {
   BadRequestException,
@@ -14,6 +16,11 @@ import { PrismaService } from './prisma.service';
 export class FolderService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Create folder
+   * @param data Create folder input
+   * @returns Create folder output
+   */
   async create(
     data: ICreateFolderServiceInput,
   ): Promise<ICreateFolderServiceOutput> {
@@ -68,6 +75,41 @@ export class FolderService {
       };
 
       return output;
+    });
+  }
+
+  /**
+   * Delete folder
+   * @param folderKey Folder key
+   * @param userId User ID
+   */
+  async delete(
+    data: IDeleteFolderServiceInput,
+  ): Promise<IDeleteFolderServiceOutput> {
+    const { folderKey } = data;
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new BadRequestException('Folder does not exist');
+      }
+      const folderInfo = await tx.folder_info.findFirst({
+        where: {
+          folder_id: folder.id,
+        },
+      });
+      if (!folderInfo) {
+        throw new BadRequestException('Folder does not exist');
+      }
+      await tx.folders.delete({
+        where: {
+          id: folder.id,
+        },
+      });
+      return true;
     });
   }
 }

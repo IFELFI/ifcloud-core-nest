@@ -19,5 +19,21 @@ export interface ICreateFolderRequestBody extends IUserRequestBody {
   data: ICreateFolderRequestBodyData;
 }
 
+export interface IDeleteFolderRequestBodyData {
+  folderKey: string & tags.Format<'uuid'>;
+}
+
+export interface IDeleteFolderServiceInput
+  extends IDeleteFolderRequestBodyData {}
+
+export type IDeleteFolderServiceOutput = boolean;
+
+export interface IDeleteFolderRequestBody extends IUserRequestBody {
+  data: IDeleteFolderRequestBodyData;
+}
+
 export const validateCreateFolderRequestBody =
   typia.createValidate<ICreateFolderRequestBody>();
+
+export const validateDeleteFolderRequestBody =
+  typia.createValidate<IDeleteFolderRequestBody>();
