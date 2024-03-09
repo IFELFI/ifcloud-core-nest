@@ -96,7 +96,7 @@ export class FolderService {
       if (!folder) {
         throw new BadRequestException('Folder does not exist');
       }
-      const folderInfo = await tx.folder_info.findFirst({
+      const folderInfo = await tx.folder_info.findUnique({
         where: {
           folder_id: folder.id,
         },
@@ -104,11 +104,15 @@ export class FolderService {
       if (!folderInfo) {
         throw new BadRequestException('Folder does not exist');
       }
-      await tx.folders.delete({
-        where: {
-          id: folder.id,
-        },
-      });
+      await tx.folders
+        .delete({
+          where: {
+            id: folder.id,
+          },
+        })
+        .catch(() => {
+          throw new InternalServerErrorException('Failed to delete folder');
+        });
       return true;
     });
   }

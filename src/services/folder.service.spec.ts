@@ -11,6 +11,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
 import { ICreateFolderServiceOutput } from 'src/interfaces/folder.interface';
 import {
+  BadRequestException,
   ConflictException,
   InternalServerErrorException,
 } from '@nestjs/common';
@@ -41,6 +42,8 @@ describe('FolderService', () => {
    * Success handling
    * Test if the service is successfully done
    */
+
+  // Create folder success handling
   it('should create a folder', async () => {
     const folderName = 'test';
     const parentFolderId = BigInt(1);
@@ -100,10 +103,37 @@ describe('FolderService', () => {
     ).toEqual(output);
   });
 
+  // Delete folder success handling
+  it('should delete a folder', async () => {
+    const folderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    const folder_info: folder_info = {
+      id: BigInt(1),
+      folder_id: folder.id,
+      owner_id: 1,
+      create_date: new Date(),
+      update_date: new Date(),
+    };
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(folder);
+    prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
+    prismaService.folders.delete.mockResolvedValue(folder);
+    expect(await service.delete({ folderKey })).toEqual(true);
+  });
+
   /**
    * Error handling
    * Test if the service is throwing an error
    */
+
+  // Create folder error handling
   it('should throw an conflict error when creating a same folder', async () => {
     const folderName = 'test';
     const parentFolderKey = uuidv4();
@@ -148,5 +178,64 @@ describe('FolderService', () => {
         userId,
       }),
     ).rejects.toThrow(InternalServerErrorException);
+  });
+
+  // Delete folder error handling
+  it('should throw an bad request error when folder is not exist', async () => {
+    const folderKey = uuidv4();
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(service.delete({ folderKey })).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('should throw an bad request error when folder_info is not exist', async () => {
+    const folderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(folder);
+    prismaService.folder_info.findUnique.mockResolvedValue(null);
+
+    await expect(service.delete({ folderKey })).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
+  it('should throw an internal server error when deleting a folder', async () => {
+    const folderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    const folder_info: folder_info = {
+      id: BigInt(1),
+      folder_id: folder.id,
+      owner_id: 1,
+      create_date: new Date(),
+      update_date: new Date(),
+    };
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(folder);
+    prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
+    prismaService.folders.delete.mockRejectedValue({ code: 'P2003' });
+
+    await expect(service.delete({ folderKey })).rejects.toThrow(
+      InternalServerErrorException,
+    );
   });
 });
