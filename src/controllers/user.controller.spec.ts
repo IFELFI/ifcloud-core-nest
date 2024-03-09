@@ -1,10 +1,7 @@
 import { UserService } from 'src/services/user.service';
 import { UserController } from './user.controller';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ICreateUserRequestBody,
-  ICreateUserServiceOutput,
-} from 'src/interfaces/user.interface';
+import { ICreateUserRequestBody } from 'src/interfaces/user.interface';
 import { PrismaService } from 'src/services/prisma.service';
 
 describe('UserController', () => {
@@ -38,7 +35,7 @@ describe('UserController', () => {
         uuidKey,
       },
     };
-    const createUserOutput: ICreateUserServiceOutput = {
+    const createUserOutput = {
       id: 1,
       uuidKey,
     };

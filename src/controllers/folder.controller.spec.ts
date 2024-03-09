@@ -1,8 +1,5 @@
 import { TestingModule, Test } from '@nestjs/testing';
-import {
-  ICreateFolderRequestBody,
-  ICreateFolderServiceOutput,
-} from 'src/interfaces/folder.interface';
+import { ICreateFolderRequestBody } from 'src/interfaces/folder.interface';
 import { FolderService } from 'src/services/folder.service';
 import { PrismaService } from 'src/services/prisma.service';
 import { FolderController } from './folder.controller';
@@ -47,10 +44,7 @@ describe('FolderController', () => {
         parentFolderKey: uuidv4(),
       },
     };
-    const createFolderOutput: ICreateFolderServiceOutput = {
-      folderKey: createFolderRequestBody.data.parentFolderKey || uuidv4(),
-    };
-    folderService.create = jest.fn().mockResolvedValue(createFolderOutput);
+    folderService.create = jest.fn().mockResolvedValue({ folderKey: uuidv4() });
     expect(await controller.createFolder(createFolderRequestBody)).toEqual(
       'Folder created',
     );

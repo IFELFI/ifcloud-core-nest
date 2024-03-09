@@ -1,11 +1,4 @@
 import {
-  ICreateFolderServiceInput,
-  ICreateFolderServiceOutput,
-  IDeleteFolderServiceInput,
-  IDeleteFolderServiceOutput,
-  IReadFolderServiceInput,
-} from './../interfaces/folder.interface';
-import {
   BadRequestException,
   ConflictException,
   Injectable,
@@ -22,16 +15,11 @@ export class FolderService {
     private checkRole: CheckRoleService,
   ) {}
 
-  /**
-   * Create folder
-   * @param data Create folder input
-   * @returns Create folder output
-   */
-  async create({
-    folderName,
-    parentFolderKey,
-    userId,
-  }: ICreateFolderServiceInput): Promise<ICreateFolderServiceOutput> {
+  async create(
+    folderName: string,
+    parentFolderKey: string | undefined,
+    userId: number,
+  ): Promise<{ folderKey: string }> {
     return this.prisma.$transaction(async (tx) => {
       let parentFolderId: bigint | null = null;
       if (parentFolderKey) {
@@ -77,7 +65,7 @@ export class FolderService {
         },
       });
 
-      const output: ICreateFolderServiceOutput = {
+      const output = {
         folderKey: createFolder.folder_key,
       };
 
@@ -90,11 +78,7 @@ export class FolderService {
    * @param folderKey Folder key
    * @param userId User ID
    */
-  async delete({
-    folderKey,
-    userId,
-  }: IDeleteFolderServiceInput): Promise<IDeleteFolderServiceOutput> {
-    // Delete folder
+  async delete(folderKey: string, userId: number): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({
         where: {
@@ -138,7 +122,10 @@ export class FolderService {
     });
   }
 
-  async read({ folderKey, userId }: IReadFolderServiceInput): Promise<{
+  async read(
+    folderKey: string,
+    userId: number,
+  ): Promise<{
     folders: folders[];
     files: files[];
   }> {

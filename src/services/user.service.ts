@@ -5,13 +5,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { ICreateUserServiceOutput } from 'src/interfaces/user.interface';
 
 @Injectable()
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  async create(uuidKey: string): Promise<ICreateUserServiceOutput> {
+  async create(uuidKey: string): Promise<{ id: number; uuidKey: string }> {
     const createUser = await this.prisma.users
       .create({
         data: {
@@ -25,7 +24,7 @@ export class UserService {
         throw new InternalServerErrorException('Failed to create user');
       });
 
-    const output: ICreateUserServiceOutput = {
+    const output = {
       id: createUser.id,
       uuidKey: createUser.uuid_key,
     };
@@ -50,7 +49,7 @@ export class UserService {
     return user.id;
   }
 
-  async delete(uuidKey: string): Promise<void> {
+  async delete(uuidKey: string): Promise<boolean> {
     await this.prisma.users
       .delete({
         where: {
@@ -63,5 +62,7 @@ export class UserService {
         }
         throw new InternalServerErrorException('Failed to delete user');
       });
+
+    return true;
   }
 }

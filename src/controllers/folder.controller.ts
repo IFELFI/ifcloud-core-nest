@@ -31,11 +31,7 @@ export class FolderController {
     const userId = createFolder.userId;
     const { folderName, parentFolderKey } = createFolder.data;
 
-    await this.folderService.create({
-      folderName,
-      parentFolderKey,
-      userId,
-    });
+    await this.folderService.create(folderName, parentFolderKey, userId);
 
     return 'Folder created';
   }
@@ -49,7 +45,7 @@ export class FolderController {
   ): Promise<string> {
     const userId = deleteFolder.userId;
 
-    await this.folderService.delete({ folderKey, userId });
+    await this.folderService.delete(folderKey, userId);
 
     return 'Folder deleted';
   }

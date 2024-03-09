@@ -10,7 +10,6 @@ import {
 } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
-import { ICreateFolderServiceOutput } from 'src/interfaces/folder.interface';
 import {
   BadRequestException,
   ConflictException,
@@ -87,10 +86,6 @@ describe('FolderService', () => {
       role: ['create', 'read', 'update', 'delete'],
     };
 
-    const output: ICreateFolderServiceOutput = {
-      folderKey: createFolder.folder_key,
-    };
-
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
@@ -101,13 +96,9 @@ describe('FolderService', () => {
       createExternalAccess,
     );
     prismaService.user_role.create.mockResolvedValue(createUserRole);
-    expect(
-      await service.create({
-        folderName,
-        parentFolderKey,
-        userId,
-      }),
-    ).toEqual(output);
+    expect(await service.create(folderName, parentFolderKey, userId)).toEqual({
+      folderKey: createFolder.folder_key,
+    });
   });
 
   // Delete folder success handling
@@ -135,13 +126,13 @@ describe('FolderService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockResolvedValue(folder);
-    expect(await service.delete({ folderKey, userId: 1 })).toEqual(true);
+    expect(await service.delete(folderKey, 1)).toEqual(true);
   });
 
   it('should not delete a folder if user does not have access', async () => {
     const folderKey = uuidv4();
     checkRoleService.checkRole.mockResolvedValue(false);
-    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
+    await expect(service.delete(folderKey, 1)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -175,7 +166,7 @@ describe('FolderService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folders.findMany.mockResolvedValue(findFolders);
     prismaService.files.findMany.mockResolvedValue(findFiles);
-    expect(await service.read({ folderKey, userId: 1 })).toEqual({
+    expect(await service.read(folderKey, 1)).toEqual({
       folders: findFolders,
       files: findFiles,
     });
@@ -202,11 +193,7 @@ describe('FolderService', () => {
     });
     prismaService.folders.create.mockRejectedValue({ code: 'P2002' });
     await expect(
-      service.create({
-        folderName,
-        parentFolderKey,
-        userId,
-      }),
+      service.create(folderName, parentFolderKey, userId),
     ).rejects.toThrow(ConflictException);
   });
 
@@ -225,11 +212,7 @@ describe('FolderService', () => {
     });
     prismaService.folders.create.mockRejectedValue({ code: 'P2003' });
     await expect(
-      service.create({
-        folderName,
-        parentFolderKey,
-        userId,
-      }),
+      service.create(folderName, parentFolderKey, userId),
     ).rejects.toThrow(InternalServerErrorException);
   });
 
@@ -242,7 +225,7 @@ describe('FolderService', () => {
     );
     prismaService.folders.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
+    await expect(service.delete(folderKey, 1)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -262,7 +245,7 @@ describe('FolderService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
+    await expect(service.delete(folderKey, 1)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -290,7 +273,7 @@ describe('FolderService', () => {
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockRejectedValue({ code: 'P2003' });
 
-    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
+    await expect(service.delete(folderKey, 1)).rejects.toThrow(
       InternalServerErrorException,
     );
   });

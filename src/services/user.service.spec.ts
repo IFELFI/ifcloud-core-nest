@@ -65,7 +65,7 @@ describe('UserService', () => {
       uuid_key: '1234',
     };
     prismaService.users.delete.mockResolvedValue(user);
-    expect(await service.delete(uuidKey)).toBeUndefined();
+    expect(await service.delete(uuidKey)).toEqual(true);
   });
 
   /**

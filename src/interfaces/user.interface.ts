@@ -9,9 +9,6 @@ export interface IUserUUID {
   uuidKey: string & tags.Format<'uuid'>;
 }
 
-export interface ICreateUserServiceInput extends IUserUUID {}
-export interface ICreateUserServiceOutput extends IUser {}
-
 export interface ICreateUserRequestBody extends IVerifiedRequestBody {}
 
 export const validateCreateUserRequestBody =
