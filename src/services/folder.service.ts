@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CheckRoleService } from './checkRole.service';
-import { files, folders } from '@prisma/client';
 
 @Injectable()
 export class FolderService {
@@ -14,7 +13,13 @@ export class FolderService {
     private prisma: PrismaService,
     private checkRole: CheckRoleService,
   ) {}
-
+  /**
+   * Create folder
+   * @param folderName Folder name
+   * @param parentFolderKey Parent folder key
+   * @param userId User ID
+   * @returns folderKey
+   */
   async create(
     folderName: string,
     parentFolderKey: string | undefined,
@@ -77,6 +82,7 @@ export class FolderService {
    * Delete folder
    * @param folderKey Folder key
    * @param userId User ID
+   * @returns true if folder is deleted
    */
   async delete(folderKey: string, userId: number): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
@@ -118,16 +124,30 @@ export class FolderService {
         .catch(() => {
           throw new InternalServerErrorException('Failed to delete folder');
         });
+
       return true;
     });
   }
 
+  /**
+   * Read folder
+   * @param folderKey Target folder key
+   * @param userId User ID
+   * @returns Folders and files data
+   */
   async read(
     folderKey: string,
     userId: number,
   ): Promise<{
-    folders: folders[];
-    files: files[];
+    folders: Array<{
+      folderKey: string;
+      folderName: string;
+    }>;
+    files: Array<{
+      fileKey: string;
+      fileName: string;
+      enabled: boolean;
+    }>;
   }> {
     return this.prisma.$transaction(async (tx) => {
       const targetFolder = await tx.folders.findUnique({
@@ -146,16 +166,36 @@ export class FolderService {
         );
       }
 
-      const folders = await tx.folders.findMany({
-        where: {
-          parent_folder_id: targetFolder.id,
-        },
-      });
-      const files = await tx.files.findMany({
-        where: {
-          parent_folder_id: targetFolder.id,
-        },
-      });
+      const folders = await tx.folders
+        .findMany({
+          where: {
+            parent_folder_id: targetFolder.id,
+          },
+        })
+        .then((folders) => {
+          return folders.map((folder) => {
+            return {
+              folderKey: folder.folder_key,
+              folderName: folder.folder_name,
+            };
+          });
+        });
+
+      const files = await tx.files
+        .findMany({
+          where: {
+            parent_folder_id: targetFolder.id,
+          },
+        })
+        .then((files) => {
+          return files.map((file) => {
+            return {
+              fileKey: file.file_key,
+              fileName: file.file_name,
+              enabled: file.enabled,
+            };
+          });
+        });
 
       return {
         folders,

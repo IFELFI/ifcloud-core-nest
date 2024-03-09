@@ -49,4 +49,44 @@ describe('FolderController', () => {
       'Folder created',
     );
   });
+
+  it('should delete a folder', async () => {
+    const deleteFolderRequestBody = {
+      userId: 1,
+      payload: {
+        uuidKey: '1234',
+      },
+    };
+    folderService.delete = jest.fn().mockResolvedValue(true);
+    expect(
+      await controller.deleteFolder(deleteFolderRequestBody, '1234'),
+    ).toEqual('Folder deleted');
+  });
+
+  it('should read a folder', async () => {
+    const readFolderRequestBody = {
+      userId: 1,
+      payload: {
+        uuidKey: '1234',
+      },
+    };
+    const folders: Array<{
+      folderKey: string;
+      folderName: string;
+    }> = [{ folderKey: '1234', folderName: 'test' }];
+    const files: Array<{
+      fileKey: string;
+      fileName: string;
+    }> = [{ fileKey: '1234', fileName: 'test' }];
+
+    folderService.read = jest.fn().mockResolvedValue({
+      folders,
+      files,
+    });
+
+    expect(await controller.readFolder(readFolderRequestBody, '1234')).toEqual({
+      folders,
+      files,
+    });
+  });
 });

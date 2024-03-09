@@ -129,14 +129,6 @@ describe('FolderService', () => {
     expect(await service.delete(folderKey, 1)).toEqual(true);
   });
 
-  it('should not delete a folder if user does not have access', async () => {
-    const folderKey = uuidv4();
-    checkRoleService.checkRole.mockResolvedValue(false);
-    await expect(service.delete(folderKey, 1)).rejects.toThrow(
-      BadRequestException,
-    );
-  });
-
   // Read folder success handling
   it('should read a folder', async () => {
     const folderKey = uuidv4();
@@ -167,8 +159,19 @@ describe('FolderService', () => {
     prismaService.folders.findMany.mockResolvedValue(findFolders);
     prismaService.files.findMany.mockResolvedValue(findFiles);
     expect(await service.read(folderKey, 1)).toEqual({
-      folders: findFolders,
-      files: findFiles,
+      folders: findFolders.map((folder) => {
+        return {
+          folderKey: folder.folder_key,
+          folderName: folder.folder_name,
+        };
+      }),
+      files: findFiles.map((file) => {
+        return {
+          fileKey: file.file_key,
+          fileName: file.file_name,
+          enabled: file.enabled,
+        };
+      }),
     });
   });
 
@@ -217,6 +220,14 @@ describe('FolderService', () => {
   });
 
   // Delete folder error handling
+  it('should not delete a folder if user does not have access', async () => {
+    const folderKey = uuidv4();
+    checkRoleService.checkRole.mockResolvedValue(false);
+    await expect(service.delete(folderKey, 1)).rejects.toThrow(
+      BadRequestException,
+    );
+  });
+
   it('should throw an bad request error if folder is not exist when deleting a folder', async () => {
     const folderKey = uuidv4();
     checkRoleService.checkRole.mockResolvedValue(true);

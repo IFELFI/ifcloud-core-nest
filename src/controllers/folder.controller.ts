@@ -49,4 +49,26 @@ export class FolderController {
 
     return 'Folder deleted';
   }
+
+  @Post('read/:folderKey')
+  @HttpCode(200)
+  async readFolder(
+    @Body(new TypiaValidationPipe(validateUserRequestBody))
+    readFolder: IUserRequestBody,
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+  ): Promise<{
+    folders: Array<{
+      folderKey: string;
+      folderName: string;
+    }>;
+    files: Array<{
+      fileKey: string;
+      fileName: string;
+      enabled: boolean;
+    }>;
+  }> {
+    const userId = readFolder.userId;
+
+    return this.folderService.read(folderKey, userId);
+  }
 }

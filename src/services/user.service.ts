@@ -10,6 +10,11 @@ import { PrismaService } from './prisma.service';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
+  /**
+   * Create user
+   * @param uuidKey UUID key
+   * @returns ID and UUID key of the user
+   */
   async create(uuidKey: string): Promise<{ id: number; uuidKey: string }> {
     const createUser = await this.prisma.users
       .create({
@@ -32,6 +37,11 @@ export class UserService {
     return output;
   }
 
+  /**
+   * Read user
+   * @param uuidKey UUID key
+   * @returns ID of the user
+   */
   async read(uuidKey: string): Promise<number> {
     const user = await this.prisma.users
       .findUniqueOrThrow({
@@ -49,6 +59,11 @@ export class UserService {
     return user.id;
   }
 
+  /**
+   * Delete user
+   * @param uuidKey UUID key
+   * @returns true if user is deleted
+   */
   async delete(uuidKey: string): Promise<boolean> {
     await this.prisma.users
       .delete({
