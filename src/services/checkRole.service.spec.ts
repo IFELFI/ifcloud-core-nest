@@ -51,7 +51,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(userRole);
 
-    const result = await service.checkRole(folderKey, userId, role);
+    const result = await service.checkRole(folder.id, userId, role);
     expect(result).toBe(true);
   });
 
@@ -73,7 +73,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(userRole);
 
-    const result = await service.checkRole(folderKey, userId, role);
+    const result = await service.checkRole(folder.id, userId, role);
     expect(result).toBe(false);
   });
 
@@ -83,17 +83,6 @@ describe('CheckRoleService', () => {
    */
 
   // Check role failure handling
-  it('should throw NotFoundException if folder does not exist', async () => {
-    const folderKey = uuidv4();
-    const userId = 1;
-    const role = 'create';
-    prismaService.folders.findUnique.mockResolvedValue(null);
-
-    await expect(service.checkRole(folderKey, userId, role)).rejects.toThrow(
-      NotFoundException,
-    );
-  });
-
   it('should throw NotFoundException if user_role does not exist', async () => {
     const folderKey = uuidv4();
     const userId = 1;
@@ -107,7 +96,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(null);
 
-    await expect(service.checkRole(folderKey, userId, role)).rejects.toThrow(
+    await expect(service.checkRole(folder.id, userId, role)).rejects.toThrow(
       NotFoundException,
     );
   });

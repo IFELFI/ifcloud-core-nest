@@ -3,6 +3,7 @@ import {
   ICreateFolderServiceOutput,
   IDeleteFolderServiceInput,
   IDeleteFolderServiceOutput,
+  IReadFolderServiceInput,
 } from './../interfaces/folder.interface';
 import {
   BadRequestException,
@@ -12,6 +13,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CheckRoleService } from './checkRole.service';
+import { files, folders } from '@prisma/client';
 
 @Injectable()
 export class FolderService {
@@ -25,10 +27,11 @@ export class FolderService {
    * @param data Create folder input
    * @returns Create folder output
    */
-  async create(
-    data: ICreateFolderServiceInput,
-  ): Promise<ICreateFolderServiceOutput> {
-    const { folderName, parentFolderKey, userId } = data;
+  async create({
+    folderName,
+    parentFolderKey,
+    userId,
+  }: ICreateFolderServiceInput): Promise<ICreateFolderServiceOutput> {
     return this.prisma.$transaction(async (tx) => {
       let parentFolderId: bigint | null = null;
       if (parentFolderKey) {
@@ -87,17 +90,10 @@ export class FolderService {
    * @param folderKey Folder key
    * @param userId User ID
    */
-  async delete(
-    data: IDeleteFolderServiceInput,
-  ): Promise<IDeleteFolderServiceOutput> {
-    const { folderKey, userId } = data;
-
-    // Check if the user has delete role
-    const hadRole = await this.checkRole.checkRole(folderKey, userId, 'delete');
-    if (!hadRole) {
-      throw new BadRequestException('User does not have delete role');
-    }
-
+  async delete({
+    folderKey,
+    userId,
+  }: IDeleteFolderServiceInput): Promise<IDeleteFolderServiceOutput> {
     // Delete folder
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({
@@ -108,6 +104,19 @@ export class FolderService {
       if (!folder) {
         throw new BadRequestException('Folder does not exist');
       }
+
+      // Check if the user has the role
+      const hasRole = await this.checkRole.checkRole(
+        folder.id,
+        userId,
+        'delete',
+      );
+      if (!hasRole) {
+        throw new BadRequestException(
+          'User does not have access to the folder',
+        );
+      }
+
       const folderInfo = await tx.folder_info.findUnique({
         where: {
           folder_id: folder.id,
@@ -126,6 +135,45 @@ export class FolderService {
           throw new InternalServerErrorException('Failed to delete folder');
         });
       return true;
+    });
+  }
+
+  async read({ folderKey, userId }: IReadFolderServiceInput): Promise<{
+    folders: folders[];
+    files: files[];
+  }> {
+    return this.prisma.$transaction(async (tx) => {
+      const targetFolder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!targetFolder) {
+        throw new BadRequestException('Folder does not exist');
+      }
+
+      const hasRole = this.checkRole.checkRole(targetFolder.id, userId, 'read');
+      if (!hasRole) {
+        throw new BadRequestException(
+          'User does not have access to the folder',
+        );
+      }
+
+      const folders = await tx.folders.findMany({
+        where: {
+          parent_folder_id: targetFolder.id,
+        },
+      });
+      const files = await tx.files.findMany({
+        where: {
+          parent_folder_id: targetFolder.id,
+        },
+      });
+
+      return {
+        folders,
+        files,
+      };
     });
   }
 }

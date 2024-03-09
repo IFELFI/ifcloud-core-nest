@@ -6,19 +6,10 @@ import { access_role } from '@prisma/client';
 export class CheckRoleService {
   constructor(private prisma: PrismaService) {}
 
-  async checkRole(folderKey: string, userId: number, role: access_role) {
-    const folder = await this.prisma.folders.findUnique({
-      where: {
-        folder_key: folderKey,
-      },
-    });
-    if (!folder) {
-      throw new NotFoundException('Folder does not exist');
-    }
-
+  async checkRole(folderId: bigint, userId: number, role: access_role) {
     const userRole = await this.prisma.user_role.findFirst({
       where: {
-        folder_id: folder.id,
+        folder_id: folderId,
         user_id: userId,
       },
     });

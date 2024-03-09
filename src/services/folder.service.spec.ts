@@ -3,6 +3,7 @@ import { FolderService } from './folder.service';
 import {
   PrismaClient,
   external_access,
+  files,
   folder_info,
   folders,
   user_role,
@@ -143,6 +144,41 @@ describe('FolderService', () => {
     await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
       BadRequestException,
     );
+  });
+
+  // Read folder success handling
+  it('should read a folder', async () => {
+    const folderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    const findFolders: folders[] = [
+      {
+        id: BigInt(1),
+        folder_name: 'test',
+        parent_folder_id: folder.id,
+        folder_key: uuidv4(),
+      },
+    ];
+    const findFiles: files[] = [
+      {
+        id: BigInt(1),
+        file_name: 'test',
+        parent_folder_id: folder.id,
+        file_key: uuidv4(),
+        enabled: true,
+      },
+    ];
+    prismaService.folders.findUnique.mockResolvedValue(folder);
+    prismaService.folders.findMany.mockResolvedValue(findFolders);
+    prismaService.files.findMany.mockResolvedValue(findFiles);
+    expect(await service.read({ folderKey, userId: 1 })).toEqual({
+      folders: findFolders,
+      files: findFiles,
+    });
   });
 
   /**
