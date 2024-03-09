@@ -1,4 +1,4 @@
-import { tags } from 'typia';
+import typia, { tags } from 'typia';
 import { TokenPayload } from './token.interface';
 import { Request } from 'express';
 
@@ -15,6 +15,8 @@ export interface IVerifiedRequestBody extends IBaseRequestBody {
 export interface IUserRequestBody extends IVerifiedRequestBody {
   userId: number & tags.Type<'uint32'>;
 }
+
+export const validateUserRequestBody = typia.createValidate<IUserRequestBody>();
 
 export interface IBaseRequest extends Request {
   body: IBaseRequestBody;

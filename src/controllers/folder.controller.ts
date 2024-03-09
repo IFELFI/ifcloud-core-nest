@@ -1,10 +1,20 @@
-import { Body, Controller, HttpCode, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+} from '@nestjs/common';
 import {
   ICreateFolderRequestBody,
-  IDeleteFolderRequestBody,
   validateCreateFolderRequestBody,
-  validateDeleteFolderRequestBody,
 } from 'src/interfaces/folder.interface';
+import {
+  IUserRequestBody,
+  validateUserRequestBody,
+} from 'src/interfaces/request.interface';
 import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FolderService } from 'src/services/folder.service';
 
@@ -30,15 +40,16 @@ export class FolderController {
     return 'Folder created';
   }
 
-  @Post('delete')
+  @Delete(':folderKey')
   @HttpCode(200)
   async deleteFolder(
-    @Body(new TypiaValidationPipe(validateDeleteFolderRequestBody))
-    deleteFolder: IDeleteFolderRequestBody,
+    @Body(new TypiaValidationPipe(validateUserRequestBody))
+    deleteFolder: IUserRequestBody,
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
   ): Promise<string> {
-    const { folderKey } = deleteFolder.data;
+    const userId = deleteFolder.userId;
 
-    await this.folderService.delete({ folderKey });
+    await this.folderService.delete({ folderKey, userId });
 
     return 'Folder deleted';
   }

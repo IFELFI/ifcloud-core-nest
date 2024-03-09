@@ -16,21 +16,27 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
+import { CheckRoleService } from './checkRole.service';
 
 describe('FolderService', () => {
   let service: FolderService;
   let prismaService: DeepMockProxy<PrismaClient>;
+  let checkRoleService: DeepMockProxy<CheckRoleService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FolderService, PrismaService],
+      providers: [FolderService, PrismaService, CheckRoleService],
     })
       .overrideProvider(PrismaService)
       .useValue(mockDeep(PrismaClient))
+      .overrideProvider(CheckRoleService)
+      .useValue(mockDeep(CheckRoleService))
       .compile();
 
     service = module.get<FolderService>(FolderService);
     prismaService = module.get<DeepMockProxy<PrismaClient>>(PrismaService);
+    checkRoleService =
+      module.get<DeepMockProxy<CheckRoleService>>(CheckRoleService);
   });
 
   // Test if the service is defined
@@ -119,13 +125,24 @@ describe('FolderService', () => {
       create_date: new Date(),
       update_date: new Date(),
     };
+
+    checkRoleService.checkRole.mockResolvedValue(true);
+
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockResolvedValue(folder);
-    expect(await service.delete({ folderKey })).toEqual(true);
+    expect(await service.delete({ folderKey, userId: 1 })).toEqual(true);
+  });
+
+  it('should not delete a folder if user does not have access', async () => {
+    const folderKey = uuidv4();
+    checkRoleService.checkRole.mockResolvedValue(false);
+    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
+      BadRequestException,
+    );
   });
 
   /**
@@ -181,19 +198,20 @@ describe('FolderService', () => {
   });
 
   // Delete folder error handling
-  it('should throw an bad request error when folder is not exist', async () => {
+  it('should throw an bad request error if folder is not exist when deleting a folder', async () => {
     const folderKey = uuidv4();
+    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete({ folderKey })).rejects.toThrow(
+    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
       BadRequestException,
     );
   });
 
-  it('should throw an bad request error when folder_info is not exist', async () => {
+  it('should throw an bad request error if folder_info is not exist when deleting a folder', async () => {
     const folderKey = uuidv4();
     const folder: folders = {
       id: BigInt(1),
@@ -201,13 +219,14 @@ describe('FolderService', () => {
       parent_folder_id: null,
       folder_key: folderKey,
     };
+    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete({ folderKey })).rejects.toThrow(
+    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -227,6 +246,7 @@ describe('FolderService', () => {
       create_date: new Date(),
       update_date: new Date(),
     };
+    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
@@ -234,7 +254,7 @@ describe('FolderService', () => {
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockRejectedValue({ code: 'P2003' });
 
-    await expect(service.delete({ folderKey })).rejects.toThrow(
+    await expect(service.delete({ folderKey, userId: 1 })).rejects.toThrow(
       InternalServerErrorException,
     );
   });

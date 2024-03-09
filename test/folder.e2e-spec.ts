@@ -14,6 +14,20 @@ import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
 import { ICreateFolderRequestBodyData } from 'src/interfaces/folder.interface';
 
+const createTestFolder = async (userId: number) => {
+  const testFolderKey = uuidv4();
+  await postgresClient.query(
+    `INSERT INTO "cloud"."folders" (id, folder_key, folder_name, parent_folder_id) VALUES (1, '${testFolderKey}', 'test_folder', null)`,
+  );
+  await postgresClient.query(
+    `INSERT INTO "cloud"."folder_info" (folder_id, owner_id) VALUES (1, ${userId})`,
+  );
+  await postgresClient.query(
+    `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${userId}, 1, '{create,update,delete}')`,
+  );
+  return testFolderKey;
+};
+
 describe('Folder', () => {
   let app: INestApplication;
 
@@ -43,8 +57,9 @@ describe('Folder', () => {
 
   /**
    * Success handling
-   * Test if the folder is successfully created
    */
+
+  // Create folder success handling
   it('should create a folder', async () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
@@ -55,9 +70,30 @@ describe('Folder', () => {
     expect(response.text).toBe('Folder created');
   });
 
+  // Delete a folder success handling
+  it('should delete a folder', async () => {
+    const payload = testUserTokenPayload;
+    const result = await postgresClient.query(
+      `SELECT id FROM "member"."users" WHERE uuid_key = '${payload.uuidKey}'`,
+    );
+    if (result.rowCount !== 1) {
+      throw new Error('User does not exist');
+    }
+    const testFolderKey = await createTestFolder(result.rows[0].id);
+    const response = await request(app.getHttpServer())
+      .delete(`/folder/${testFolderKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .send({});
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe('Folder deleted');
+  });
+
   /**
    * Error handling
    */
+
+  // Create folder error handling
   it('should not create a folder if Authorization header is not given', async () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')

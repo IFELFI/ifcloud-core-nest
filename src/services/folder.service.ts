@@ -11,10 +11,14 @@ import {
   InternalServerErrorException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
+import { CheckRoleService } from './checkRole.service';
 
 @Injectable()
 export class FolderService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private checkRole: CheckRoleService,
+  ) {}
 
   /**
    * Create folder
@@ -86,7 +90,15 @@ export class FolderService {
   async delete(
     data: IDeleteFolderServiceInput,
   ): Promise<IDeleteFolderServiceOutput> {
-    const { folderKey } = data;
+    const { folderKey, userId } = data;
+
+    // Check if the user has delete role
+    const hadRole = await this.checkRole.checkRole(folderKey, userId, 'delete');
+    if (!hadRole) {
+      throw new BadRequestException('User does not have delete role');
+    }
+
+    // Delete folder
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({
         where: {
