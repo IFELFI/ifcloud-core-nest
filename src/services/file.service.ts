@@ -95,6 +95,7 @@ export class FileService {
     const tempFileName = `${parentFolderKey}_${fileName}`;
 
     if (chunkNumber === 0) {
+      // Check if parent folder exists
       const parentFolder = await this.prisma.folders.findUnique({
         where: {
           folder_key: parentFolderKey,
@@ -103,7 +104,22 @@ export class FileService {
       if (!parentFolder) {
         throw new NotFoundException('Folder does not exist');
       }
+
+      // Check if user has permission to create file
       await this.checkRole.checkRole(parentFolder.id, userId, 'create');
+
+      // Check if file already exists
+      const existingFile = await this.prisma.files.findFirst({
+        where: {
+          parent_folder_id: parentFolder.id,
+          file_name: fileName,
+        },
+      });
+      if (existingFile) {
+        throw new ConflictException('File already exists');
+      }
+
+      // Create temp file
       await this.prisma.temp_files
         .create({
           data: {
@@ -120,6 +136,7 @@ export class FileService {
         });
     }
 
+    // Upload chunk
     const uploadChunkIsDone = await this.uploadChunk(
       chunk,
       chunkNumber,
@@ -127,6 +144,7 @@ export class FileService {
       tempFileName,
     );
 
+    // If all chunks are uploaded
     if (uploadChunkIsDone) {
       return await this.prisma.$transaction(async (tx) => {
         // Get parent folder
@@ -147,29 +165,32 @@ export class FileService {
         if (!tempFile) {
           throw new InternalServerErrorException('Failed to find temp file');
         }
-        // Upload file
-        const uploadedFile = await tx.files.create({
-          data: {
-            parent_folder_id: parentFolder.id,
-            file_key: tempFile.file_key,
-            file_name: fileName,
-            enabled: true,
-          },
-        });
-        // Get file stats
-        const fileStats = fs.statSync(
-          path.join(this.baseDir, uploadedFile.file_key),
-        );
-        // Create file info
-        await tx.file_info.create({
-          data: {
-            file_id: uploadedFile.id,
-            uploader_id: userId,
-            byte_size: fileStats.size,
-          },
-        });
-
-        return { isDone: true, fileKey: uploadedFile.file_key };
+        try {
+          // Upload file
+          const uploadedFile = await tx.files.create({
+            data: {
+              parent_folder_id: parentFolder.id,
+              file_key: tempFile.file_key,
+              file_name: fileName,
+              enabled: true,
+            },
+          });
+          // Get file stats
+          const fileStats = fs.statSync(
+            path.join(this.baseDir, uploadedFile.file_key),
+          );
+          // Create file info
+          await tx.file_info.create({
+            data: {
+              file_id: uploadedFile.id,
+              uploader_id: userId,
+              byte_size: fileStats.size,
+            },
+          });
+          return { isDone: true, fileKey: uploadedFile.file_key };
+        } catch (error) {
+          throw new InternalServerErrorException('Failed to upload file');
+        }
       });
     }
     return { isDone: false };

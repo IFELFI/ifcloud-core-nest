@@ -7,6 +7,10 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
+import {
+  ConflictException,
+  InternalServerErrorException,
+} from '@nestjs/common';
 
 describe('FileService', () => {
   let service: FileService;
@@ -131,6 +135,7 @@ describe('FileService', () => {
     // Temp file created
     prismaService.folders.findUnique.mockResolvedValue(parentFolder);
     checkRoleService.checkRole.mockResolvedValue(true);
+    prismaService.files.findFirst.mockResolvedValue(null);
     prismaService.temp_files.create.mockResolvedValue(tempFile);
     service['uploadChunk'] = jest.fn().mockResolvedValue(true);
 
@@ -161,5 +166,151 @@ describe('FileService', () => {
     expect(fsStatSync).toHaveBeenCalled();
     expect(fsExistsSync).toHaveBeenCalled();
     expect(fsMkdirSync).toHaveBeenCalled();
+  });
+
+  /**
+   * Failure handling
+   * Test if the service is failed
+   */
+
+  // Merge chunks failure handling
+  it('should throw error when merge chunks', async () => {
+    const fileName = 'test.txt';
+    const totalChunks = 1;
+    const fsCreateWriteStream = jest
+      .spyOn(fs, 'createWriteStream')
+      .mockReturnValue({
+        write: jest.fn(),
+        end: jest.fn(),
+      } as any);
+    const fsPromisesReadFile = jest
+      .spyOn(fs.promises, 'readFile')
+      .mockRejectedValue(new Error('error'));
+    jest.spyOn(fs, 'unlinkSync').mockReturnValue();
+
+    await expect(service['mergeChunks'](fileName, totalChunks)).rejects.toThrow(
+      'error',
+    );
+    expect(fsCreateWriteStream).toHaveBeenCalled();
+    expect(fsPromisesReadFile).toHaveBeenCalled();
+  });
+
+  // Upload chunk failure handling
+  it('should throw error when upload chunk', async () => {
+    const chunk = Buffer.from('test');
+    const chunkNumber = 0;
+    const totalChunks = 1;
+    const fileName = 'test.txt';
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
+    jest.spyOn(fs.promises, 'writeFile').mockRejectedValue(new Error('error'));
+
+    await expect(
+      service['uploadChunk'](chunk, chunkNumber, totalChunks, fileName),
+    ).rejects.toThrow('error');
+    expect(fsExistsSync).toHaveBeenCalled();
+    expect(fsMkdirSync).toHaveBeenCalled();
+  });
+
+  it('should throw error when upload chunk but failed to merge chunks', async () => {
+    const chunk = Buffer.from('test');
+    const chunkNumber = 0;
+    const totalChunks = 1;
+    const fileName = 'test.txt';
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
+    jest.spyOn(fs.promises, 'writeFile').mockResolvedValue();
+
+    const fsUnlinkSync = jest.spyOn(fs, 'unlinkSync').mockReturnValue();
+
+    service['mergeChunks'] = jest.fn().mockRejectedValue(new Error('error'));
+
+    await expect(
+      service['uploadChunk'](chunk, chunkNumber, totalChunks, fileName),
+    ).rejects.toThrow(InternalServerErrorException);
+    expect(fsExistsSync).toHaveBeenCalled();
+    expect(fsMkdirSync).toHaveBeenCalled();
+    expect(fsUnlinkSync).toHaveBeenCalled();
+  });
+
+  // Upload file failure handling
+  it('should throw error when upload file but failed to create temp file', async () => {
+    const userId = 1;
+    const parentFolderKey = uuidv4();
+    const chunk = Buffer.from('test');
+    const chunkNumber = 0;
+    const totalChunks = 1;
+    const fileName = 'test.txt';
+
+    prismaService.folders.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    });
+    checkRoleService.checkRole.mockResolvedValue(true);
+    prismaService.temp_files.create.mockRejectedValue({ code: 'P2002' });
+
+    await expect(
+      service.uploadFile(
+        userId,
+        parentFolderKey,
+        fileName,
+        chunk,
+        chunkNumber,
+        totalChunks,
+      ),
+    ).rejects.toThrow(ConflictException);
+  });
+
+  it('should throw error when upload file but failed to create file', async () => {
+    const userId = 1;
+    const parentFolderKey = uuidv4();
+    const chunk = Buffer.from('test');
+    const chunkNumber = 0;
+    const totalChunks = 1;
+    const fileName = 'test.txt';
+
+    prismaService.folders.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    });
+    checkRoleService.checkRole.mockResolvedValue(true);
+    prismaService.files.findFirst.mockResolvedValue(null);
+    prismaService.temp_files.create.mockResolvedValue({
+      id: BigInt(1),
+      temp_file_name: fileName,
+      uploader_id: userId,
+      file_key: uuidv4(),
+      total_chunks: totalChunks,
+      create_date: new Date(),
+    });
+    service['uploadChunk'] = jest.fn().mockResolvedValue(true);
+
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.temp_files.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      temp_file_name: fileName,
+      uploader_id: userId,
+      file_key: uuidv4(),
+      total_chunks: totalChunks,
+      create_date: new Date(),
+    });
+    prismaService.files.create.mockRejectedValue({ code: 'P2002' });
+
+    await expect(
+      service.uploadFile(
+        userId,
+        parentFolderKey,
+        fileName,
+        chunk,
+        chunkNumber,
+        totalChunks,
+      ),
+    ).rejects.toThrow(InternalServerErrorException);
   });
 });
