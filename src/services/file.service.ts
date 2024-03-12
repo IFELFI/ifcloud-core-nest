@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -106,7 +107,16 @@ export class FileService {
       }
 
       // Check if user has permission to create file
-      await this.checkRole.checkRole(parentFolder.id, userId, 'create');
+      const hasRole = await this.checkRole.checkRole(
+        parentFolder.id,
+        userId,
+        'create',
+      );
+      if (!hasRole) {
+        throw new ForbiddenException(
+          'User does not have role to create file in the folder',
+        );
+      }
 
       // Check if file already exists
       const existingFile = await this.prisma.files.findFirst({

@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import {
   ConflictException,
+  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 
@@ -312,5 +313,33 @@ describe('FileService', () => {
         totalChunks,
       ),
     ).rejects.toThrow(InternalServerErrorException);
+  });
+
+  it('should throw error when upload file but has no role to upload a file', async () => {
+    const userId = 1;
+    const parentFolderKey = uuidv4();
+    const chunk = Buffer.from('test');
+    const chunkNumber = 0;
+    const totalChunks = 1;
+    const fileName = 'test.txt';
+
+    prismaService.folders.findUnique.mockResolvedValue({
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: null,
+      folder_key: parentFolderKey,
+    });
+    checkRoleService.checkRole.mockResolvedValue(false);
+
+    await expect(
+      service.uploadFile(
+        userId,
+        parentFolderKey,
+        fileName,
+        chunk,
+        chunkNumber,
+        totalChunks,
+      ),
+    ).rejects.toThrow(ForbiddenException);
   });
 });
