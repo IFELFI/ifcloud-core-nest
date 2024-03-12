@@ -23,6 +23,7 @@ export class FolderModule implements NestModule {
       .forRoutes(
         { path: 'folder/create', method: RequestMethod.POST },
         { path: 'folder/:folderKey', method: RequestMethod.DELETE },
+        { path: 'folder/:folderKey', method: RequestMethod.GET },
       );
   }
 }

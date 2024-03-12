@@ -6,13 +6,13 @@ import {
   files,
   folder_info,
   folders,
-  user_role,
 } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from './prisma.service';
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
@@ -80,11 +80,6 @@ describe('FolderService', () => {
       enabled: false,
       access_key_id: BigInt(1),
     };
-    const createUserRole: user_role = {
-      user_id: 1,
-      folder_id: createFolder.id,
-      role: ['create', 'read', 'update', 'delete'],
-    };
 
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
@@ -95,7 +90,7 @@ describe('FolderService', () => {
     prismaService.external_access.create.mockResolvedValue(
       createExternalAccess,
     );
-    prismaService.user_role.create.mockResolvedValue(createUserRole);
+    checkRoleService.checkRole.mockResolvedValue(true);
     expect(await service.create(folderName, parentFolderKey, userId)).toEqual({
       folderKey: createFolder.folder_key,
     });
@@ -220,11 +215,11 @@ describe('FolderService', () => {
   });
 
   // Delete folder error handling
-  it('should not delete a folder if user does not have access', async () => {
+  it('should not delete a folder if user does not have role to delete folder', async () => {
     const folderKey = uuidv4();
     checkRoleService.checkRole.mockResolvedValue(false);
     await expect(service.delete(folderKey, 1)).rejects.toThrow(
-      BadRequestException,
+      ForbiddenException,
     );
   });
 

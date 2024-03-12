@@ -21,6 +21,7 @@ let prismaService: PrismaService;
 let testUserToken: string;
 let expiredUserToken: string;
 let testUserTokenPayload: TestTokenPayload;
+let wrongUserTokenPayload: TestTokenPayload;
 let wrongUserToken: string;
 
 beforeAll(async () => {
@@ -45,7 +46,6 @@ beforeAll(async () => {
       },
     },
   });
-  console.log('Database connected');
   // Create a test user token
   if (!process.env.TOKEN_SECRET) {
     throw new Error('TOKEN_SECRET not set');
@@ -69,7 +69,7 @@ beforeAll(async () => {
     process.env.TOKEN_SECRET,
     { expiresIn: '0s' },
   );
-  const wrongUserTokenPayload = {
+  wrongUserTokenPayload = {
     uuidKey: uuidv4(),
     email: 'test@test.email',
     nickname: 'test',
@@ -96,6 +96,8 @@ export {
   testUserTokenPayload,
   expiredUserToken,
   wrongUserToken,
+  wrongUserTokenPayload,
   prismaService,
   postgresClient,
+  postgresContainer,
 };

@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { CheckRoleService } from './checkRole.service';
@@ -35,6 +37,16 @@ export class FolderService {
         });
         if (!parentFolder) {
           throw new BadRequestException('Parent folder does not exist');
+        }
+        const hasRole = await this.checkRole.checkRole(
+          parentFolder.id,
+          userId,
+          'create',
+        );
+        if (!hasRole) {
+          throw new ForbiddenException(
+            'User does not have role to create folder',
+          );
         }
         parentFolderId = parentFolder.id;
       }
@@ -102,8 +114,8 @@ export class FolderService {
         'delete',
       );
       if (!hasRole) {
-        throw new BadRequestException(
-          'User does not have access to the folder',
+        throw new ForbiddenException(
+          'User does not have role to delete folder',
         );
       }
 
@@ -156,14 +168,16 @@ export class FolderService {
         },
       });
       if (!targetFolder) {
-        throw new BadRequestException('Folder does not exist');
+        throw new NotFoundException('Folder does not exist');
       }
 
-      const hasRole = this.checkRole.checkRole(targetFolder.id, userId, 'read');
+      const hasRole = await this.checkRole.checkRole(
+        targetFolder.id,
+        userId,
+        'read',
+      );
       if (!hasRole) {
-        throw new BadRequestException(
-          'User does not have access to the folder',
-        );
+        throw new ForbiddenException('User does not have role to read folder');
       }
 
       const folders = await tx.folders
