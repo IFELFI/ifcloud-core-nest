@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   Param,
   ParseUUIDPipe,
@@ -50,7 +51,7 @@ export class FolderController {
     return 'Folder deleted';
   }
 
-  @Post('read/:folderKey')
+  @Get(':folderKey')
   @HttpCode(200)
   async readFolder(
     @Body(new TypiaValidationPipe(validateUserRequestBody))

@@ -4,7 +4,6 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { CheckRoleService } from './checkRole.service';
 import { PrismaService } from './prisma.service';
 import { v4 as uuidv4 } from 'uuid';
-import { NotFoundException } from '@nestjs/common';
 
 describe('CheckRoleService', () => {
   let service: CheckRoleService;
@@ -96,8 +95,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(null);
 
-    await expect(service.checkRole(folder.id, userId, role)).rejects.toThrow(
-      NotFoundException,
-    );
+    const result = await service.checkRole(folder.id, userId, role);
+    expect(result).toBe(false);
   });
 });
