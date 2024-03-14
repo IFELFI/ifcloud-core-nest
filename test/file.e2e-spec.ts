@@ -86,12 +86,14 @@ describe('File', () => {
 
   // Create file success handling
   it('should create a file', async () => {
-    const file = fs.readFileSync(`${__dirname}/sample/sample-image1.jpg`);
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image1.jpg`,
+    );
     const response = await uploadFile(
       file,
       'sample-image1.jpg',
       testFolderKey,
-      testUserToken,
+      'Bearer ' + testUserToken,
     );
     expect(response.status).toBe(201);
     expect(response.body.message).toBe('File uploaded');
@@ -99,6 +101,29 @@ describe('File', () => {
       fs.existsSync(path.join(baseDir, response.body.fileKey + '.jpg')),
     ).toBe(true);
   });
+
+  /**
+   * Failure handling
+   */
+
+  // Create file failure handling
+  it('should not create a file if Authorization header is not given', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image2.jpg`,
+    );
+    const response = await uploadFile(
+      file,
+      'sample-image2.jpg',
+      testFolderKey,
+      '',
+    );
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Authorization header is missing');
+  });
+
+  /**
+   * Functions for testing
+   */
 
   const uploadChunk = async (
     chunk: Buffer,
@@ -110,7 +135,7 @@ describe('File', () => {
   ) => {
     const response = await request(app.getHttpServer())
       .post(`/file/upload/${folderKey}`)
-      .set('Authorization', `Bearer ${userToken}`)
+      .set('Authorization', `${userToken}`)
       .attach('file', chunk, { filename: fileName })
       .field('chunkNumber', chunkNumber)
       .field('totalChunks', totalChunks)
