@@ -4,7 +4,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import fs from 'fs';
+import fs, { ReadStream } from 'fs';
 import path from 'path';
 import { PrismaService } from './prisma.service';
 
@@ -13,75 +13,6 @@ export class FileService {
   private readonly baseDir = process.env.FILE_UPLOAD_DIR!;
 
   constructor(private prisma: PrismaService) {}
-
-  /**
-   * Get resource path
-   * @param fileKey File key
-   * @param fileName File name
-   * @returns Resource path
-   */
-  private async getResourcePath(
-    fileKey: string,
-    fileName: string,
-  ): Promise<string> {
-    return path.join(this.baseDir, fileKey + path.extname(fileName));
-  }
-
-  /**
-   * Merge chunks
-   * @param fileName File name
-   * @param totalChunks # of total chunks
-   */
-  private async mergeChunks(
-    fileName: string,
-    totalChunks: number,
-  ): Promise<void> {
-    const chunkDir = path.join(this.baseDir, 'chunks');
-    const writeStream = fs.createWriteStream(path.join(this.baseDir, fileName));
-
-    for (let i = 0; i < totalChunks; i++) {
-      const chunkPath = path.join(chunkDir, `${fileName}_${i}`);
-      const chunkBuffer = await fs.promises.readFile(chunkPath);
-      writeStream.write(chunkBuffer);
-      fs.unlinkSync(chunkPath);
-    }
-    writeStream.end();
-  }
-
-  /**
-   * Upload chunk
-   * @param chunk Chunk buffer
-   * @param chunkNumber Chunk number
-   * @param totalChunks Total chunks
-   * @param fileName File name
-   * @returns True if all chunks are uploaded
-   */
-  private async uploadChunk(
-    chunk: Buffer,
-    chunkNumber: number,
-    totalChunks: number,
-    fileName: string,
-  ): Promise<boolean> {
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir);
-    }
-    const chunkDir = path.join(this.baseDir, 'chunks');
-    if (!fs.existsSync(chunkDir)) {
-      fs.mkdirSync(chunkDir);
-    }
-
-    const chunkPath = path.join(chunkDir, `${fileName}_${chunkNumber}`);
-    await fs.promises.writeFile(chunkPath, chunk);
-
-    if (chunkNumber === totalChunks - 1) {
-      await this.mergeChunks(fileName, totalChunks).catch(() => {
-        throw new InternalServerErrorException('Failed to merge chunks');
-      });
-      return true;
-    }
-
-    return false;
-  }
 
   /**
    * Upload file
@@ -205,5 +136,109 @@ export class FileService {
       });
     }
     return { isDone: false };
+  }
+
+  async readFile(fileKey: string): Promise<Buffer | ReadStream> {
+    const file = await this.prisma.files.findUnique({
+      where: {
+        file_key: fileKey,
+      },
+    });
+    if (!file) {
+      throw new NotFoundException('File does not exist');
+    }
+    const resourcePath = await this.getResourcePath(
+      file.file_key,
+      file.file_name,
+    );
+    if (!fs.existsSync(resourcePath)) {
+      this.prisma.files.delete({
+        where: {
+          file_key: fileKey,
+        },
+      });
+      throw new NotFoundException('File does not exist in storage');
+    }
+    // Use regex to check if the file is an video or audio file
+    const isVideo =
+      /\.(mp4|webm|ogg|mp3|wav|flac|aac|wma|wmv|avi|mov|mkv|flv|3gp|3g2|ts|mpeg|mpg|ogv|webm|mkv|flv|vob|gifv)$/i.test(
+        file.file_name,
+      );
+    if (isVideo) {
+      const fileStream = fs.createReadStream(resourcePath);
+      return fileStream;
+    } else {
+      const fileBuffer = await fs.promises.readFile(resourcePath);
+      return fileBuffer;
+    }
+  }
+
+  /**
+   * Get resource path
+   * @param fileKey File key
+   * @param fileName File name
+   * @returns Resource path
+   */
+  private async getResourcePath(
+    fileKey: string,
+    fileName: string,
+  ): Promise<string> {
+    return path.join(this.baseDir, fileKey + path.extname(fileName));
+  }
+
+  /**
+   * Merge chunks
+   * @param fileName File name
+   * @param totalChunks # of total chunks
+   */
+  private async mergeChunks(
+    fileName: string,
+    totalChunks: number,
+  ): Promise<void> {
+    const chunkDir = path.join(this.baseDir, 'chunks');
+    const writeStream = fs.createWriteStream(path.join(this.baseDir, fileName));
+
+    for (let i = 0; i < totalChunks; i++) {
+      const chunkPath = path.join(chunkDir, `${fileName}_${i}`);
+      const chunkBuffer = await fs.promises.readFile(chunkPath);
+      writeStream.write(chunkBuffer);
+      fs.unlinkSync(chunkPath);
+    }
+    writeStream.end();
+  }
+
+  /**
+   * Upload chunk
+   * @param chunk Chunk buffer
+   * @param chunkNumber Chunk number
+   * @param totalChunks Total chunks
+   * @param fileName File name
+   * @returns True if all chunks are uploaded
+   */
+  private async uploadChunk(
+    chunk: Buffer,
+    chunkNumber: number,
+    totalChunks: number,
+    fileName: string,
+  ): Promise<boolean> {
+    if (!fs.existsSync(this.baseDir)) {
+      fs.mkdirSync(this.baseDir);
+    }
+    const chunkDir = path.join(this.baseDir, 'chunks');
+    if (!fs.existsSync(chunkDir)) {
+      fs.mkdirSync(chunkDir);
+    }
+
+    const chunkPath = path.join(chunkDir, `${fileName}_${chunkNumber}`);
+    await fs.promises.writeFile(chunkPath, chunk);
+
+    if (chunkNumber === totalChunks - 1) {
+      await this.mergeChunks(fileName, totalChunks).catch(() => {
+        throw new InternalServerErrorException('Failed to merge chunks');
+      });
+      return true;
+    }
+
+    return false;
   }
 }
