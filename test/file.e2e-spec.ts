@@ -11,12 +11,14 @@ import {
 import { v4 as uuidv4 } from 'uuid';
 import request from 'supertest';
 import fs from 'fs';
+import path from 'path';
 
 describe('File', () => {
   let app: INestApplication;
   let testUserId: number;
   const testFolderKey = uuidv4();
   const chunkSize = 1024 * 1024 * 2;
+  const baseDir = process.env.FILE_UPLOAD_DIR || 'uploads';
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -61,6 +63,23 @@ describe('File', () => {
     );
   });
 
+  afterEach(async () => {
+    const deleteFolderRecursive = (path: string) => {
+      if (fs.existsSync(path)) {
+        fs.readdirSync(path).forEach((file) => {
+          const curPath = `${path}/${file}`;
+          if (fs.lstatSync(curPath).isDirectory()) {
+            deleteFolderRecursive(curPath);
+          } else {
+            fs.unlinkSync(curPath);
+          }
+        });
+        fs.rmdirSync(path);
+      }
+    };
+    deleteFolderRecursive(baseDir);
+  });
+
   /**
    * Success handling
    */
@@ -74,8 +93,11 @@ describe('File', () => {
       testFolderKey,
       testUserToken,
     );
-    expect(response.body.message).toBe('File uploaded');
     expect(response.status).toBe(201);
+    expect(response.body.message).toBe('File uploaded');
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey + '.jpg')),
+    ).toBe(true);
   });
 
   const uploadChunk = async (
@@ -90,16 +112,9 @@ describe('File', () => {
       .post(`/file/upload/${folderKey}`)
       .set('Authorization', `Bearer ${userToken}`)
       .attach('file', chunk, { filename: fileName })
-      .field(
-        'data',
-        JSON.stringify({
-          data: {
-            chunkNumber,
-            totalChunks,
-            fileName,
-          },
-        }),
-      );
+      .field('chunkNumber', chunkNumber)
+      .field('totalChunks', totalChunks)
+      .field('fileName', fileName);
     return response;
   };
 

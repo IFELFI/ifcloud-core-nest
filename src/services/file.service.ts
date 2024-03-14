@@ -1,11 +1,9 @@
 import {
   ConflictException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { CheckRoleService } from './checkRole.service';
 import fs from 'fs';
 import path from 'path';
 import { PrismaService } from './prisma.service';
@@ -14,10 +12,20 @@ import { PrismaService } from './prisma.service';
 export class FileService {
   private readonly baseDir = process.env.FILE_UPLOAD_DIR!;
 
-  constructor(
-    private prisma: PrismaService,
-    private checkRole: CheckRoleService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
+
+  /**
+   * Get resource path
+   * @param fileKey File key
+   * @param fileName File name
+   * @returns Resource path
+   */
+  private async getResourcePath(
+    fileKey: string,
+    fileName: string,
+  ): Promise<string> {
+    return path.join(this.baseDir, fileKey + path.extname(fileName));
+  }
 
   /**
    * Merge chunks
@@ -106,18 +114,6 @@ export class FileService {
         throw new NotFoundException('Folder does not exist');
       }
 
-      // Check if user has permission to create file
-      const hasRole = await this.checkRole.checkRole(
-        parentFolder.id,
-        userId,
-        'create',
-      );
-      if (!hasRole) {
-        throw new ForbiddenException(
-          'User does not have role to create file in the folder',
-        );
-      }
-
       // Check if file already exists
       const existingFile = await this.prisma.files.findFirst({
         where: {
@@ -175,6 +171,7 @@ export class FileService {
         if (!tempFile) {
           throw new InternalServerErrorException('Failed to find temp file');
         }
+
         try {
           // Upload file
           const uploadedFile = await tx.files.create({
@@ -185,10 +182,14 @@ export class FileService {
               enabled: true,
             },
           });
-          // Get file stats
-          const fileStats = fs.statSync(
-            path.join(this.baseDir, uploadedFile.file_key),
+          // Rename real file
+          const resourcePath = await this.getResourcePath(
+            uploadedFile.file_key,
+            uploadedFile.file_name,
           );
+          fs.renameSync(path.join(this.baseDir, tempFileName), resourcePath);
+          // Get file stats
+          const fileStats = fs.statSync(resourcePath);
           // Create file info
           await tx.file_info.create({
             data: {

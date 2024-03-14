@@ -9,7 +9,6 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import {
   ConflictException,
-  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 
@@ -98,6 +97,7 @@ describe('FileService', () => {
     const fileName = 'test.txt';
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
+    jest.spyOn(fs, 'renameSync').mockReturnValue();
     jest.spyOn(fs.promises, 'writeFile').mockResolvedValue();
 
     const parentFolder: folders = {
@@ -135,7 +135,7 @@ describe('FileService', () => {
 
     // Temp file created
     prismaService.folders.findUnique.mockResolvedValue(parentFolder);
-    checkRoleService.checkRole.mockResolvedValue(true);
+    checkRoleService.check.mockResolvedValue(true);
     prismaService.files.findFirst.mockResolvedValue(null);
     prismaService.temp_files.create.mockResolvedValue(tempFile);
     service['uploadChunk'] = jest.fn().mockResolvedValue(true);
@@ -249,7 +249,7 @@ describe('FileService', () => {
       parent_folder_id: null,
       folder_key: parentFolderKey,
     });
-    checkRoleService.checkRole.mockResolvedValue(true);
+    checkRoleService.check.mockResolvedValue(true);
     prismaService.temp_files.create.mockRejectedValue({ code: 'P2002' });
 
     await expect(
@@ -278,7 +278,7 @@ describe('FileService', () => {
       parent_folder_id: null,
       folder_key: parentFolderKey,
     });
-    checkRoleService.checkRole.mockResolvedValue(true);
+    checkRoleService.check.mockResolvedValue(true);
     prismaService.files.findFirst.mockResolvedValue(null);
     prismaService.temp_files.create.mockResolvedValue({
       id: BigInt(1),
@@ -313,33 +313,5 @@ describe('FileService', () => {
         totalChunks,
       ),
     ).rejects.toThrow(InternalServerErrorException);
-  });
-
-  it('should throw error when upload file but has no role to upload a file', async () => {
-    const userId = 1;
-    const parentFolderKey = uuidv4();
-    const chunk = Buffer.from('test');
-    const chunkNumber = 0;
-    const totalChunks = 1;
-    const fileName = 'test.txt';
-
-    prismaService.folders.findUnique.mockResolvedValue({
-      id: BigInt(1),
-      folder_name: 'test',
-      parent_folder_id: null,
-      folder_key: parentFolderKey,
-    });
-    checkRoleService.checkRole.mockResolvedValue(false);
-
-    await expect(
-      service.uploadFile(
-        userId,
-        parentFolderKey,
-        fileName,
-        chunk,
-        chunkNumber,
-        totalChunks,
-      ),
-    ).rejects.toThrow(ForbiddenException);
   });
 });
