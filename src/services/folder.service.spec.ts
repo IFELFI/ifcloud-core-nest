@@ -12,31 +12,24 @@ import { PrismaService } from './prisma.service';
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   InternalServerErrorException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
-import { CheckRoleService } from './checkRole.service';
 
 describe('FolderService', () => {
   let service: FolderService;
   let prismaService: DeepMockProxy<PrismaClient>;
-  let checkRoleService: DeepMockProxy<CheckRoleService>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FolderService, PrismaService, CheckRoleService],
+      providers: [FolderService, PrismaService],
     })
       .overrideProvider(PrismaService)
       .useValue(mockDeep(PrismaClient))
-      .overrideProvider(CheckRoleService)
-      .useValue(mockDeep(CheckRoleService))
       .compile();
 
     service = module.get<FolderService>(FolderService);
     prismaService = module.get<DeepMockProxy<PrismaClient>>(PrismaService);
-    checkRoleService =
-      module.get<DeepMockProxy<CheckRoleService>>(CheckRoleService);
   });
 
   // Test if the service is defined
@@ -90,7 +83,6 @@ describe('FolderService', () => {
     prismaService.external_access.create.mockResolvedValue(
       createExternalAccess,
     );
-    checkRoleService.checkRole.mockResolvedValue(true);
     expect(await service.create(folderName, parentFolderKey, userId)).toEqual({
       folderKey: createFolder.folder_key,
     });
@@ -113,15 +105,13 @@ describe('FolderService', () => {
       update_date: new Date(),
     };
 
-    checkRoleService.checkRole.mockResolvedValue(true);
-
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockResolvedValue(folder);
-    expect(await service.delete(folderKey, 1)).toEqual(true);
+    expect(await service.delete(folderKey)).toEqual(true);
   });
 
   // Read folder success handling
@@ -153,7 +143,7 @@ describe('FolderService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folders.findMany.mockResolvedValue(findFolders);
     prismaService.files.findMany.mockResolvedValue(findFiles);
-    expect(await service.read(folderKey, 1)).toEqual({
+    expect(await service.read(folderKey)).toEqual({
       folders: findFolders.map((folder) => {
         return {
           folderKey: folder.folder_key,
@@ -215,23 +205,14 @@ describe('FolderService', () => {
   });
 
   // Delete folder error handling
-  it('should not delete a folder if user does not have role to delete folder', async () => {
-    const folderKey = uuidv4();
-    checkRoleService.checkRole.mockResolvedValue(false);
-    await expect(service.delete(folderKey, 1)).rejects.toThrow(
-      ForbiddenException,
-    );
-  });
-
   it('should throw an bad request error if folder is not exist when deleting a folder', async () => {
     const folderKey = uuidv4();
-    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete(folderKey, 1)).rejects.toThrow(
+    await expect(service.delete(folderKey)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -244,14 +225,13 @@ describe('FolderService', () => {
       parent_folder_id: null,
       folder_key: folderKey,
     };
-    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.folder_info.findUnique.mockResolvedValue(null);
 
-    await expect(service.delete(folderKey, 1)).rejects.toThrow(
+    await expect(service.delete(folderKey)).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -271,7 +251,6 @@ describe('FolderService', () => {
       create_date: new Date(),
       update_date: new Date(),
     };
-    checkRoleService.checkRole.mockResolvedValue(true);
     prismaService.$transaction.mockImplementation((callback) =>
       callback(prismaService),
     );
@@ -279,7 +258,7 @@ describe('FolderService', () => {
     prismaService.folder_info.findUnique.mockResolvedValue(folder_info);
     prismaService.folders.delete.mockRejectedValue({ code: 'P2003' });
 
-    await expect(service.delete(folderKey, 1)).rejects.toThrow(
+    await expect(service.delete(folderKey)).rejects.toThrow(
       InternalServerErrorException,
     );
   });

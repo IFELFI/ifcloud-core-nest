@@ -87,6 +87,7 @@ afterAll(async () => {
 afterEach(async () => {
   await postgresClient.query('DELETE FROM "cloud"."folders"');
   await postgresClient.query('DELETE FROM "cloud"."files"');
+  await postgresClient.query('DELETE FROM "temp"."temp_files"');
   await postgresClient.query('DELETE FROM "member"."users"');
 });
 

@@ -3,14 +3,19 @@ import {
   Controller,
   HttpCode,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Post,
+  Query,
   Res,
   UploadedFile,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { UserGuard } from 'src/guards/user.guard';
 import {
   IUploadFileRequestBody,
   validateUploadFileRequestBody,
@@ -19,6 +24,7 @@ import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FileService } from 'src/services/file.service';
 
 @Controller('file')
+@UseGuards(AuthGuard, UserGuard)
 export class FileController {
   constructor(private fileService: FileService) {}
 
@@ -30,13 +36,13 @@ export class FileController {
     @Body(new TypiaValidationPipe(validateUploadFileRequestBody))
     uploadFile: IUploadFileRequestBody,
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+    @Query('userId', ParseIntPipe) userId: number,
     @Res() response: Response,
   ): Promise<void> {
-    const userId = uploadFile.userId;
-    const fileName = uploadFile.data.fileName;
     const fileBuffer = file.buffer;
-    const totalChunks = uploadFile.data.totalChunks;
-    const chunkNumber = uploadFile.data.chunkNumber;
+    const fileName = uploadFile.fileName;
+    const totalChunks = parseInt(uploadFile.totalChunks);
+    const chunkNumber = parseInt(uploadFile.chunkNumber);
 
     const result = await this.fileService.uploadFile(
       userId,
@@ -51,11 +57,13 @@ export class FileController {
       response.status(201).json({
         done: true,
         message: 'File uploaded',
+        fileKey: result.fileKey,
+      });
+    } else {
+      response.status(200).json({
+        done: false,
+        message: 'Chunk uploaded',
       });
     }
-    response.status(200).json({
-      done: false,
-      message: 'File not uploaded',
-    });
   }
 }

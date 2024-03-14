@@ -6,6 +6,9 @@ import { PrismaService } from 'src/services/prisma.service';
 import { FileController } from './file.controller';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from 'src/guards/auth.guard';
+import { UserGuard } from 'src/guards/user.guard';
 
 describe('FileController', () => {
   let controller: FileController;
@@ -15,12 +18,20 @@ describe('FileController', () => {
     status: jest.fn(() => res),
     json: jest.fn(),
   };
+  const mockGuards = {
+    canActivate: jest.fn().mockReturnValue(true),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FileController],
-      providers: [FileService, PrismaService, CheckRoleService],
-    }).compile();
+      providers: [FileService, PrismaService, CheckRoleService, JwtService],
+    })
+      .overrideGuard(AuthGuard)
+      .useValue(mockGuards)
+      .overrideGuard(UserGuard)
+      .useValue(mockGuards)
+      .compile();
 
     controller = module.get<FileController>(FileController);
     fileService = module.get<FileService>(FileService);
@@ -40,15 +51,9 @@ describe('FileController', () => {
    */
   it('should upload a file', async () => {
     const uploadFileRequestBody: IUploadFileRequestBody = {
-      userId: 1,
-      payload: {
-        uuidKey: '1234',
-      },
-      data: {
-        fileName: 'test.txt',
-        totalChunks: 1,
-        chunkNumber: 0,
-      },
+      fileName: 'test.txt',
+      totalChunks: '1',
+      chunkNumber: '0',
     };
     const file: Express.Multer.File = {
       fieldname: 'file',
@@ -63,8 +68,10 @@ describe('FileController', () => {
       stream: Readable.from('test'),
     };
     const folderKey = uuidv4();
-    fileService.uploadFile = jest.fn().mockResolvedValue(true);
-    await controller.uploadFile(file, uploadFileRequestBody, folderKey, res);
+    fileService.uploadFile = jest
+      .fn()
+      .mockResolvedValue({ isDone: true, fileKey: uuidv4() });
+    await controller.uploadFile(file, uploadFileRequestBody, folderKey, 1, res);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 });

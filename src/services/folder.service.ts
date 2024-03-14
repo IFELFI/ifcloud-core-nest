@@ -1,20 +1,15 @@
 import {
   BadRequestException,
   ConflictException,
-  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
-import { CheckRoleService } from './checkRole.service';
 
 @Injectable()
 export class FolderService {
-  constructor(
-    private prisma: PrismaService,
-    private checkRole: CheckRoleService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
   /**
    * Create folder
    * @param folderName Folder name
@@ -37,16 +32,6 @@ export class FolderService {
         });
         if (!parentFolder) {
           throw new BadRequestException('Parent folder does not exist');
-        }
-        const hasRole = await this.checkRole.checkRole(
-          parentFolder.id,
-          userId,
-          'create',
-        );
-        if (!hasRole) {
-          throw new ForbiddenException(
-            'User does not have role to create folder',
-          );
         }
         parentFolderId = parentFolder.id;
       }
@@ -96,7 +81,7 @@ export class FolderService {
    * @param userId User ID
    * @returns true if folder is deleted
    */
-  async delete(folderKey: string, userId: number): Promise<boolean> {
+  async delete(folderKey: string): Promise<boolean> {
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({
         where: {
@@ -105,18 +90,6 @@ export class FolderService {
       });
       if (!folder) {
         throw new BadRequestException('Folder does not exist');
-      }
-
-      // Check if the user has the role
-      const hasRole = await this.checkRole.checkRole(
-        folder.id,
-        userId,
-        'delete',
-      );
-      if (!hasRole) {
-        throw new ForbiddenException(
-          'User does not have role to delete folder',
-        );
       }
 
       const folderInfo = await tx.folder_info.findUnique({
@@ -147,10 +120,7 @@ export class FolderService {
    * @param userId User ID
    * @returns Folders and files data
    */
-  async read(
-    folderKey: string,
-    userId: number,
-  ): Promise<{
+  async read(folderKey: string): Promise<{
     folders: Array<{
       folderKey: string;
       folderName: string;
@@ -169,15 +139,6 @@ export class FolderService {
       });
       if (!targetFolder) {
         throw new NotFoundException('Folder does not exist');
-      }
-
-      const hasRole = await this.checkRole.checkRole(
-        targetFolder.id,
-        userId,
-        'read',
-      );
-      if (!hasRole) {
-        throw new ForbiddenException('User does not have role to read folder');
       }
 
       const folders = await tx.folders
