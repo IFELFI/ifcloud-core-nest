@@ -5,10 +5,12 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  Res,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import {
   IUploadFileRequestBody,
   validateUploadFileRequestBody,
@@ -28,7 +30,8 @@ export class FileController {
     @Body(new TypiaValidationPipe(validateUploadFileRequestBody))
     uploadFile: IUploadFileRequestBody,
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-  ): Promise<string> {
+    @Res() response: Response,
+  ): Promise<void> {
     const userId = uploadFile.userId;
     const fileName = uploadFile.data.fileName;
     const fileBuffer = file.buffer;
@@ -45,8 +48,14 @@ export class FileController {
     );
 
     if (result) {
-      return 'File uploaded';
+      response.status(201).json({
+        done: true,
+        message: 'File uploaded',
+      });
     }
-    return 'Chunk uploaded';
+    response.status(200).json({
+      done: false,
+      message: 'File not uploaded',
+    });
   }
 }

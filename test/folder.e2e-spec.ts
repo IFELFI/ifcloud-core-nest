@@ -33,7 +33,7 @@ const createFolder = async (
     `INSERT INTO "cloud"."folder_info" (folder_id, owner_id) VALUES (${folderId}, ${userId})`,
   );
   await postgresClient.query(
-    `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${userId}, ${folderId}, '{create,update,delete,read}')`,
+    `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${userId}, ${folderId}, '{create,read,update,delete}')`,
   );
   return folderKey;
 };
@@ -207,16 +207,8 @@ describe('Folder', () => {
   });
 
   it('should not create a folder if folderName is not unique', async () => {
-    const baseFolderKey = uuidv4();
-    const baseFolderId = BigInt(123);
-    const test =
-      'INSERT INTO "cloud"."folders" (id, folder_key, folder_name, parent_folder_id) VALUES ($1, $2, $3, $4) RETURNING id';
-    const values = [baseFolderId, baseFolderKey, 'base_folder', null];
-    const result = await postgresClient.query(test, values);
-
-    if (result.rowCount !== 1) {
-      throw new Error('Failed to create a base folder');
-    }
+    const baseFolderKey = await createTestFolder(testUserId);
+    await createFolder(BigInt(111), testUserId, 'test_folder', BigInt(1234));
 
     const createFolderRequestBodyData: ICreateFolderRequestBodyData = {
       folderName: 'test_folder',
@@ -283,7 +275,7 @@ describe('Folder', () => {
     expect(response.body.message).toBe('Folder does not exist');
   });
 
-  it('should not read a folder if user does not have access to the folder', async () => {
+  it('should not read a folder if user does not have role to read the folder', async () => {
     const baseFolderKey = await createTestFolder(testUserId);
     await createFolder(BigInt(1), testUserId, 'dummy1', BigInt(1234));
     await createFolder(BigInt(2), testUserId, 'dummy2', BigInt(1234));
@@ -301,7 +293,7 @@ describe('Folder', () => {
 
     expect(response.status).toBe(403);
     expect(response.body.message).toBe(
-      'User does not have access to the folder',
+      'User does not have role to read folder',
     );
   });
 });

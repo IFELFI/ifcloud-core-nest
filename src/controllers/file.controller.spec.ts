@@ -11,6 +11,10 @@ describe('FileController', () => {
   let controller: FileController;
   let fileService: FileService;
   let checkRoleService: CheckRoleService;
+  const res = {
+    status: jest.fn(() => res),
+    json: jest.fn(),
+  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -60,8 +64,7 @@ describe('FileController', () => {
     };
     const folderKey = uuidv4();
     fileService.uploadFile = jest.fn().mockResolvedValue(true);
-    expect(
-      await controller.uploadFile(file, uploadFileRequestBody, folderKey),
-    ).toEqual('File uploaded');
+    await controller.uploadFile(file, uploadFileRequestBody, folderKey, res);
+    expect(res.status).toHaveBeenCalledWith(201);
   });
 });
