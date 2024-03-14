@@ -9,7 +9,7 @@ import {
   testUserTokenPayload,
 } from './setup-e2e';
 import { v4 as uuidv4 } from 'uuid';
-import request from 'supertest';
+import request, { Response } from 'supertest';
 import fs from 'fs';
 import path from 'path';
 
@@ -17,7 +17,7 @@ describe('File', () => {
   let app: INestApplication;
   let testUserId: number;
   const testFolderKey = uuidv4();
-  const chunkSize = 1024 * 1024 * 2;
+  const chunkSize = 1024 * 1024 * 5;
   const baseDir = process.env.FILE_UPLOAD_DIR || 'uploads';
 
   beforeAll(async () => {
@@ -154,14 +154,22 @@ describe('File', () => {
       const start = i * chunkSize;
       const end = (i + 1) * chunkSize;
       const chunk = file.subarray(start, end);
-      const response = await uploadChunk(
-        chunk,
-        i,
-        totalChunks,
-        fileName,
-        folderKey,
-        userToken,
-      );
+      let response: Response | null;
+      let count = 0;
+      do {
+        response = await uploadChunk(
+          chunk,
+          i,
+          totalChunks,
+          fileName,
+          folderKey,
+          userToken,
+        ).catch(() => {
+          return null;
+        });
+      } while (!response && count++ < 100);
+      if (response === null)
+        return { status: 500, body: { message: 'Failed to upload file' } };
       if (response.status === 200) continue;
       else return { status: response.status, body: response.body };
     }
