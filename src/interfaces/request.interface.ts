@@ -1,31 +1,24 @@
-import typia, { tags } from 'typia';
-import { TokenPayload } from './token.interface';
 import { Request } from 'express';
+import { tags } from 'typia';
 
-export interface IBaseRequestBody {
-  data?: any;
-  payload?: TokenPayload;
+export interface IBaseRequestQuery {
+  uuidKey?: string & tags.Pattern<'^[a-zA-Z0-9_-]{1,255}$'>;
 }
 
-export interface IVerifiedRequestBody extends IBaseRequestBody {
-  payload: TokenPayload;
+export interface IBaseRequest
+  extends Request<any, any, any, IBaseRequestQuery> {}
+
+export interface IValidRequestQuery {
+  uuidKey: string & tags.Pattern<'^[a-zA-Z0-9_-]{1,255}$'>;
   userId?: number & tags.Type<'uint32'>;
 }
 
-export interface IUserRequestBody extends IVerifiedRequestBody {
+export interface IValidRequest
+  extends Request<any, any, any, IValidRequestQuery> {}
+
+export interface IUserRequestQuery extends IValidRequestQuery {
   userId: number & tags.Type<'uint32'>;
 }
 
-export const validateUserRequestBody = typia.createValidate<IUserRequestBody>();
-
-export interface IBaseRequest extends Request {
-  body: IBaseRequestBody;
-}
-
-export interface IVerifiedRequest extends Request {
-  body: IVerifiedRequestBody;
-}
-
-export interface IUserRequest extends Request {
-  body: IUserRequestBody;
-}
+export interface IUserRequest
+  extends Request<any, any, any, IUserRequestQuery> {}
