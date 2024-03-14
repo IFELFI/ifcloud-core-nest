@@ -13,7 +13,7 @@ import {
 } from './setup-e2e';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
-import { ICreateFolderRequestBodyData } from 'src/interfaces/folder.interface';
+import { ICreateFolderRequestBody } from 'src/interfaces/folder.interface';
 
 const createTestFolder = async (userId: number) => {
   return createFolder(BigInt(1234), userId, 'test_folder', null);
@@ -95,15 +95,15 @@ describe('Folder', () => {
    * Success handling
    */
 
-  // Create folder success handling
-  it('should create a folder', async () => {
+  // Create root folder success handling
+  it('should create a root folder', async () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({ data: { folderName: 'test_folder' } });
+      .send({ folderName: 'test_folder' });
 
     expect(response.status).toBe(201);
-    expect(response.text).toBe('Folder created');
+    expect(response.text).toBe('Root folder created');
   });
 
   // Read a folder success handling
@@ -144,9 +144,9 @@ describe('Folder', () => {
   it('should not create a folder if Authorization header is not given', async () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
-      .send({ data: { folderName: 'test_folder' } });
+      .send({ folderName: 'test_folder' });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Authorization header is missing');
   });
 
@@ -154,9 +154,9 @@ describe('Folder', () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${expiredUserToken}`)
-      .send({ data: { folderName: 'test_folder' } });
+      .send({ folderName: 'test_folder' });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Invalid token');
   });
 
@@ -164,7 +164,7 @@ describe('Folder', () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${wrongUserToken}`)
-      .send({ data: { folderName: 'test_folder' } });
+      .send({ folderName: 'test_folder' });
 
     expect(response.status).toBe(404);
     expect(response.body.message).toBe('User does not exist');
@@ -174,11 +174,11 @@ describe('Folder', () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({ data: {} });
+      .send({});
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe(
-      'Validation failed for $input.data.folderName',
+      'Validation failed for $input.folderName',
     );
   });
 
@@ -186,11 +186,11 @@ describe('Folder', () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({ data: { folderName: '' } });
+      .send({ folderName: '' });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe(
-      'Validation failed for $input.data.folderName',
+      'Validation failed for $input.folderName',
     );
   });
 
@@ -198,11 +198,11 @@ describe('Folder', () => {
     const response = await request(app.getHttpServer())
       .post('/folder/create')
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({ data: { folderName: 'a'.repeat(256) } });
+      .send({ folderName: 'a'.repeat(256) });
 
     expect(response.status).toBe(400);
     expect(response.body.message).toBe(
-      'Validation failed for $input.data.folderName',
+      'Validation failed for $input.folderName',
     );
   });
 
@@ -210,29 +210,43 @@ describe('Folder', () => {
     const baseFolderKey = await createTestFolder(testUserId);
     await createFolder(BigInt(111), testUserId, 'test_folder', BigInt(1234));
 
-    const createFolderRequestBodyData: ICreateFolderRequestBodyData = {
+    const createFolderRequestBody: ICreateFolderRequestBody = {
       folderName: 'test_folder',
-      parentFolderKey: baseFolderKey,
     };
 
     // Create a folder first
     await request(app.getHttpServer())
-      .post('/folder/create')
+      .post(`/folder/create/${baseFolderKey}`)
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({
-        data: createFolderRequestBodyData,
-      });
+      .send(createFolderRequestBody);
 
     // Try to create the same folder again
     const response = await request(app.getHttpServer())
-      .post('/folder/create')
+      .post(`/folder/create/${baseFolderKey}`)
       .set('Authorization', `Bearer ${testUserToken}`)
-      .send({
-        data: createFolderRequestBodyData,
-      });
+      .send(createFolderRequestBody);
 
     expect(response.status).toBe(409);
     expect(response.body.message).toBe('Folder already exists');
+  });
+
+  it('should not create a folder if user does not have role to create the folder', async () => {
+    const baseFolderKey = await createTestFolder(testUserId);
+
+    // Create a user with no access to the folder
+    const payload = wrongUserTokenPayload;
+    postgresClient.query(
+      `INSERT INTO "member"."users" (uuid_key) VALUES ('${payload.uuidKey}')`,
+    );
+    const response = await request(app.getHttpServer())
+      .post(`/folder/create/${baseFolderKey}`)
+      .set('Authorization', `Bearer ${wrongUserToken}`)
+      .send({
+        folderName: 'test_folder',
+      });
+
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe('User does not have the required role');
   });
 
   // Read a folder error handling
@@ -241,7 +255,7 @@ describe('Folder', () => {
       .get('/folder/1234')
       .send({});
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Authorization header is missing');
   });
 
@@ -251,7 +265,7 @@ describe('Folder', () => {
       .set('Authorization', `Bearer ${expiredUserToken}`)
       .send({});
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Invalid token');
   });
 
@@ -271,8 +285,8 @@ describe('Folder', () => {
       .set('Authorization', `Bearer ${testUserToken}`)
       .send({});
 
-    expect(response.status).toBe(404);
     expect(response.body.message).toBe('Folder does not exist');
+    expect(response.status).toBe(404);
   });
 
   it('should not read a folder if user does not have role to read the folder', async () => {
@@ -292,8 +306,6 @@ describe('Folder', () => {
       .send({});
 
     expect(response.status).toBe(403);
-    expect(response.body.message).toBe(
-      'User does not have role to read folder',
-    );
+    expect(response.body.message).toBe('User does not have the required role');
   });
 });

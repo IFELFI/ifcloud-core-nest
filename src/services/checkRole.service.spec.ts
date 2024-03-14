@@ -50,7 +50,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(userRole);
 
-    const result = await service.checkRole(folder.id, userId, role);
+    const result = await service.check(folderKey, userId, role);
     expect(result).toBe(true);
   });
 
@@ -72,7 +72,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(userRole);
 
-    const result = await service.checkRole(folder.id, userId, role);
+    const result = await service.check(folderKey, userId, role);
     expect(result).toBe(false);
   });
 
@@ -95,7 +95,7 @@ describe('CheckRoleService', () => {
     prismaService.folders.findUnique.mockResolvedValue(folder);
     prismaService.user_role.findFirst.mockResolvedValue(null);
 
-    const result = await service.checkRole(folder.id, userId, role);
+    const result = await service.check(folderKey, userId, role);
     expect(result).toBe(false);
   });
 });

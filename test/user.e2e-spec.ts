@@ -45,7 +45,7 @@ describe('User', () => {
       .post('/user/enroll')
       .send({});
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Authorization header is missing');
   });
 
@@ -55,7 +55,7 @@ describe('User', () => {
       .set('Authorization', `Bearer ${expiredUserToken}`)
       .send({});
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(response.body.message).toBe('Invalid token');
   });
 });
