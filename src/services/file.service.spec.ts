@@ -10,6 +10,8 @@ import fs from 'fs';
 import {
   ConflictException,
   InternalServerErrorException,
+  NotFoundException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 
 describe('FileService', () => {
@@ -169,6 +171,63 @@ describe('FileService', () => {
     expect(fsMkdirSync).toHaveBeenCalled();
   });
 
+  // Download file success handling
+  it('should download file', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.txt';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    const fsCreateReadStream = jest
+      .spyOn(fs, 'createReadStream')
+      .mockReturnValue({
+        pipe: jest.fn(),
+      } as any);
+
+    const result = await service.downloadFile(fileKey);
+
+    expect(result).toBeDefined();
+    expect(fsExistsSync).toHaveBeenCalled();
+    expect(fsCreateReadStream).toHaveBeenCalled();
+  });
+
+  // Stream video success handling
+  it('should stream file', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.mp4';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    const fsCreateReadStream = jest
+      .spyOn(fs, 'createReadStream')
+      .mockReturnValue({
+        pipe: jest.fn(),
+      } as any);
+    service['ffmpeg'] = jest.fn().mockReturnValue({
+      format: jest.fn().mockReturnValue({
+        on: jest.fn(),
+      }),
+    });
+
+    const result = await service.streamVideo(fileKey);
+
+    expect(result).toBeDefined();
+    expect(fsExistsSync).toHaveBeenCalled();
+    expect(fsCreateReadStream).toHaveBeenCalled();
+  });
+
   /**
    * Failure handling
    * Test if the service is failed
@@ -313,5 +372,92 @@ describe('FileService', () => {
         totalChunks,
       ),
     ).rejects.toThrow(InternalServerErrorException);
+  });
+
+  // Download file failure handling
+  it('should throw error when download file but file does not exist', async () => {
+    const fileKey = uuidv4();
+    prismaService.files.findUnique.mockResolvedValue(null);
+
+    await expect(service.downloadFile(fileKey)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should throw error when download file does not exist', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.txt';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    prismaService.files.delete.mockResolvedValue(file);
+
+    await expect(service.downloadFile(fileKey)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(prismaService.files.delete).toHaveBeenCalled();
+  });
+
+  // Stream video failure handling
+  it('should throw error when stream video but file does not exist', async () => {
+    const fileKey = uuidv4();
+    prismaService.files.findUnique.mockResolvedValue(null);
+
+    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+      NotFoundException,
+    );
+  });
+
+  it('should throw error if the file is not a video', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.txt';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    service['ffmpeg'] = jest.fn().mockReturnValue({
+      format: jest.fn().mockReturnValue({
+        on: jest.fn().mockImplementation((event, callback) => {
+          if (event === 'error') {
+            callback({ code: 1 });
+          }
+        }),
+      }),
+    });
+
+    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+      UnsupportedMediaTypeException,
+    );
+  });
+
+  it('should throw error when stream video but file does not exist', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.mp4';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+    prismaService.files.delete.mockResolvedValue(file);
+
+    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(prismaService.files.delete).toHaveBeenCalled();
   });
 });

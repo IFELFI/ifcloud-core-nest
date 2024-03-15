@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   Param,
   ParseIntPipe,
@@ -13,8 +14,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { access_role } from '@prisma/client';
 import { Response } from 'express';
 import { AuthGuard } from 'src/guards/auth.guard';
+import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import {
   IUploadFileRequestBody,
@@ -65,5 +68,25 @@ export class FileController {
         message: 'Chunk uploaded',
       });
     }
+  }
+
+  @Get('download/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.read))
+  async downloadFile(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    const stream = await this.fileService.downloadFile(fileKey);
+    stream.pipe(response);
+  }
+
+  @Get('stream/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.read))
+  async streamFile(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    const stream = await this.fileService.streamVideo(fileKey);
+    stream.pipe(response, { end: true });
   }
 }

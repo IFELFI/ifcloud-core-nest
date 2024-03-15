@@ -9,6 +9,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserGuard } from 'src/guards/user.guard';
+import { path } from '@ffmpeg-installer/ffmpeg';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
+
+ffmpeg.setFfmpegPath(path);
 
 describe('FileController', () => {
   let controller: FileController;
@@ -72,6 +77,28 @@ describe('FileController', () => {
       .fn()
       .mockResolvedValue({ isDone: true, fileKey: uuidv4() });
     await controller.uploadFile(file, uploadFileRequestBody, folderKey, 1, res);
+    expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('should download a file', async () => {
+    const fileKey = uuidv4();
+    const stream = fs.createReadStream('./test/sample/sample-video1.mp4');
+    fileService.downloadFile = jest.fn().mockResolvedValue(stream);
+    await controller.downloadFile(fileKey, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('should stream a file', async () => {
+    const fileKey = uuidv4();
+    const ffmpegStream = ffmpeg()
+      .input('./test/sample/sample-video1.mp4')
+      .outputFormat('mp4')
+      .outputOptions([
+        '-movflags frag_keyframe+empty_moov',
+        '-frag_duration 5000',
+      ]);
+    fileService.streamVideo = jest.fn().mockResolvedValue(ffmpegStream);
+    await controller.streamFile(fileKey, res);
     expect(res.status).toHaveBeenCalledWith(201);
   });
 });

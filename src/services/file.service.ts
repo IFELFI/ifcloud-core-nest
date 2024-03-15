@@ -3,10 +3,15 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnsupportedMediaTypeException,
 } from '@nestjs/common';
 import fs, { ReadStream } from 'fs';
 import path from 'path';
 import { PrismaService } from './prisma.service';
+import ffmpeg, { FfmpegCommand } from 'fluent-ffmpeg';
+import ffmpegPath from '@ffmpeg-installer/ffmpeg';
+
+ffmpeg.setFfmpegPath(ffmpegPath.path);
 
 @Injectable()
 export class FileService {
@@ -138,7 +143,12 @@ export class FileService {
     return { isDone: false };
   }
 
-  async readFile(fileKey: string): Promise<Buffer | ReadStream> {
+  /**
+   * Download file
+   * @param fileKey File key
+   * @returns Read Stream of file
+   */
+  async downloadFile(fileKey: string): Promise<ReadStream> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -159,18 +169,53 @@ export class FileService {
       });
       throw new NotFoundException('File does not exist in storage');
     }
-    // Use regex to check if the file is an video or audio file
-    const isVideo =
-      /\.(mp4|webm|ogg|mp3|wav|flac|aac|wma|wmv|avi|mov|mkv|flv|3gp|3g2|ts|mpeg|mpg|ogv|webm|mkv|flv|vob|gifv)$/i.test(
-        file.file_name,
-      );
-    if (isVideo) {
-      const fileStream = fs.createReadStream(resourcePath);
-      return fileStream;
-    } else {
-      const fileBuffer = await fs.promises.readFile(resourcePath);
-      return fileBuffer;
+    const fileStream = fs.createReadStream(resourcePath);
+    return fileStream;
+  }
+
+  /**
+   * Stream video with mp4 format
+   * @param fileKey File key
+   * @returns FfmpegCommand
+   */
+  async streamVideo(fileKey: string): Promise<FfmpegCommand> {
+    const file = await this.prisma.files.findUnique({
+      where: {
+        file_key: fileKey,
+      },
+    });
+    if (!file) {
+      throw new NotFoundException('File does not exist');
     }
+    // Check if file is video
+    if (!file.file_name.match(/\.(mp4|webm|ogg|ogv|avi|mov|flv|wmv|mkv)$/)) {
+      throw new UnsupportedMediaTypeException('File is not a video');
+    }
+    const resourcePath = await this.getResourcePath(
+      file.file_key,
+      file.file_name,
+    );
+    if (!fs.existsSync(resourcePath)) {
+      this.prisma.files.delete({
+        where: {
+          file_key: fileKey,
+        },
+      });
+      throw new NotFoundException('File does not exist in storage');
+    }
+
+    const fileStream = fs.createReadStream(resourcePath);
+    const ffmpegStream = ffmpeg(fileStream)
+      .videoCodec('libx264')
+      .format('mp4')
+      .outputOptions([
+        '-movflags frag_keyframe+empty_moov',
+        '-frag_duration 5000',
+      ])
+      .on('error', () => {
+        throw new InternalServerErrorException('Failed to convert file');
+      });
+    return ffmpegStream;
   }
 
   /**
