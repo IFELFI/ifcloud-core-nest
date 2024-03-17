@@ -1,4 +1,6 @@
 import typia, { tags } from 'typia';
+import { IUserRequestQuery } from './request.interface';
+import { Request } from 'express';
 
 export interface IUploadFileRequestBody {
   fileName: string &
@@ -9,3 +11,18 @@ export interface IUploadFileRequestBody {
 
 export const validateUploadFileRequestBody =
   typia.createValidate<IUploadFileRequestBody>();
+
+export interface IFileRangeQuery extends IUserRequestQuery {
+  range: string;
+}
+
+export interface IFileRangeRequest
+  extends Request<any, any, any, IFileRangeQuery> {}
+
+export type VideoResolution =
+  | '144p'
+  | '240p'
+  | '360p'
+  | '480p'
+  | '720p'
+  | '1080p';
