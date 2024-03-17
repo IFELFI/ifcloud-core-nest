@@ -8,6 +8,7 @@ import { PrismaService } from './prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs';
 import {
+  BadRequestException,
   ConflictException,
   InternalServerErrorException,
   NotFoundException,
@@ -47,6 +48,7 @@ describe('FileService', () => {
 
   // Merge chunks success handling
   it('should merge chunks', async () => {
+    const fileKey = uuidv4();
     const fileName = 'test.txt';
     const totalChunks = 1;
     const fsCreateWriteStream = jest
@@ -60,7 +62,7 @@ describe('FileService', () => {
       .mockResolvedValue(Buffer.from('test'));
     const fsUnlinkSync = jest.spyOn(fs, 'unlinkSync').mockReturnValue();
 
-    await service['mergeChunks'](fileName, totalChunks);
+    await service['mergeChunks'](fileKey, totalChunks, fileName);
 
     expect(fsCreateWriteStream).toHaveBeenCalled();
     expect(fsPromisesReadFile).toHaveBeenCalled();
@@ -72,6 +74,7 @@ describe('FileService', () => {
     const chunk = Buffer.from('test');
     const chunkNumber = 0;
     const totalChunks = 1;
+    const fileKey = uuidv4();
     const fileName = 'test.txt';
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
@@ -81,6 +84,7 @@ describe('FileService', () => {
       chunk,
       chunkNumber,
       totalChunks,
+      fileKey,
       fileName,
     );
 
@@ -99,7 +103,6 @@ describe('FileService', () => {
     const fileName = 'test.txt';
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
-    jest.spyOn(fs, 'renameSync').mockReturnValue();
     jest.spyOn(fs.promises, 'writeFile').mockResolvedValue();
 
     const parentFolder: folders = {
@@ -111,7 +114,7 @@ describe('FileService', () => {
 
     const tempFile: temp_files = {
       id: BigInt(1),
-      temp_file_name: fileName,
+      temp_file_name: `${parentFolder.folder_key}_${fileName}`,
       uploader_id: userId,
       file_key: uuidv4(),
       total_chunks: totalChunks,
@@ -148,6 +151,7 @@ describe('FileService', () => {
     );
     prismaService.temp_files.findUnique.mockResolvedValue(tempFile);
     prismaService.files.create.mockResolvedValue(file);
+    service['generateStreamVideo'] = jest.fn().mockReturnValue(Promise<void>);
     const fsStatSync = jest
       .spyOn(fs, 'statSync')
       .mockReturnValue({ size: BigInt(4) } as any);
@@ -215,17 +219,16 @@ describe('FileService', () => {
       .mockReturnValue({
         pipe: jest.fn(),
       } as any);
-    service['ffmpeg'] = jest.fn().mockReturnValue({
-      format: jest.fn().mockReturnValue({
-        on: jest.fn(),
-      }),
-    });
+    const fsStatSync = jest
+      .spyOn(fs.promises, 'stat')
+      .mockReturnValue({ size: 10293754 } as any);
 
-    const result = await service.streamVideo(fileKey);
+    const result = await service.streamVideo(fileKey, 0, '720p');
 
     expect(result).toBeDefined();
     expect(fsExistsSync).toHaveBeenCalled();
     expect(fsCreateReadStream).toHaveBeenCalled();
+    expect(fsStatSync).toHaveBeenCalled();
   });
 
   /**
@@ -235,6 +238,7 @@ describe('FileService', () => {
 
   // Merge chunks failure handling
   it('should throw error when merge chunks', async () => {
+    const fileKey = uuidv4();
     const fileName = 'test.txt';
     const totalChunks = 1;
     const fsCreateWriteStream = jest
@@ -248,9 +252,9 @@ describe('FileService', () => {
       .mockRejectedValue(new Error('error'));
     jest.spyOn(fs, 'unlinkSync').mockReturnValue();
 
-    await expect(service['mergeChunks'](fileName, totalChunks)).rejects.toThrow(
-      'error',
-    );
+    await expect(
+      service['mergeChunks'](fileKey, totalChunks, fileName),
+    ).rejects.toThrow('error');
     expect(fsCreateWriteStream).toHaveBeenCalled();
     expect(fsPromisesReadFile).toHaveBeenCalled();
   });
@@ -260,13 +264,20 @@ describe('FileService', () => {
     const chunk = Buffer.from('test');
     const chunkNumber = 0;
     const totalChunks = 1;
+    const fileKey = uuidv4();
     const fileName = 'test.txt';
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
     jest.spyOn(fs.promises, 'writeFile').mockRejectedValue(new Error('error'));
 
     await expect(
-      service['uploadChunk'](chunk, chunkNumber, totalChunks, fileName),
+      service['uploadChunk'](
+        chunk,
+        chunkNumber,
+        totalChunks,
+        fileKey,
+        fileName,
+      ),
     ).rejects.toThrow('error');
     expect(fsExistsSync).toHaveBeenCalled();
     expect(fsMkdirSync).toHaveBeenCalled();
@@ -276,6 +287,7 @@ describe('FileService', () => {
     const chunk = Buffer.from('test');
     const chunkNumber = 0;
     const totalChunks = 1;
+    const fileKey = uuidv4();
     const fileName = 'test.txt';
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     const fsMkdirSync = jest.spyOn(fs, 'mkdirSync').mockReturnValue(undefined);
@@ -286,7 +298,13 @@ describe('FileService', () => {
     service['mergeChunks'] = jest.fn().mockRejectedValue(new Error('error'));
 
     await expect(
-      service['uploadChunk'](chunk, chunkNumber, totalChunks, fileName),
+      service['uploadChunk'](
+        chunk,
+        chunkNumber,
+        totalChunks,
+        fileKey,
+        fileName,
+      ),
     ).rejects.toThrow(InternalServerErrorException);
     expect(fsExistsSync).toHaveBeenCalled();
     expect(fsMkdirSync).toHaveBeenCalled();
@@ -371,7 +389,7 @@ describe('FileService', () => {
         chunkNumber,
         totalChunks,
       ),
-    ).rejects.toThrow(InternalServerErrorException);
+    ).rejects.toThrow(ConflictException);
   });
 
   // Download file failure handling
@@ -405,11 +423,11 @@ describe('FileService', () => {
   });
 
   // Stream video failure handling
-  it('should throw error when stream video but file does not exist', async () => {
+  it('should throw error when stream video but file does not exist in database', async () => {
     const fileKey = uuidv4();
     prismaService.files.findUnique.mockResolvedValue(null);
 
-    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
       NotFoundException,
     );
   });
@@ -425,18 +443,8 @@ describe('FileService', () => {
       enabled: true,
     };
     prismaService.files.findUnique.mockResolvedValue(file);
-    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
-    service['ffmpeg'] = jest.fn().mockReturnValue({
-      format: jest.fn().mockReturnValue({
-        on: jest.fn().mockImplementation((event, callback) => {
-          if (event === 'error') {
-            callback({ code: 1 });
-          }
-        }),
-      }),
-    });
 
-    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
       UnsupportedMediaTypeException,
     );
   });
@@ -455,9 +463,28 @@ describe('FileService', () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     prismaService.files.delete.mockResolvedValue(file);
 
-    await expect(service.streamVideo(fileKey)).rejects.toThrow(
+    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
       NotFoundException,
     );
     expect(prismaService.files.delete).toHaveBeenCalled();
+  });
+
+  it('should throw error when file size is less than start', async () => {
+    const fileKey = uuidv4();
+    const fileName = 'test.mp4';
+    const file: files = {
+      id: BigInt(1),
+      file_name: fileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    };
+    prismaService.files.findUnique.mockResolvedValue(file);
+    jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    jest.spyOn(fs.promises, 'stat').mockResolvedValue({ size: 2 } as any);
+
+    await expect(service.streamVideo(fileKey, 3, '720p')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });
