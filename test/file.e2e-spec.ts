@@ -3,10 +3,13 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/services/prisma.service';
 import {
+  expiredUserToken,
   postgresClient,
   prismaService,
   testUserToken,
   testUserTokenPayload,
+  wrongUserToken,
+  wrongUserTokenPayload,
 } from './setup-e2e';
 import { v4 as uuidv4 } from 'uuid';
 import request from 'supertest';
@@ -60,6 +63,11 @@ describe('File', () => {
     );
     await postgresClient.query(
       `INSERT INTO "cloud".folder_info (folder_id, owner_id) VALUES (${BigInt(1234)}, ${testUserId})`,
+    );
+
+    // Create Wrong User
+    await postgresClient.query(
+      `INSERT INTO "member"."users" (uuid_key) VALUES ('${wrongUserTokenPayload.uuidKey}')`,
     );
   });
 
@@ -160,6 +168,29 @@ describe('File', () => {
     expect(response.status).toBe(206);
   });
 
+  // Delete file success handling
+  it('should delete a file', async () => {
+    const fileKey = await createFile('sample-image1.jpg');
+    const response = await request(app.getHttpServer())
+      .delete(`/file/${testFolderKey}/${fileKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`);
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe('File deleted');
+  });
+
+  // Rename file success handling
+  it('should rename a file', async () => {
+    const fileKey = await createFile('sample-image1.jpg');
+    const response = await request(app.getHttpServer())
+      .patch(`/file/rename/${testFolderKey}/${fileKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .send({ fileName: 'sample-image1-renamed.jpg' });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe('File renamed');
+  });
+
   /**
    * Failure handling
    */
@@ -177,6 +208,74 @@ describe('File', () => {
     );
     expect(response.status).toBe(401);
     expect(response.body.message).toBe('Authorization header is missing');
+  });
+
+  it('should not create a file if Token is expired', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image2.jpg`,
+    );
+    const response = await uploadFile(
+      file,
+      'sample-image2.jpg',
+      testFolderKey,
+      'Bearer ' + expiredUserToken,
+    );
+    expect(response.status).toBe(401);
+    expect(response.body.message).toBe('Invalid token');
+  });
+
+  it('should not create a file if user does not have create role', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image2.jpg`,
+    );
+    const response = await uploadFile(
+      file,
+      'sample-image2.jpg',
+      testFolderKey,
+      'Bearer ' + wrongUserToken,
+    );
+    expect(response.status).toBe(403);
+    expect(response.body.message).toBe('User does not have the required role');
+  });
+
+  it('should not create a file if file name is not given', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image2.jpg`,
+    );
+    const response = await request(app.getHttpServer())
+      .post(`/file/upload/${testFolderKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .attach('file', file, { filename: 'sample-image.jpg' })
+      .field('chunkNumber', 0)
+      .field('totalChunks', 1);
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Validation failed for $input.fileName');
+  });
+
+  it('should not create a file if file name is invalid', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-image2.jpg`,
+    );
+    const response = await uploadFile(
+      file,
+      'sample-image2',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Validation failed for $input.fileName');
+  });
+
+  it('should not create a file if file is not given', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/file/upload/${testFolderKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .field('fileName', 'sample-image2.jpg')
+      .field('chunkNumber', 0)
+      .field('totalChunks', 1);
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe('Invalid file');
   });
 
   /**

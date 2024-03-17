@@ -268,9 +268,10 @@ export class FileService {
    */
   async deleteFile(fileKey: string): Promise<void> {
     const fileDirPath = this.getFileDirPath(fileKey);
-    if (fs.existsSync(fileDirPath)) {
-      fs.rmdirSync(fileDirPath, { recursive: true });
+    if (!fs.existsSync(fileDirPath)) {
+      throw new NotFoundException('File does not exist');
     }
+    fs.rmdirSync(fileDirPath, { recursive: true });
     await this.prisma.files.delete({
       where: {
         file_key: fileKey,
