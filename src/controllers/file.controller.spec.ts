@@ -9,15 +9,25 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserGuard } from 'src/guards/user.guard';
+import { path } from '@ffmpeg-installer/ffmpeg';
+import ffmpeg from 'fluent-ffmpeg';
+import fs from 'fs';
+import { Response } from 'express';
+import { mockDeep } from 'jest-mock-extended';
+
+ffmpeg.setFfmpegPath(path);
 
 describe('FileController', () => {
   let controller: FileController;
   let fileService: FileService;
   let checkRoleService: CheckRoleService;
-  const res = {
-    status: jest.fn(() => res),
-    json: jest.fn(),
-  };
+  const res = mockDeep<Response>({
+    status: jest.fn().mockImplementation(() => res),
+    writeHead: jest.fn().mockImplementation((status, headers) => {
+      res.status(status);
+      res.headers = headers;
+    }),
+  });
   const mockGuards = {
     canActivate: jest.fn().mockReturnValue(true),
   };
@@ -73,5 +83,46 @@ describe('FileController', () => {
       .mockResolvedValue({ isDone: true, fileKey: uuidv4() });
     await controller.uploadFile(file, uploadFileRequestBody, folderKey, 1, res);
     expect(res.status).toHaveBeenCalledWith(201);
+  });
+
+  it('should download a file', async () => {
+    const fileKey = uuidv4();
+    const stream = fs.createReadStream('./test/sample/sample-video1.mp4');
+    fileService.downloadFile = jest.fn().mockResolvedValue(stream);
+    await controller.downloadFile(fileKey, res);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('should stream a file', async () => {
+    const fileKey = uuidv4();
+    const start = 0;
+    const end = 1024 * 1024;
+    const fileStream = fs.createReadStream('./test/sample/sample-video1.mp4', {
+      start,
+      end,
+    });
+    const ffmpegStream = ffmpeg(fileStream)
+      .videoCodec('libx264')
+      .format('mp4')
+      .outputOptions([
+        '-movflags frag_keyframe+empty_moov',
+        '-frag_duration 5000',
+      ]);
+    fileService.streamVideo = jest.fn().mockResolvedValue({
+      stream: ffmpegStream,
+      end: end,
+      fileSize: 104857600,
+    });
+    await controller.streamFile(fileKey, '720p', start, res);
+    expect(res.status).toHaveBeenCalledWith(206);
+    expect(res.headers).toBeDefined();
+    expect(res.headers).toHaveProperty('Content-Range');
+    expect(res.headers['Content-Range']).toBe(
+      `bytes ${start}-${end}/104857600`,
+    );
+    expect(res.headers).toHaveProperty('Content-Length');
+    expect(res.headers['Content-Length']).toBe(1048576);
+    expect(res.headers).toHaveProperty('Content-Type');
+    expect(res.headers['Content-Type']).toBe('video/mp4');
   });
 });

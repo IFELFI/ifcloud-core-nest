@@ -27,14 +27,14 @@ describe('ValidationPipe', () => {
    * Success handling
    * Test if the pipe is successfully done
    */
-  it('should validate', () => {
+  it('should validate', async () => {
     const data = {
       name: 'John',
       age: 30,
       email: 'test@test.com',
       bigId: BigInt(1),
     };
-    expect(pipe.transform(data)).toEqual(data);
+    expect(await pipe.transform(data)).toEqual(data);
   });
 
   /**

@@ -11,6 +11,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { access_role } from '@prisma/client';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
@@ -27,7 +28,7 @@ export class FolderController {
   constructor(private folderService: FolderService) {}
 
   @Post('create/:folderKey')
-  @UseGuards(RoleGuard('create'))
+  @UseGuards(RoleGuard(access_role.create))
   @HttpCode(201)
   async createFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
@@ -57,7 +58,7 @@ export class FolderController {
   }
 
   @Delete(':folderKey')
-  @UseGuards(RoleGuard('delete'))
+  @UseGuards(RoleGuard(access_role.delete))
   @HttpCode(200)
   async deleteFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
@@ -68,7 +69,7 @@ export class FolderController {
   }
 
   @Get(':folderKey')
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   @HttpCode(200)
   async readFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,

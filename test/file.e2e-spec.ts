@@ -85,7 +85,7 @@ describe('File', () => {
    */
 
   // Create file success handling
-  it('should create a file', async () => {
+  it('should upload a file', async () => {
     const file = await fs.promises.readFile(
       `${__dirname}/sample/sample-image1.jpg`,
     );
@@ -98,8 +98,66 @@ describe('File', () => {
     expect(response.status).toBe(201);
     expect(response.body.message).toBe('File uploaded');
     expect(
-      fs.existsSync(path.join(baseDir, response.body.fileKey + '.jpg')),
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `origin.jpg`)),
     ).toBe(true);
+  });
+
+  it('should upload a video file and create different resolutions', async () => {
+    const file = await fs.promises.readFile(
+      `${__dirname}/sample/sample-video1.mp4`,
+    );
+    const response = await uploadFile(
+      file,
+      'sample-video1.mp4',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    expect(response.status).toBe(201);
+    expect(response.body.message).toBe('File uploaded');
+    expect(response.body.fileKey).toBeDefined();
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `origin.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `1080p.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `720p.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `480p.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `360p.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `240p.mp4`)),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(baseDir, response.body.fileKey, `144p.mp4`)),
+    ).toBe(true);
+  }, 30000);
+
+  // Download file success handling
+  it('should download a file', async () => {
+    const fileKey = await createFile('sample-image1.jpg');
+    const response = await request(app.getHttpServer())
+      .get(`/file/download/${testFolderKey}/${fileKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`);
+
+    expect(response.status).toBe(200);
+  });
+
+  // Stream file success handling
+  it('should stream a file', async () => {
+    const fileKey = await createFile('sample-video1.mp4');
+    const response = await request(app.getHttpServer())
+      .get(`/file/stream/${testFolderKey}/${fileKey}`)
+      .query({ resolution: '1080p' })
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .set('range', 'bytes=0-1024');
+
+    expect(response.status).toBe(206);
   });
 
   /**
@@ -124,6 +182,36 @@ describe('File', () => {
   /**
    * Functions for testing
    */
+
+  const createFile = async (fileName: string): Promise<string> => {
+    const file = await fs.promises.readFile(`${__dirname}/sample/${fileName}`);
+    const extName = path.extname(fileName);
+
+    const fileKey = uuidv4();
+    await postgresClient.query(
+      `INSERT INTO "cloud"."files" (file_name, file_key, parent_folder_id) VALUES ('${fileName}', '${fileKey}', ${BigInt(1234)})`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud".file_info (file_id, uploader_id, byte_size) VALUES ((SELECT id FROM "cloud"."files" WHERE file_key = '${fileKey}'), ${testUserId}, ${file.length})`,
+    );
+
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir);
+    }
+    fs.mkdirSync(`${baseDir}/${fileKey}`);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/origin${extName}`, file);
+    if (!extName.match(/mp4|webm|mov/)) {
+      return fileKey;
+    }
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/1080p${extName}`, file);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/720p${extName}`, file);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/480p${extName}`, file);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/360p${extName}`, file);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/240p${extName}`, file);
+    await fs.promises.writeFile(`${baseDir}/${fileKey}/144p${extName}`, file);
+
+    return fileKey;
+  };
 
   const uploadChunk = async (
     chunk: Buffer,
@@ -162,9 +250,9 @@ describe('File', () => {
         folderKey,
         userToken,
       );
-      if (response.status === 200) continue;
+      if (response.status === 206) continue;
       else return { status: response.status, body: response.body };
     }
-    return { status: 500, body: { message: 'Failed to upload file' } };
+    return { status: 572, body: { message: 'Failed to upload file' } };
   };
 });
