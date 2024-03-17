@@ -9,7 +9,7 @@ import typia from 'typia';
 @Injectable()
 export class TypiaValidationPipe<T = any, R = any> implements PipeTransform {
   constructor(private validator: (input: unknown) => typia.IValidation<any>) {}
-  transform(value: T): R {
+  async transform(value: T): Promise<R> {
     try {
       const result = this.validator(value);
       if (result.success) {
