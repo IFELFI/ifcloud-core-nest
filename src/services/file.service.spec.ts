@@ -151,7 +151,7 @@ describe('FileService', () => {
     );
     prismaService.temp_files.findUnique.mockResolvedValue(tempFile);
     prismaService.files.create.mockResolvedValue(file);
-    service['generateStreamVideo'] = jest.fn().mockReturnValue(Promise<void>);
+    service['generateStreamVideo'] = jest.fn().mockResolvedValue(true);
     const fsStatSync = jest
       .spyOn(fs, 'statSync')
       .mockReturnValue({ size: BigInt(4) } as any);
@@ -242,7 +242,7 @@ describe('FileService', () => {
     });
 
     const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
-    const fsRmdirSync = jest.spyOn(fs, 'rmdirSync').mockReturnValue();
+    const fsRmdirSync = jest.spyOn(fs.promises, 'rm').mockResolvedValue();
 
     await service.deleteFile(fileKey);
 
