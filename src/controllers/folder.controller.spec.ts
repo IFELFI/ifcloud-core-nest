@@ -81,4 +81,16 @@ describe('FolderController', () => {
       files,
     });
   });
+
+  it('should update parent folder', async () => {
+    folderService.updateParent = jest.fn().mockResolvedValue(true);
+    expect(await controller.moveFolder('1234', '5678')).toEqual('Folder moved');
+  });
+
+  it('should rename a folder', async () => {
+    folderService.updateName = jest.fn().mockResolvedValue(true);
+    expect(await controller.renameFolder('1234', 'test')).toEqual(
+      'Folder renamed',
+    );
+  });
 });

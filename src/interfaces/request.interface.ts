@@ -22,3 +22,10 @@ export interface IUserRequestQuery extends IValidRequestQuery {
 
 export interface IUserRequest
   extends Request<any, any, any, IUserRequestQuery> {}
+
+export interface ITargetRequestQuery extends IUserRequestQuery {
+  targetKey: string & tags.Pattern<'^[a-zA-Z0-9_-]{1,255}$'>;
+}
+
+export interface ITargetRequest
+  extends Request<any, any, any, ITargetRequestQuery> {}

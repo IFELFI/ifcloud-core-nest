@@ -7,6 +7,7 @@ import {
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -85,5 +86,29 @@ export class FolderController {
     }>;
   }> {
     return this.folderService.read(folderKey);
+  }
+
+  @Patch('move/:folderKey')
+  @UseGuards(RoleGuard(access_role.update, true, access_role.update))
+  @HttpCode(200)
+  async moveFolder(
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+    @Query('target', new ParseUUIDPipe()) targetFolderKey: string,
+  ): Promise<string> {
+    await this.folderService.updateParent(folderKey, targetFolderKey);
+
+    return 'Folder moved';
+  }
+
+  @Patch('rename/:folderKey')
+  @UseGuards(RoleGuard(access_role.update))
+  @HttpCode(200)
+  async renameFolder(
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+    @Body('folderName') folderName: string,
+  ): Promise<string> {
+    await this.folderService.updateName(folderKey, folderName);
+
+    return 'Folder renamed';
   }
 }
