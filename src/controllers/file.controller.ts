@@ -135,4 +135,15 @@ export class FileController {
     await this.fileService.renameFile(fileKey, renameFile.fileName);
     return 'File renamed';
   }
+
+  @Patch('move/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.update, true, access_role.update))
+  @HttpCode(200)
+  async moveFile(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Query('targetKey', new ParseUUIDPipe()) targetFolderKey: string,
+  ): Promise<string> {
+    await this.fileService.updateParent(fileKey, targetFolderKey);
+    return 'File moved';
+  }
 }

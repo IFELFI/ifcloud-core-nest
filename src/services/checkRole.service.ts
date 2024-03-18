@@ -11,6 +11,9 @@ export class CheckRoleService {
     userId: number,
     role: access_role,
   ): Promise<boolean> {
+    if (!folderKey) {
+      throw new NotFoundException('Folder key is required');
+    }
     const folder = await this.prisma.folders.findUnique({
       where: {
         folder_key: folderKey,

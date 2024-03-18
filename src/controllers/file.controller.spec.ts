@@ -142,4 +142,12 @@ describe('FileController', () => {
     await controller.renameFile(fileKey, newFileName);
     expect(res.status).toHaveBeenCalledWith(200);
   });
+
+  it('should move a file', async () => {
+    const fileKey = uuidv4();
+    const folderKey = uuidv4();
+    fileService.updateParent = jest.fn().mockResolvedValue(true);
+    await controller.moveFile(fileKey, folderKey);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
 });

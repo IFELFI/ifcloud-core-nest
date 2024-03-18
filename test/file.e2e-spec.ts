@@ -195,6 +195,27 @@ describe('File', () => {
     expect(response.text).toBe('File renamed');
   });
 
+  // Move file success handling
+  it('should move a file', async () => {
+    const targetFolderKey = uuidv4();
+    await postgresClient.query(
+      `INSERT INTO "cloud"."folders" (id, folder_name, folder_key) VALUES (${BigInt(1235)}, 'test', '${targetFolderKey}')`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${testUserId}, '${BigInt(1235)}', '{create,read,update,delete}')`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud".folder_info (folder_id, owner_id) VALUES (${BigInt(1235)}, ${testUserId})`,
+    );
+    const response = await request(app.getHttpServer())
+      .patch(`/file/move/${testFolderKey}/${uploadedImageKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .query({ targetKey: targetFolderKey });
+
+    expect(response.status).toBe(200);
+    expect(response.text).toBe('File moved');
+  });
+
   /**
    * Failure handling
    */
