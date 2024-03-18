@@ -1,11 +1,13 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   Res,
@@ -21,9 +23,12 @@ import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import { RangeInterceptor } from 'src/interceptors/range.interceptor';
 import {
+  IRenameFileRequestBody,
   IUploadFileRequestBody,
+  validateRenameFileRequestBody,
   validateUploadFileRequestBody,
 } from 'src/interfaces/file.interface';
+import { FileValidatePipe } from 'src/pipes/file.validate.pipe';
 import { ParseRangePipe } from 'src/pipes/parseRange.pipe';
 import { ParseResolutionPipe } from 'src/pipes/parseResolution.pipe';
 import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
@@ -36,9 +41,10 @@ export class FileController {
 
   @Post('upload/:folderKey')
   @UseInterceptors(FileInterceptor('file'))
+  @UseGuards(RoleGuard(access_role.create))
   @HttpCode(201)
   async uploadFile(
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile(new FileValidatePipe()) file: Express.Multer.File,
     @Body(new TypiaValidationPipe(validateUploadFileRequestBody))
     uploadFile: IUploadFileRequestBody,
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
@@ -106,5 +112,27 @@ export class FileController {
     };
     response.writeHead(206, headers);
     stream.pipe(response);
+  }
+
+  @Delete(':folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.delete))
+  @HttpCode(200)
+  async deleteFile(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+  ): Promise<string> {
+    await this.fileService.deleteFile(fileKey);
+    return 'File deleted';
+  }
+
+  @Patch('rename/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.update))
+  @HttpCode(200)
+  async renameFile(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Body(new TypiaValidationPipe(validateRenameFileRequestBody))
+    renameFile: IRenameFileRequestBody,
+  ): Promise<string> {
+    await this.fileService.renameFile(fileKey, renameFile.fileName);
+    return 'File renamed';
   }
 }

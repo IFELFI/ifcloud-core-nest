@@ -125,4 +125,21 @@ describe('FileController', () => {
     expect(res.headers).toHaveProperty('Content-Type');
     expect(res.headers['Content-Type']).toBe('video/mp4');
   });
+
+  it('should delete a file', async () => {
+    const fileKey = uuidv4();
+    fileService.deleteFile = jest.fn().mockResolvedValue(true);
+    await controller.deleteFile(fileKey);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('should rename a file', async () => {
+    const fileKey = uuidv4();
+    const newFileName = {
+      fileName: 'newFileName.txt',
+    };
+    fileService.renameFile = jest.fn().mockResolvedValue(true);
+    await controller.renameFile(fileKey, newFileName);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
 });

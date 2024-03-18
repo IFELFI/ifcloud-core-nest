@@ -231,6 +231,42 @@ describe('FileService', () => {
     expect(fsStatSync).toHaveBeenCalled();
   });
 
+  it('should delete file', async () => {
+    const fileKey = uuidv4();
+    prismaService.files.delete.mockResolvedValue({
+      id: BigInt(1),
+      file_name: 'test.txt',
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    });
+
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+    const fsRmdirSync = jest.spyOn(fs, 'rmdirSync').mockReturnValue();
+
+    await service.deleteFile(fileKey);
+
+    expect(fsExistsSync).toHaveBeenCalled();
+    expect(fsRmdirSync).toHaveBeenCalled();
+    expect(prismaService.files.delete).toHaveBeenCalled();
+  });
+
+  it('should rename file', async () => {
+    const fileKey = uuidv4();
+    const newFileName = 'newFileName.txt';
+    prismaService.files.update.mockResolvedValue({
+      id: BigInt(1),
+      file_name: newFileName,
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    });
+
+    await service.renameFile(fileKey, newFileName);
+
+    expect(prismaService.files.update).toHaveBeenCalled();
+  });
+
   /**
    * Failure handling
    * Test if the service is failed
@@ -486,5 +522,16 @@ describe('FileService', () => {
     await expect(service.streamVideo(fileKey, 3, '720p')).rejects.toThrow(
       BadRequestException,
     );
+  });
+
+  // Delete file failure handling
+  it('should throw error when delete file but file does not exist', async () => {
+    const fileKey = uuidv4();
+    const fsExistsSync = jest.spyOn(fs, 'existsSync').mockReturnValue(false);
+
+    await expect(service.deleteFile(fileKey)).rejects.toThrow(
+      NotFoundException,
+    );
+    expect(fsExistsSync).toHaveBeenCalled();
   });
 });

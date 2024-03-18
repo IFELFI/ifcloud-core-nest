@@ -26,3 +26,10 @@ export type VideoResolution =
   | '480p'
   | '720p'
   | '1080p';
+
+export interface IRenameFileRequestBody {
+  fileName: string;
+}
+
+export const validateRenameFileRequestBody =
+  typia.createValidate<IRenameFileRequestBody>();
