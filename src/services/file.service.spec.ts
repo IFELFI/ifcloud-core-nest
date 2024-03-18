@@ -281,7 +281,7 @@ describe('FileService', () => {
       enabled: true,
     });
 
-    await service.moveFile(fileKey, targetFolderKey);
+    await service.updateParent(fileKey, targetFolderKey);
 
     expect(prismaService.files.update).toHaveBeenCalled();
   });
@@ -556,8 +556,8 @@ describe('FileService', () => {
     const targetFolderKey = uuidv4();
     prismaService.folders.findUnique.mockResolvedValue(null);
 
-    await expect(service.moveFile(fileKey, targetFolderKey)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(
+      service.updateParent(fileKey, targetFolderKey),
+    ).rejects.toThrow(NotFoundException);
   });
 });

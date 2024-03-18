@@ -304,7 +304,7 @@ export class FileService {
    * @param fileKey File key
    * @param targetParentKey Target parent folder key
    */
-  async moveFile(fileKey: string, targetParentKey: string): Promise<void> {
+  async updateParent(fileKey: string, targetParentKey: string): Promise<void> {
     const targetParent = await this.prisma.folders.findUnique({
       where: {
         folder_key: targetParentKey,
