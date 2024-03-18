@@ -40,4 +40,16 @@ describe('UserController', () => {
       'User created',
     );
   });
+
+  it('should delete a user', async () => {
+    const uuidKey = uuidv4();
+    const deleteUserOutput = {
+      id: 1,
+      uuidKey,
+    };
+    userService.delete = jest.fn().mockResolvedValue(deleteUserOutput);
+    expect(await controller.deleteUser(deleteUserOutput.uuidKey)).toEqual(
+      'User deleted',
+    );
+  });
 });
