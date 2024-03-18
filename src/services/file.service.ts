@@ -171,7 +171,11 @@ export class FileService {
       await this.generateStreamVideo(
         uploadedFile.file_key,
         uploadedFile.file_name,
-      );
+      ).catch(() => {
+        throw new InternalServerErrorException(
+          'Failed to generate stream video',
+        );
+      });
       return { isDone: true, fileKey: uploadedFile.file_key };
     }
     return { isDone: false };
@@ -271,7 +275,7 @@ export class FileService {
     if (!fs.existsSync(fileDirPath)) {
       throw new NotFoundException('File does not exist');
     }
-    fs.rmdirSync(fileDirPath, { recursive: true });
+    await fs.promises.rm(fileDirPath, { recursive: true });
     await this.prisma.files.delete({
       where: {
         file_key: fileKey,

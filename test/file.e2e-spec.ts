@@ -22,6 +22,10 @@ describe('File', () => {
   const testFolderKey = uuidv4();
   const chunkSize = 1024 * 1024 * 2;
   const baseDir = process.env.FILE_UPLOAD_DIR || 'uploads';
+  const sampleImage = fs.readFileSync(`${__dirname}/sample/sample-image.jpg`);
+  const sampleVideo = fs.readFileSync(`${__dirname}/sample/sample-video.mp4`);
+  let uploadedImageKey: string;
+  let uploadedVideoKey: string;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -33,6 +37,11 @@ describe('File', () => {
 
     app = module.createNestApplication();
     await app.init();
+
+    // upload sample image
+    uploadedImageKey = await createFile('uploaded-image.jpg', sampleImage);
+    // upload sample video
+    uploadedVideoKey = await createFile('uploaded-video.mp4', sampleVideo);
   });
 
   afterAll(async () => {
@@ -69,23 +78,27 @@ describe('File', () => {
     await postgresClient.query(
       `INSERT INTO "member"."users" (uuid_key) VALUES ('${wrongUserTokenPayload.uuidKey}')`,
     );
+
+    // Create Image and Video
+    const uploadedImageName = 'uploaded-image.jpg';
+    const uploadedVideoName = 'uploaded-video.mp4';
+
+    await postgresClient.query(
+      `INSERT INTO "cloud"."files" (file_name, file_key, parent_folder_id) VALUES ('${uploadedImageName}', '${uploadedImageKey}', ${BigInt(1234)})`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud".file_info (file_id, uploader_id, byte_size) VALUES ((SELECT id FROM "cloud"."files" WHERE file_key = '${uploadedImageKey}'), ${testUserId}, ${sampleImage.length})`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud"."files" (file_name, file_key, parent_folder_id) VALUES ('${uploadedVideoName}', '${uploadedVideoKey}', ${BigInt(1234)})`,
+    );
+    await postgresClient.query(
+      `INSERT INTO "cloud".file_info (file_id, uploader_id, byte_size) VALUES ((SELECT id FROM "cloud"."files" WHERE file_key = '${uploadedVideoKey}'), ${testUserId}, ${sampleVideo.length})`,
+    );
   });
 
   afterAll(async () => {
-    const deleteFolderRecursive = (path: string) => {
-      if (fs.existsSync(path)) {
-        fs.readdirSync(path).forEach((file) => {
-          const curPath = `${path}/${file}`;
-          if (fs.lstatSync(curPath).isDirectory()) {
-            deleteFolderRecursive(curPath);
-          } else {
-            fs.unlinkSync(curPath);
-          }
-        });
-        fs.rmdirSync(path);
-      }
-    };
-    deleteFolderRecursive(baseDir);
+    await fs.promises.rm(baseDir, { recursive: true });
   });
 
   /**
@@ -94,11 +107,8 @@ describe('File', () => {
 
   // Create file success handling
   it('should upload a file', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image1.jpg`,
-    );
     const response = await uploadFile(
-      file,
+      sampleImage,
       'sample-image1.jpg',
       testFolderKey,
       'Bearer ' + testUserToken,
@@ -111,15 +121,13 @@ describe('File', () => {
   });
 
   it('should upload a video file and create different resolutions', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-video1.mp4`,
-    );
     const response = await uploadFile(
-      file,
-      'sample-video1.mp4',
+      sampleVideo,
+      'sample-video.mp4',
       testFolderKey,
       'Bearer ' + testUserToken,
     );
+    expect(response.body.message).toBe('File uploaded');
     expect(response.status).toBe(201);
     expect(response.body.message).toBe('File uploaded');
     expect(response.body.fileKey).toBeDefined();
@@ -148,9 +156,8 @@ describe('File', () => {
 
   // Download file success handling
   it('should download a file', async () => {
-    const fileKey = await createFile('sample-image1.jpg');
     const response = await request(app.getHttpServer())
-      .get(`/file/download/${testFolderKey}/${fileKey}`)
+      .get(`/file/download/${testFolderKey}/${uploadedImageKey}`)
       .set('Authorization', `Bearer ${testUserToken}`);
 
     expect(response.status).toBe(200);
@@ -158,9 +165,8 @@ describe('File', () => {
 
   // Stream file success handling
   it('should stream a file', async () => {
-    const fileKey = await createFile('sample-video1.mp4');
     const response = await request(app.getHttpServer())
-      .get(`/file/stream/${testFolderKey}/${fileKey}`)
+      .get(`/file/stream/${testFolderKey}/${uploadedVideoKey}`)
       .query({ resolution: '1080p' })
       .set('Authorization', `Bearer ${testUserToken}`)
       .set('range', 'bytes=0-1024');
@@ -170,9 +176,8 @@ describe('File', () => {
 
   // Delete file success handling
   it('should delete a file', async () => {
-    const fileKey = await createFile('sample-image1.jpg');
     const response = await request(app.getHttpServer())
-      .delete(`/file/${testFolderKey}/${fileKey}`)
+      .delete(`/file/${testFolderKey}/${uploadedImageKey}`)
       .set('Authorization', `Bearer ${testUserToken}`);
 
     expect(response.status).toBe(200);
@@ -181,9 +186,8 @@ describe('File', () => {
 
   // Rename file success handling
   it('should rename a file', async () => {
-    const fileKey = await createFile('sample-image1.jpg');
     const response = await request(app.getHttpServer())
-      .patch(`/file/rename/${testFolderKey}/${fileKey}`)
+      .patch(`/file/rename/${testFolderKey}/${uploadedImageKey}`)
       .set('Authorization', `Bearer ${testUserToken}`)
       .send({ fileName: 'sample-image1-renamed.jpg' });
 
@@ -197,12 +201,9 @@ describe('File', () => {
 
   // Create file failure handling
   it('should not create a file if Authorization header is not given', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image2.jpg`,
-    );
     const response = await uploadFile(
-      file,
-      'sample-image2.jpg',
+      sampleImage,
+      'sample-image.jpg',
       testFolderKey,
       '',
     );
@@ -211,12 +212,9 @@ describe('File', () => {
   });
 
   it('should not create a file if Token is expired', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image2.jpg`,
-    );
     const response = await uploadFile(
-      file,
-      'sample-image2.jpg',
+      sampleImage,
+      'sample-image.jpg',
       testFolderKey,
       'Bearer ' + expiredUserToken,
     );
@@ -225,12 +223,9 @@ describe('File', () => {
   });
 
   it('should not create a file if user does not have create role', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image2.jpg`,
-    );
     const response = await uploadFile(
-      file,
-      'sample-image2.jpg',
+      sampleImage,
+      'sample-image.jpg',
       testFolderKey,
       'Bearer ' + wrongUserToken,
     );
@@ -239,13 +234,10 @@ describe('File', () => {
   });
 
   it('should not create a file if file name is not given', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image2.jpg`,
-    );
     const response = await request(app.getHttpServer())
       .post(`/file/upload/${testFolderKey}`)
       .set('Authorization', `Bearer ${testUserToken}`)
-      .attach('file', file, { filename: 'sample-image.jpg' })
+      .attach('file', sampleImage, { filename: 'sample-image.jpg' })
       .field('chunkNumber', 0)
       .field('totalChunks', 1);
 
@@ -254,12 +246,9 @@ describe('File', () => {
   });
 
   it('should not create a file if file name is invalid', async () => {
-    const file = await fs.promises.readFile(
-      `${__dirname}/sample/sample-image2.jpg`,
-    );
     const response = await uploadFile(
-      file,
-      'sample-image2',
+      sampleImage,
+      'sample-image',
       testFolderKey,
       'Bearer ' + testUserToken,
     );
@@ -271,28 +260,97 @@ describe('File', () => {
     const response = await request(app.getHttpServer())
       .post(`/file/upload/${testFolderKey}`)
       .set('Authorization', `Bearer ${testUserToken}`)
-      .field('fileName', 'sample-image2.jpg')
+      .field('fileName', 'sample-image.jpg')
       .field('chunkNumber', 0)
       .field('totalChunks', 1);
     expect(response.status).toBe(400);
     expect(response.body.message).toBe('Invalid file');
   });
 
+  it('should not create a file if chunkNumber is not given', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/file/upload/${testFolderKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .attach('file', sampleImage, { filename: 'sample-image.jpg' })
+      .field('totalChunks', 1)
+      .field('fileName', 'sample-image.jpg');
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      'Validation failed for $input.chunkNumber',
+    );
+  });
+
+  it('should not create a file if totalChunks is not given', async () => {
+    const response = await request(app.getHttpServer())
+      .post(`/file/upload/${testFolderKey}`)
+      .set('Authorization', `Bearer ${testUserToken}`)
+      .attach('file', sampleImage, { filename: 'sample-image.jpg' })
+      .field('chunkNumber', 0)
+      .field('fileName', 'sample-image.jpg');
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      'Validation failed for $input.totalChunks',
+    );
+  });
+
+  it('should not create a file if chunkNumber is invalid', async () => {
+    const response = await uploadChunk(
+      sampleImage,
+      -1,
+      1,
+      'sample-image.jpg',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      'Validation failed for $input.chunkNumber',
+    );
+  });
+
+  it('should not create a file if totalChunks is invalid', async () => {
+    const response = await uploadChunk(
+      sampleImage,
+      0,
+      -1,
+      'sample-image.jpg',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(
+      'Validation failed for $input.totalChunks',
+    );
+  });
+
+  it('should not create a file if file is already uploaded', async () => {
+    await uploadFile(
+      sampleImage,
+      'sample-image.jpg',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    const response = await uploadFile(
+      sampleImage,
+      'sample-image.jpg',
+      testFolderKey,
+      'Bearer ' + testUserToken,
+    );
+    expect(response.status).toBe(409);
+    expect(response.body.message).toBe('File already exists');
+  });
+
   /**
    * Functions for testing
    */
 
-  const createFile = async (fileName: string): Promise<string> => {
-    const file = await fs.promises.readFile(`${__dirname}/sample/${fileName}`);
+  const createFile = async (
+    fileName: string,
+    file: Buffer,
+  ): Promise<string> => {
     const extName = path.extname(fileName);
 
     const fileKey = uuidv4();
-    await postgresClient.query(
-      `INSERT INTO "cloud"."files" (file_name, file_key, parent_folder_id) VALUES ('${fileName}', '${fileKey}', ${BigInt(1234)})`,
-    );
-    await postgresClient.query(
-      `INSERT INTO "cloud".file_info (file_id, uploader_id, byte_size) VALUES ((SELECT id FROM "cloud"."files" WHERE file_key = '${fileKey}'), ${testUserId}, ${file.length})`,
-    );
 
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir);
