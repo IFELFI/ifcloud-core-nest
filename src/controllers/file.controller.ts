@@ -37,7 +37,7 @@ import { FileService } from 'src/services/file.service';
 @Controller('file')
 @UseGuards(AuthGuard, UserGuard)
 export class FileController {
-  constructor(private fileService: FileService) {}
+  constructor(private fileService: FileService) { }
 
   @Post('upload/:folderKey')
   @UseInterceptors(FileInterceptor('file'))
@@ -56,7 +56,7 @@ export class FileController {
     const totalChunks = parseInt(uploadFile.totalChunks);
     const chunkNumber = parseInt(uploadFile.chunkNumber);
 
-    const result = await this.fileService.uploadFile(
+    const result = await this.fileService.upload(
       userId,
       folderKey,
       fileName,
@@ -85,7 +85,7 @@ export class FileController {
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
     @Res() response: Response,
   ): Promise<void> {
-    const stream = await this.fileService.downloadFile(fileKey);
+    const stream = await this.fileService.download(fileKey);
     response.status(200);
     stream.pipe(response);
   }
@@ -99,7 +99,7 @@ export class FileController {
     @Query('range', ParseRangePipe) start: number,
     @Res() response: Response,
   ): Promise<void> {
-    const { stream, end, fileSize } = await this.fileService.streamVideo(
+    const { stream, end, fileSize } = await this.fileService.stream(
       fileKey,
       start,
       resolution,

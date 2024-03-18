@@ -78,7 +78,7 @@ describe('FileController', () => {
       stream: Readable.from('test'),
     };
     const folderKey = uuidv4();
-    fileService.uploadFile = jest
+    fileService.upload = jest
       .fn()
       .mockResolvedValue({ isDone: true, fileKey: uuidv4() });
     await controller.uploadFile(file, uploadFileRequestBody, folderKey, 1, res);
@@ -88,7 +88,7 @@ describe('FileController', () => {
   it('should download a file', async () => {
     const fileKey = uuidv4();
     const stream = fs.createReadStream('./test/sample/sample-video1.mp4');
-    fileService.downloadFile = jest.fn().mockResolvedValue(stream);
+    fileService.download = jest.fn().mockResolvedValue(stream);
     await controller.downloadFile(fileKey, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -108,7 +108,7 @@ describe('FileController', () => {
         '-movflags frag_keyframe+empty_moov',
         '-frag_duration 5000',
       ]);
-    fileService.streamVideo = jest.fn().mockResolvedValue({
+    fileService.stream = jest.fn().mockResolvedValue({
       stream: ffmpegStream,
       end: end,
       fileSize: 104857600,

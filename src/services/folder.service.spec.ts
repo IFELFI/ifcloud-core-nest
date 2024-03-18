@@ -13,6 +13,7 @@ import {
   BadRequestException,
   ConflictException,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -160,6 +161,63 @@ describe('FolderService', () => {
     });
   });
 
+  // Update folder success handling
+  it('should update a folder parent', async () => {
+    const folderKey = uuidv4();
+    const parentFolderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: BigInt(2),
+      folder_key: folderKey,
+    };
+    const parentFolder: folders = {
+      id: BigInt(3),
+      folder_name: 'test',
+      parent_folder_id: BigInt(4),
+      folder_key: parentFolderKey,
+    };
+    const updateFolder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: parentFolder.id,
+      folder_key: folderKey,
+    };
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique
+      .mockResolvedValueOnce(folder)
+      .mockResolvedValueOnce(parentFolder);
+    prismaService.folders.update.mockResolvedValue(updateFolder);
+
+    expect(await service.updateParent(folderKey, parentFolderKey)).toEqual(
+      true,
+    );
+  });
+
+  // Update folder name success handling
+  it('should update a folder name', async () => {
+    const folderKey = uuidv4();
+    const folderName = 'test';
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'beforeTest',
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    const updateFolder: folders = {
+      id: BigInt(1),
+      folder_name: folderName,
+      parent_folder_id: null,
+      folder_key: folderKey,
+    };
+    prismaService.folders.findUnique.mockResolvedValue(folder);
+    prismaService.folders.update.mockResolvedValue(updateFolder);
+
+    expect(await service.updateName(folderKey, folderName)).toEqual(true);
+  });
+
   /**
    * Error handling
    * Test if the service is throwing an error
@@ -260,6 +318,63 @@ describe('FolderService', () => {
 
     await expect(service.delete(folderKey)).rejects.toThrow(
       InternalServerErrorException,
+    );
+  });
+
+  // Read folder error handling
+  it('should throw an not found error if folder is not exist when reading a folder', async () => {
+    const folderKey = uuidv4();
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(service.read(folderKey)).rejects.toThrow(NotFoundException);
+  });
+
+  // Update folder parent error handling
+  it('should throw an not found error if target folder is not exist when updating a folder parent', async () => {
+    const folderKey = uuidv4();
+    const parentFolderKey = uuidv4();
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.updateParent(folderKey, parentFolderKey),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  it('should throw an not found error if parent folder is not exist when updating a folder parent', async () => {
+    const folderKey = uuidv4();
+    const parentFolderKey = uuidv4();
+    const folder: folders = {
+      id: BigInt(1),
+      folder_name: 'test',
+      parent_folder_id: BigInt(2),
+      folder_key: folderKey,
+    };
+    prismaService.$transaction.mockImplementation((callback) =>
+      callback(prismaService),
+    );
+    prismaService.folders.findUnique
+      .mockResolvedValueOnce(folder)
+      .mockResolvedValueOnce(null);
+
+    await expect(
+      service.updateParent(folderKey, parentFolderKey),
+    ).rejects.toThrow(NotFoundException);
+  });
+
+  // Update folder name error handling
+  it('should throw an not found error if folder is not exist when updating a folder name', async () => {
+    const folderKey = uuidv4();
+    const folderName = 'test';
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(service.updateName(folderKey, folderName)).rejects.toThrow(
+      NotFoundException,
     );
   });
 });

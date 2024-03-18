@@ -37,7 +37,7 @@ export class FileService {
    * @param totalChunks Total chunks
    * @returns If file is uploaded successfully, return file key
    */
-  async uploadFile(
+  async upload(
     userId: number,
     parentFolderKey: string,
     fileName: string,
@@ -186,7 +186,7 @@ export class FileService {
    * @param fileKey File key
    * @returns Read Stream of file
    */
-  async downloadFile(fileKey: string): Promise<ReadStream> {
+  async download(fileKey: string): Promise<ReadStream> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -215,7 +215,7 @@ export class FileService {
    * @param resolution Video resolution
    * @returns Read Stream of video and end position of stream and file size
    */
-  async streamVideo(
+  async stream(
     fileKey: string,
     start: number,
     resolution: string,
