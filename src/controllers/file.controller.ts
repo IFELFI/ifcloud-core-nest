@@ -37,7 +37,7 @@ import { FileService } from 'src/services/file.service';
 @Controller('file')
 @UseGuards(AuthGuard, UserGuard)
 export class FileController {
-  constructor(private fileService: FileService) { }
+  constructor(private fileService: FileService) {}
 
   @Post('upload/:folderKey')
   @UseInterceptors(FileInterceptor('file'))
