@@ -231,6 +231,7 @@ describe('FileService', () => {
     expect(fsStatSync).toHaveBeenCalled();
   });
 
+  // Delete file success handling
   it('should delete file', async () => {
     const fileKey = uuidv4();
     prismaService.files.delete.mockResolvedValue({
@@ -251,6 +252,7 @@ describe('FileService', () => {
     expect(prismaService.files.delete).toHaveBeenCalled();
   });
 
+  // Rename file success handling
   it('should rename file', async () => {
     const fileKey = uuidv4();
     const newFileName = 'newFileName.txt';
@@ -263,6 +265,23 @@ describe('FileService', () => {
     });
 
     await service.renameFile(fileKey, newFileName);
+
+    expect(prismaService.files.update).toHaveBeenCalled();
+  });
+
+  // Move file success handling
+  it('should move file', async () => {
+    const fileKey = uuidv4();
+    const targetFolderKey = uuidv4();
+    prismaService.files.update.mockResolvedValue({
+      id: BigInt(1),
+      file_name: 'test.txt',
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    });
+
+    await service.moveFile(fileKey, targetFolderKey);
 
     expect(prismaService.files.update).toHaveBeenCalled();
   });
@@ -529,5 +548,16 @@ describe('FileService', () => {
       NotFoundException,
     );
     expect(fsExistsSync).toHaveBeenCalled();
+  });
+
+  // Move file failure handling
+  it('should throw error when move file but file does not exist', async () => {
+    const fileKey = uuidv4();
+    const targetFolderKey = uuidv4();
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(service.moveFile(fileKey, targetFolderKey)).rejects.toThrow(
+      NotFoundException,
+    );
   });
 });

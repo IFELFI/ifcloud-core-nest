@@ -300,6 +300,30 @@ export class FileService {
   }
 
   /**
+   * Move file to another folder
+   * @param fileKey File key
+   * @param targetParentKey Target parent folder key
+   */
+  async moveFile(fileKey: string, targetParentKey: string): Promise<void> {
+    const targetParent = await this.prisma.folders.findUnique({
+      where: {
+        folder_key: targetParentKey,
+      },
+    });
+    if (!targetParent) {
+      throw new NotFoundException('Target parent folder does not exist');
+    }
+    await this.prisma.files.update({
+      where: {
+        file_key: fileKey,
+      },
+      data: {
+        parent_folder_id: targetParent.id,
+      },
+    });
+  }
+
+  /**
    * ------------------------------
    * Below are private methods for file service
    * ------------------------------
