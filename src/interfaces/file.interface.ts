@@ -12,6 +12,14 @@ export interface IUploadFileRequestBody {
 export const validateUploadFileRequestBody =
   typia.createValidate<IUploadFileRequestBody>();
 
+export interface IRenameFileRequestBody {
+  fileName: string &
+    tags.Pattern<'^[a-zA-Z0-9_.-]{1,200}[.][a-zA-Z0-9]{1,20}$'>;
+}
+
+export const validateRenameFileRequestBody =
+  typia.createValidate<IRenameFileRequestBody>();
+
 export interface IFileRangeQuery extends IUserRequestQuery {
   range: string;
 }
@@ -26,10 +34,3 @@ export type VideoResolution =
   | '480p'
   | '720p'
   | '1080p';
-
-export interface IRenameFileRequestBody {
-  fileName: string;
-}
-
-export const validateRenameFileRequestBody =
-  typia.createValidate<IRenameFileRequestBody>();

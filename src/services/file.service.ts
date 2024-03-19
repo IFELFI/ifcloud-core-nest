@@ -18,14 +18,10 @@ ffmpeg.setFfmpegPath(ffmpegPath.path);
 
 @Injectable()
 export class FileService {
-  private readonly baseDir = process.env.FILE_UPLOAD_DIR!;
+  private readonly baseDir = process.env.STORAGE_PATH!;
   private readonly chunkSize = 1024 * 1024 * 2;
 
-  constructor(private prisma: PrismaService) {
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir);
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Upload file
@@ -37,7 +33,7 @@ export class FileService {
    * @param totalChunks Total chunks
    * @returns If file is uploaded successfully, return file key
    */
-  async uploadFile(
+  async upload(
     userId: number,
     parentFolderKey: string,
     fileName: string,
@@ -186,7 +182,7 @@ export class FileService {
    * @param fileKey File key
    * @returns Read Stream of file
    */
-  async downloadFile(fileKey: string): Promise<ReadStream> {
+  async download(fileKey: string): Promise<ReadStream> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -215,7 +211,7 @@ export class FileService {
    * @param resolution Video resolution
    * @returns Read Stream of video and end position of stream and file size
    */
-  async streamVideo(
+  async stream(
     fileKey: string,
     start: number,
     resolution: string,
@@ -295,6 +291,30 @@ export class FileService {
       },
       data: {
         file_name: newFileName,
+      },
+    });
+  }
+
+  /**
+   * Move file to another folder
+   * @param fileKey File key
+   * @param targetParentKey Target parent folder key
+   */
+  async updateParent(fileKey: string, targetParentKey: string): Promise<void> {
+    const targetParent = await this.prisma.folders.findUnique({
+      where: {
+        folder_key: targetParentKey,
+      },
+    });
+    if (!targetParent) {
+      throw new NotFoundException('Target parent folder does not exist');
+    }
+    await this.prisma.files.update({
+      where: {
+        file_key: fileKey,
+      },
+      data: {
+        parent_folder_id: targetParent.id,
       },
     });
   }

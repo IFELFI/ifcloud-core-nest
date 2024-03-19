@@ -178,4 +178,71 @@ export class FolderService {
       };
     });
   }
+
+  /**
+   * Update folder parent
+   * @param folderKey Folder key
+   * @param targetParentKey Target parent folder key
+   * @returns true if folder parent is updated
+   */
+  async updateParent(
+    folderKey: string,
+    targetParentKey: string,
+  ): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const targetParent = await tx.folders.findUnique({
+        where: {
+          folder_key: targetParentKey,
+        },
+      });
+      if (!targetParent) {
+        throw new NotFoundException('Target parent folder does not exist');
+      }
+      await tx.folders.update({
+        where: {
+          id: folder.id,
+        },
+        data: {
+          parent_folder_id: targetParent.id,
+        },
+      });
+      return true;
+    });
+  }
+
+  /**
+   * Update folder name
+   * @param folderKey Folder key
+   * @param folderName Folder name
+   * @returns true if folder name is updated
+   */
+  async updateName(folderKey: string, folderName: string): Promise<boolean> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      await tx.folders.update({
+        where: {
+          id: folder.id,
+        },
+        data: {
+          folder_name: folderName,
+        },
+      });
+      return true;
+    });
+  }
 }

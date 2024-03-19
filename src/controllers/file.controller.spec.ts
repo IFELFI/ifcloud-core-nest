@@ -78,7 +78,7 @@ describe('FileController', () => {
       stream: Readable.from('test'),
     };
     const folderKey = uuidv4();
-    fileService.uploadFile = jest
+    fileService.upload = jest
       .fn()
       .mockResolvedValue({ isDone: true, fileKey: uuidv4() });
     await controller.uploadFile(file, uploadFileRequestBody, folderKey, 1, res);
@@ -87,8 +87,8 @@ describe('FileController', () => {
 
   it('should download a file', async () => {
     const fileKey = uuidv4();
-    const stream = fs.createReadStream('./test/sample/sample-video1.mp4');
-    fileService.downloadFile = jest.fn().mockResolvedValue(stream);
+    const stream = fs.createReadStream('./test/sample/sample-video.mp4');
+    fileService.download = jest.fn().mockResolvedValue(stream);
     await controller.downloadFile(fileKey, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
@@ -97,7 +97,7 @@ describe('FileController', () => {
     const fileKey = uuidv4();
     const start = 0;
     const end = 1024 * 1024;
-    const fileStream = fs.createReadStream('./test/sample/sample-video1.mp4', {
+    const fileStream = fs.createReadStream('./test/sample/sample-video.mp4', {
       start,
       end,
     });
@@ -108,7 +108,7 @@ describe('FileController', () => {
         '-movflags frag_keyframe+empty_moov',
         '-frag_duration 5000',
       ]);
-    fileService.streamVideo = jest.fn().mockResolvedValue({
+    fileService.stream = jest.fn().mockResolvedValue({
       stream: ffmpegStream,
       end: end,
       fileSize: 104857600,
@@ -140,6 +140,14 @@ describe('FileController', () => {
     };
     fileService.renameFile = jest.fn().mockResolvedValue(true);
     await controller.renameFile(fileKey, newFileName);
+    expect(res.status).toHaveBeenCalledWith(200);
+  });
+
+  it('should move a file', async () => {
+    const fileKey = uuidv4();
+    const folderKey = uuidv4();
+    fileService.updateParent = jest.fn().mockResolvedValue(true);
+    await controller.moveFile(fileKey, folderKey);
     expect(res.status).toHaveBeenCalledWith(200);
   });
 });

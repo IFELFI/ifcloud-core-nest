@@ -157,7 +157,7 @@ describe('FileService', () => {
       .mockReturnValue({ size: BigInt(4) } as any);
     prismaService.file_info.create.mockResolvedValue(fileInfo);
 
-    const result = await service.uploadFile(
+    const result = await service.upload(
       userId,
       parentFolderKey,
       fileName,
@@ -194,7 +194,7 @@ describe('FileService', () => {
         pipe: jest.fn(),
       } as any);
 
-    const result = await service.downloadFile(fileKey);
+    const result = await service.download(fileKey);
 
     expect(result).toBeDefined();
     expect(fsExistsSync).toHaveBeenCalled();
@@ -223,7 +223,7 @@ describe('FileService', () => {
       .spyOn(fs.promises, 'stat')
       .mockReturnValue({ size: 10293754 } as any);
 
-    const result = await service.streamVideo(fileKey, 0, '720p');
+    const result = await service.stream(fileKey, 0, '720p');
 
     expect(result).toBeDefined();
     expect(fsExistsSync).toHaveBeenCalled();
@@ -231,6 +231,7 @@ describe('FileService', () => {
     expect(fsStatSync).toHaveBeenCalled();
   });
 
+  // Delete file success handling
   it('should delete file', async () => {
     const fileKey = uuidv4();
     prismaService.files.delete.mockResolvedValue({
@@ -251,6 +252,7 @@ describe('FileService', () => {
     expect(prismaService.files.delete).toHaveBeenCalled();
   });
 
+  // Rename file success handling
   it('should rename file', async () => {
     const fileKey = uuidv4();
     const newFileName = 'newFileName.txt';
@@ -263,6 +265,23 @@ describe('FileService', () => {
     });
 
     await service.renameFile(fileKey, newFileName);
+
+    expect(prismaService.files.update).toHaveBeenCalled();
+  });
+
+  // Move file success handling
+  it('should move file', async () => {
+    const fileKey = uuidv4();
+    const targetFolderKey = uuidv4();
+    prismaService.files.update.mockResolvedValue({
+      id: BigInt(1),
+      file_name: 'test.txt',
+      parent_folder_id: BigInt(1234),
+      file_key: fileKey,
+      enabled: true,
+    });
+
+    await service.updateParent(fileKey, targetFolderKey);
 
     expect(prismaService.files.update).toHaveBeenCalled();
   });
@@ -366,7 +385,7 @@ describe('FileService', () => {
     prismaService.temp_files.create.mockRejectedValue({ code: 'P2002' });
 
     await expect(
-      service.uploadFile(
+      service.upload(
         userId,
         parentFolderKey,
         fileName,
@@ -417,7 +436,7 @@ describe('FileService', () => {
     prismaService.files.create.mockRejectedValue({ code: 'P2002' });
 
     await expect(
-      service.uploadFile(
+      service.upload(
         userId,
         parentFolderKey,
         fileName,
@@ -433,9 +452,7 @@ describe('FileService', () => {
     const fileKey = uuidv4();
     prismaService.files.findUnique.mockResolvedValue(null);
 
-    await expect(service.downloadFile(fileKey)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.download(fileKey)).rejects.toThrow(NotFoundException);
   });
 
   it('should throw error when download file does not exist', async () => {
@@ -452,9 +469,7 @@ describe('FileService', () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     prismaService.files.delete.mockResolvedValue(file);
 
-    await expect(service.downloadFile(fileKey)).rejects.toThrow(
-      NotFoundException,
-    );
+    await expect(service.download(fileKey)).rejects.toThrow(NotFoundException);
     expect(prismaService.files.delete).toHaveBeenCalled();
   });
 
@@ -463,7 +478,7 @@ describe('FileService', () => {
     const fileKey = uuidv4();
     prismaService.files.findUnique.mockResolvedValue(null);
 
-    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
+    await expect(service.stream(fileKey, 0, '720p')).rejects.toThrow(
       NotFoundException,
     );
   });
@@ -480,7 +495,7 @@ describe('FileService', () => {
     };
     prismaService.files.findUnique.mockResolvedValue(file);
 
-    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
+    await expect(service.stream(fileKey, 0, '720p')).rejects.toThrow(
       UnsupportedMediaTypeException,
     );
   });
@@ -499,7 +514,7 @@ describe('FileService', () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(false);
     prismaService.files.delete.mockResolvedValue(file);
 
-    await expect(service.streamVideo(fileKey, 0, '720p')).rejects.toThrow(
+    await expect(service.stream(fileKey, 0, '720p')).rejects.toThrow(
       NotFoundException,
     );
     expect(prismaService.files.delete).toHaveBeenCalled();
@@ -519,7 +534,7 @@ describe('FileService', () => {
     jest.spyOn(fs, 'existsSync').mockReturnValue(true);
     jest.spyOn(fs.promises, 'stat').mockResolvedValue({ size: 2 } as any);
 
-    await expect(service.streamVideo(fileKey, 3, '720p')).rejects.toThrow(
+    await expect(service.stream(fileKey, 3, '720p')).rejects.toThrow(
       BadRequestException,
     );
   });
@@ -533,5 +548,16 @@ describe('FileService', () => {
       NotFoundException,
     );
     expect(fsExistsSync).toHaveBeenCalled();
+  });
+
+  // Move file failure handling
+  it('should throw error when move file but file does not exist', async () => {
+    const fileKey = uuidv4();
+    const targetFolderKey = uuidv4();
+    prismaService.folders.findUnique.mockResolvedValue(null);
+
+    await expect(
+      service.updateParent(fileKey, targetFolderKey),
+    ).rejects.toThrow(NotFoundException);
   });
 });

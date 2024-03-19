@@ -1,0 +1,23 @@
+# Ignore env file
+.env
+
+# Ignore 
+storage
+
+# Ignore test codes
+test
+**/*.spec.ts
+
+# Ignore README.md
+README.md
+
+# Ignore .git
+.git
+.gitignore
+
+# Ignore node_modules
+node_modules
+
+# Ignore docker files
+Dockerfile
+.dockerignore
