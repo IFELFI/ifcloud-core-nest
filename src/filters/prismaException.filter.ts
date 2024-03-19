@@ -10,7 +10,8 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const status = 500;
-    const message = 'Internal server error';
+    // const message = 'Internal server error';
+    const message = exception.message;
     const name = 'PrismaClientKnownRequestError';
 
     const errorResponse: IExceptionResponseData = {

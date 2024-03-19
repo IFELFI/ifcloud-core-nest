@@ -5,6 +5,9 @@ CREATE SCHEMA IF NOT EXISTS "cloud";
 CREATE SCHEMA IF NOT EXISTS "member";
 
 -- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "public";
+
+-- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "temp";
 
 -- CreateEnum
@@ -25,8 +28,8 @@ CREATE TABLE "cloud"."file_info" (
     "id" BIGSERIAL NOT NULL,
     "file_id" BIGINT NOT NULL,
     "uploader_id" INTEGER NOT NULL,
-    "create_date" TIMESTAMPTZ(6) NOT NULL,
-    "update_date" TIMESTAMPTZ(6) NOT NULL,
+    "create_date" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "update_date" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "byte_size" INTEGER NOT NULL,
 
     CONSTRAINT "pk_file_info" PRIMARY KEY ("id")
@@ -132,6 +135,9 @@ CREATE UNIQUE INDEX "uni_users" ON "member"."users"("uuid_key");
 CREATE UNIQUE INDEX "uni_access_key" ON "temp"."temp_access_key"("access_key");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "uni_temp_file_name" ON "temp"."temp_files"("temp_file_name");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "uni_file_key" ON "temp"."temp_files"("file_key");
 
 -- AddForeignKey
@@ -166,3 +172,4 @@ ALTER TABLE "cloud"."user_role" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_i
 
 -- AddForeignKey
 ALTER TABLE "temp"."temp_files" ADD CONSTRAINT "fk_uploader_id" FOREIGN KEY ("uploader_id") REFERENCES "member"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+

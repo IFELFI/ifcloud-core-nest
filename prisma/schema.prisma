@@ -24,8 +24,8 @@ model file_info {
   id          BigInt   @id(map: "pk_file_info") @default(autoincrement())
   file_id     BigInt   @unique(map: "uni_file_info")
   uploader_id Int
-  create_date DateTime @db.Timestamptz(6)
-  update_date DateTime @db.Timestamptz(6)
+  create_date DateTime @default(now()) @db.Timestamptz(6)
+  update_date DateTime @default(now()) @db.Timestamptz(6)
   byte_size   Int
   files       files    @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
   users       users    @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uploader_id")
@@ -110,7 +110,7 @@ model temp_access_key {
 model temp_files {
   id             BigInt   @id(map: "pk_temp_files") @default(autoincrement())
   uploader_id    Int
-  temp_file_name String   @db.VarChar(256)
+  temp_file_name String   @unique(map: "uni_temp_file_name") @db.VarChar(256)
   file_key       String   @unique(map: "uni_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   create_date    DateTime @default(now()) @db.Timestamptz(6)
   total_chunks   Int

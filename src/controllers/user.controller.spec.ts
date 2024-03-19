@@ -1,11 +1,9 @@
 import { UserService } from 'src/services/user.service';
 import { UserController } from './user.controller';
 import { Test, TestingModule } from '@nestjs/testing';
-import {
-  ICreateUserRequestBody,
-  ICreateUserServiceOutput,
-} from 'src/interfaces/user.interface';
 import { PrismaService } from 'src/services/prisma.service';
+import { JwtService } from '@nestjs/jwt';
+import { v4 as uuidv4 } from 'uuid';
 
 describe('UserController', () => {
   let controller: UserController;
@@ -14,7 +12,7 @@ describe('UserController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [UserService, PrismaService],
+      providers: [UserService, PrismaService, JwtService],
     }).compile();
 
     controller = module.get<UserController>(UserController);
@@ -32,19 +30,26 @@ describe('UserController', () => {
    * Test if the controller is successfully done
    */
   it('should create a user', async () => {
-    const uuidKey = '1234';
-    const createUserRequestBody: ICreateUserRequestBody = {
-      payload: {
-        uuidKey,
-      },
-    };
-    const createUserOutput: ICreateUserServiceOutput = {
+    const uuidKey = uuidv4();
+    const createUserOutput = {
       id: 1,
       uuidKey,
     };
     userService.create = jest.fn().mockResolvedValue(createUserOutput);
-    expect(await controller.createUser(createUserRequestBody)).toEqual(
+    expect(await controller.createUser(createUserOutput.uuidKey)).toEqual(
       'User created',
+    );
+  });
+
+  it('should delete a user', async () => {
+    const uuidKey = uuidv4();
+    const deleteUserOutput = {
+      id: 1,
+      uuidKey,
+    };
+    userService.delete = jest.fn().mockResolvedValue(deleteUserOutput);
+    expect(await controller.deleteUser(deleteUserOutput.uuidKey)).toEqual(
+      'User deleted',
     );
   });
 });
