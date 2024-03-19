@@ -18,14 +18,10 @@ ffmpeg.setFfmpegPath(ffmpegPath.path);
 
 @Injectable()
 export class FileService {
-  private readonly baseDir = process.env.FILE_UPLOAD_DIR!;
+  private readonly baseDir = process.env.STORAGE_PATH!;
   private readonly chunkSize = 1024 * 1024 * 2;
 
-  constructor(private prisma: PrismaService) {
-    if (!fs.existsSync(this.baseDir)) {
-      fs.mkdirSync(this.baseDir);
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   /**
    * Upload file
