@@ -8,8 +8,12 @@ import 'dotenv/config';
 async function bootstrap() {
   await setup();
   const app = await NestFactory.create(AppModule);
+  const port = process.env.PORT;
+  if (!port) {
+    throw new Error('PORT is not defined');
+  }
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
-  await app.listen(3000);
+  await app.listen(Number(port));
 }
 
 async function setup() {
