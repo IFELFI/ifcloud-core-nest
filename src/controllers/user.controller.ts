@@ -2,6 +2,7 @@ import { UserService } from 'src/services/user.service';
 import {
   Controller,
   Delete,
+  Get,
   HttpCode,
   ParseUUIDPipe,
   Post,
@@ -15,6 +16,15 @@ import { UserGuard } from 'src/guards/user.guard';
 @UseGuards(AuthGuard)
 export class UserController {
   constructor(private userService: UserService) {}
+
+  @Get()
+  @HttpCode(200)
+  async getUser(
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
+  ): Promise<string> {
+    await this.userService.read(uuidKey);
+    return 'User found';
+  }
 
   @Post('enroll')
   @HttpCode(201)

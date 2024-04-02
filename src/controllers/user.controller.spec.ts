@@ -29,6 +29,16 @@ describe('UserController', () => {
    * Success handling
    * Test if the controller is successfully done
    */
+  it('should get a user', async () => {
+    const uuidKey = uuidv4();
+    const user = {
+      id: 1,
+      uuidKey,
+    };
+    userService.read = jest.fn().mockResolvedValue(user.id);
+    expect(await controller.getUser(user.uuidKey)).toEqual('User found');
+  });
+
   it('should create a user', async () => {
     const uuidKey = uuidv4();
     const createUserOutput = {
