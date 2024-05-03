@@ -1,3 +1,4 @@
+import { TokenPayloadData } from './../src/interfaces/token.interface';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
@@ -7,6 +8,7 @@ import { Client } from 'pg';
 import { PrismaService } from 'src/services/prisma.service';
 import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
+import { users } from '@prisma/client';
 
 export interface TestTokenPayload {
   uuidKey: string;
@@ -101,4 +103,58 @@ export {
   prismaService,
   postgresClient,
   postgresContainer,
+};
+
+export const setupData = async (
+  postgresClient: Client,
+  createUser: boolean = true,
+) => {
+  if (!process.env.TOKEN_SECRET) {
+    throw new Error('TOKEN_SECRET not set');
+  }
+
+  const createTestUser = async (uuidKey: string) => {
+    const user = await postgresClient.query<users, users[]>(
+      `INSERT INTO "member"."users" (uuid_key) VALUES ('${uuidKey}') RETURNING *`,
+    );
+    return user.rows[0];
+  };
+
+  const uuidKey = uuidv4();
+
+  let user: users | null = null;
+  if (createUser) {
+    user = await createTestUser(uuidKey);
+  }
+
+  const payload: TokenPayloadData = {
+    uuidKey: uuidKey,
+    email: 'test@ifelfi.com',
+    nickname: 'test',
+    imageUrl: null,
+  };
+
+  const accessToken = {
+    normal: jwt.sign(payload, process.env.TOKEN_SECRET, {
+      expiresIn: '1h',
+      issuer: 'ifelfi.com',
+    }),
+    expired: jwt.sign(payload, process.env.TOKEN_SECRET, {
+      expiresIn: '0s',
+      issuer: 'ifelfi.com',
+    }),
+    wrongPayload: jwt.sign({ wrong: 'payload' }, process.env.TOKEN_SECRET, {
+      expiresIn: '1h',
+      issuer: 'ifelfi.com',
+    }),
+    wrongSecret: jwt.sign(payload, 'wrong secret', {
+      expiresIn: '1h',
+      issuer: 'ifelfi.com',
+    }),
+  };
+
+  return {
+    user,
+    accessToken,
+  };
 };
