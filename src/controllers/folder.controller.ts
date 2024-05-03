@@ -48,12 +48,9 @@ export class FolderController {
   @HttpCode(201)
   async createRootFolder(
     @Query('userId', ParseIntPipe) userId: number,
-    @Body(new TypiaValidationPipe(validateCreateFolderRequestBody))
-    createFolder: ICreateFolderRequestBody,
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
   ): Promise<string> {
-    const folderName = createFolder.folderName;
-
-    await this.folderService.create(folderName, undefined, userId);
+    await this.folderService.create(uuidKey, null, userId);
 
     return 'Root folder created';
   }
