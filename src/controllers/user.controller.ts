@@ -5,7 +5,6 @@ import {
   Get,
   HttpCode,
   ParseUUIDPipe,
-  Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -26,7 +25,7 @@ export class UserController {
     return 'User found';
   }
 
-  @Post('enroll')
+  @Get('enroll')
   @HttpCode(201)
   async createUser(
     @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
