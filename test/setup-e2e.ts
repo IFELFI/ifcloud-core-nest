@@ -204,10 +204,10 @@ export const createFile = async (
 ) => {
   const fileKey = uuidv4();
   const file = await postgresClient.query<files, files[]>(
-    `INSERT INTO "cloud"."files" (id, parent_folder_id, file_name, enabled, file_key) VALUES (${fileId}, ${parentFolderId}, '${fileName}', ${enabled}, '${fileKey}')`,
+    `INSERT INTO "cloud"."files" (id, parent_folder_id, file_name, enabled, file_key) VALUES (${fileId}, ${parentFolderId}, '${fileName}', ${enabled}, '${fileKey}') RETURNING *`,
   );
   const fileInfo = await postgresClient.query<file_info, file_info[]>(
-    `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize})`,
+    `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize}) RETURNING *`,
   );
   return {
     file: file.rows[0],

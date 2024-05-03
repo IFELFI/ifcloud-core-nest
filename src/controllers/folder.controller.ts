@@ -90,7 +90,7 @@ export class FolderController {
   @HttpCode(200)
   async moveFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-    @Query('target', new ParseUUIDPipe()) targetFolderKey: string,
+    @Query('targetKey', new ParseUUIDPipe()) targetFolderKey: string,
   ): Promise<string> {
     await this.folderService.updateParent(folderKey, targetFolderKey);
 
@@ -102,7 +102,7 @@ export class FolderController {
   @HttpCode(200)
   async renameFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-    @Body('folderName') folderName: string,
+    @Body('folderName') folderName: string, // TypiaValidationPipe will be added later
   ): Promise<string> {
     await this.folderService.updateName(folderKey, folderName);
 
