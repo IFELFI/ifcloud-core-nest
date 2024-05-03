@@ -19,7 +19,7 @@ export class FolderService {
    */
   async create(
     folderName: string,
-    parentFolderKey: string | undefined,
+    parentFolderKey: string | null,
     userId: number,
   ): Promise<{ folderKey: string }> {
     return this.prisma.$transaction(async (tx) => {
