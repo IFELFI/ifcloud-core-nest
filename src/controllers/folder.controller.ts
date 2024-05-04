@@ -18,7 +18,9 @@ import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import {
   ICreateFolderRequestBody,
+  IRenameFolderRequestBody,
   validateCreateFolderRequestBody,
+  validateRenameFolderRequestBody,
 } from 'src/interfaces/folder.interface';
 import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FolderService } from 'src/services/folder.service';
@@ -102,9 +104,10 @@ export class FolderController {
   @HttpCode(200)
   async renameFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-    @Body('folderName') folderName: string, // TypiaValidationPipe will be added later
+    @Body(new TypiaValidationPipe(validateRenameFolderRequestBody))
+    renameFolder: IRenameFolderRequestBody,
   ): Promise<string> {
-    await this.folderService.updateName(folderKey, folderName);
+    await this.folderService.updateName(folderKey, renameFolder.folderName);
 
     return 'Folder renamed';
   }
