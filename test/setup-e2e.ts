@@ -16,6 +16,8 @@ import {
   user_role,
   users,
 } from '@prisma/client';
+import path from 'path';
+import fs from 'fs';
 
 export interface TestTokenPayload {
   uuidKey: string;
@@ -201,6 +203,7 @@ export const createFile = async (
   fileName: string,
   enabled: boolean = true,
   byteSize: number = 100,
+  fileBuffer: Buffer | null = null,
 ) => {
   const fileKey = uuidv4();
   const file = await postgresClient.query<files, files[]>(
@@ -209,6 +212,18 @@ export const createFile = async (
   const fileInfo = await postgresClient.query<file_info, file_info[]>(
     `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize}) RETURNING *`,
   );
+  if (fileBuffer) {
+    const baseDir = process.env.FILE_UPLOAD_DIR || 'uploads';
+    const extName = path.extname(fileName);
+    if (!fs.existsSync(baseDir)) {
+      fs.mkdirSync(baseDir);
+    }
+    fs.mkdirSync(`${baseDir}/${fileKey}`);
+    await fs.promises.writeFile(
+      `${baseDir}/origin/${fileKey}${extName}`,
+      fileBuffer,
+    );
+  }
   return {
     file: file.rows[0],
     fileInfo: fileInfo.rows[0],
