@@ -85,12 +85,7 @@ export class FileService {
       throw new NotFoundException('Temp file not found');
     }
 
-    const uploadChunkResult = await this.uploadChunk(
-      chunk,
-      chunkNumber,
-      totalChunks,
-      tempFile.file_key,
-    );
+    await this.uploadChunk(chunk, chunkNumber, totalChunks, tempFile.file_key);
 
     let allChunkUploaded = false;
     for (let i = 0; i < totalChunks; i++) {
@@ -189,12 +184,18 @@ export class FileService {
     if (!fs.existsSync(originPath)) {
       throw new NotFoundException('File does not exist');
     }
-    await fs.promises.rm(originPath);
-    await this.prisma.files.delete({
-      where: {
-        file_key: fileKey,
-      },
+    await fs.promises.rm(originPath).catch(() => {
+      throw new InternalServerErrorException('Failed to delete file');
     });
+    await this.prisma.files
+      .delete({
+        where: {
+          file_key: fileKey,
+        },
+      })
+      .catch(() => {
+        throw new InternalServerErrorException('Failed to delete file');
+      });
   }
 
   /**
@@ -203,14 +204,21 @@ export class FileService {
    * @param newFileName New file name
    */
   async renameFile(fileKey: string, newFileName: string): Promise<void> {
-    await this.prisma.files.update({
-      where: {
-        file_key: fileKey,
-      },
-      data: {
-        file_name: newFileName,
-      },
-    });
+    await this.prisma.files
+      .update({
+        where: {
+          file_key: fileKey,
+        },
+        data: {
+          file_name: newFileName,
+        },
+      })
+      .catch((error) => {
+        if (error.code === 'P2002') {
+          throw new ConflictException('File already exists');
+        }
+        throw new InternalServerErrorException('Failed to rename file');
+      });
   }
 
   /**
@@ -227,14 +235,21 @@ export class FileService {
     if (!targetParent) {
       throw new NotFoundException('Target parent folder does not exist');
     }
-    await this.prisma.files.update({
-      where: {
-        file_key: fileKey,
-      },
-      data: {
-        parent_folder_id: targetParent.id,
-      },
-    });
+    await this.prisma.files
+      .update({
+        where: {
+          file_key: fileKey,
+        },
+        data: {
+          parent_folder_id: targetParent.id,
+        },
+      })
+      .catch((error) => {
+        if (error.code === 'P2002') {
+          throw new ConflictException('File already exists');
+        }
+        throw new InternalServerErrorException('Failed to move file');
+      });
   }
 
   /**
@@ -257,7 +272,9 @@ export class FileService {
     }
 
     const chunkPath = `${chunkDirPath}/${chunkNumber}`;
-    await fs.promises.writeFile(chunkPath, chunk);
+    await fs.promises.writeFile(chunkPath, chunk).catch(() => {
+      throw new InternalServerErrorException('Failed to write chunk');
+    });
 
     if (chunkNumber === totalChunks - 1) {
       await this.mergeChunks(fileKey, totalChunks).catch(() => {
@@ -283,7 +300,9 @@ export class FileService {
       const chunkPath = `${chunkDirPath}/${i}`;
       const chunk = await fs.promises.readFile(chunkPath);
       writeStream.write(chunk);
-      await fs.promises.unlink(chunkPath);
+      await fs.promises.unlink(chunkPath).catch(() => {
+        throw new InternalServerErrorException('Failed to delete chunk');
+      });
     }
     writeStream.end();
   }
