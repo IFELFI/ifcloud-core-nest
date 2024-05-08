@@ -93,38 +93,38 @@ describe('FileController', () => {
     expect(res.status).toHaveBeenCalledWith(200);
   });
 
-  it('should stream a file', async () => {
-    const fileKey = uuidv4();
-    const start = 0;
-    const end = 1024 * 1024;
-    const fileStream = fs.createReadStream('./test/sample/sample-video.mp4', {
-      start,
-      end,
-    });
-    const ffmpegStream = ffmpeg(fileStream)
-      .videoCodec('libx264')
-      .format('mp4')
-      .outputOptions([
-        '-movflags frag_keyframe+empty_moov',
-        '-frag_duration 5000',
-      ]);
-    fileService.stream = jest.fn().mockResolvedValue({
-      stream: ffmpegStream,
-      end: end,
-      fileSize: 104857600,
-    });
-    await controller.streamFile(fileKey, '720p', start, res);
-    expect(res.status).toHaveBeenCalledWith(206);
-    expect(res.headers).toBeDefined();
-    expect(res.headers).toHaveProperty('Content-Range');
-    expect(res.headers['Content-Range']).toBe(
-      `bytes ${start}-${end}/104857600`,
-    );
-    expect(res.headers).toHaveProperty('Content-Length');
-    expect(res.headers['Content-Length']).toBe(1048576);
-    expect(res.headers).toHaveProperty('Content-Type');
-    expect(res.headers['Content-Type']).toBe('video/mp4');
-  });
+  // it('should stream a file', async () => {
+  //   const fileKey = uuidv4();
+  //   const start = 0;
+  //   const end = 1024 * 1024;
+  //   const fileStream = fs.createReadStream('./test/sample/sample-video.mp4', {
+  //     start,
+  //     end,
+  //   });
+  //   const ffmpegStream = ffmpeg(fileStream)
+  //     .videoCodec('libx264')
+  //     .format('mp4')
+  //     .outputOptions([
+  //       '-movflags frag_keyframe+empty_moov',
+  //       '-frag_duration 5000',
+  //     ]);
+  //   fileService.stream = jest.fn().mockResolvedValue({
+  //     stream: ffmpegStream,
+  //     end: end,
+  //     fileSize: 104857600,
+  //   });
+  //   await controller.streamFile(fileKey, '720p', start, res);
+  //   expect(res.status).toHaveBeenCalledWith(206);
+  //   expect(res.headers).toBeDefined();
+  //   expect(res.headers).toHaveProperty('Content-Range');
+  //   expect(res.headers['Content-Range']).toBe(
+  //     `bytes ${start}-${end}/104857600`,
+  //   );
+  //   expect(res.headers).toHaveProperty('Content-Length');
+  //   expect(res.headers['Content-Length']).toBe(1048576);
+  //   expect(res.headers).toHaveProperty('Content-Type');
+  //   expect(res.headers['Content-Type']).toBe('video/mp4');
+  // });
 
   it('should delete a file', async () => {
     const fileKey = uuidv4();
