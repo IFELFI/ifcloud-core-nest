@@ -8,6 +8,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Observable } from 'rxjs';
 import { IBaseRequest } from 'src/interfaces/request.interface';
+import { TokenPayload } from 'src/interfaces/token.interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -18,7 +19,7 @@ export class AuthGuard implements CanActivate {
     try {
       const request = context.switchToHttp().getRequest<IBaseRequest>();
       const token = this.getAuthorizationToken(request);
-      const payloadTemp = this.jwtService.verify(token);
+      const payloadTemp = this.jwtService.verify<TokenPayload>(token);
       if (typeof payloadTemp !== 'object' || !('uuidKey' in payloadTemp)) {
         throw new UnauthorizedException('Invalid token');
       }
