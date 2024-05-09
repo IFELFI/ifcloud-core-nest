@@ -22,7 +22,7 @@ export function RoleGuard(
     async canActivate(context: ExecutionContext): Promise<boolean> {
       if (!checkTarget) {
         const request = context.switchToHttp().getRequest<IUserRequest>();
-        const folderKey = request.params.folderKey;
+        const folderKey = request.params.folderKey as string;
         const userId = request.query.userId;
         const hasRole = await this.checkRole.check(folderKey, userId, role);
         if (!hasRole) {

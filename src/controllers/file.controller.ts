@@ -21,7 +21,6 @@ import { Response } from 'express';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
-import { RangeInterceptor } from 'src/interceptors/range.interceptor';
 import {
   IRenameFileRequestBody,
   IUploadFileRequestBody,
@@ -29,8 +28,6 @@ import {
   validateUploadFileRequestBody,
 } from 'src/interfaces/file.interface';
 import { FileValidatePipe } from 'src/pipes/file.validate.pipe';
-import { ParseRangePipe } from 'src/pipes/parseRange.pipe';
-import { ParseResolutionPipe } from 'src/pipes/parseResolution.pipe';
 import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FileService } from 'src/services/file.service';
 
@@ -90,29 +87,29 @@ export class FileController {
     stream.pipe(response);
   }
 
-  @Get('stream/:folderKey/:fileKey')
-  @UseGuards(RoleGuard(access_role.read))
-  @UseInterceptors(RangeInterceptor)
-  async streamFile(
-    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
-    @Query('resolution', ParseResolutionPipe) resolution: string,
-    @Query('range', ParseRangePipe) start: number,
-    @Res() response: Response,
-  ): Promise<void> {
-    const { stream, end, fileSize } = await this.fileService.stream(
-      fileKey,
-      start,
-      resolution,
-    );
-    const headers = {
-      'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-      'Accept-Ranges': 'bytes',
-      'Content-Length': end - start,
-      'Content-Type': 'video/mp4',
-    };
-    response.writeHead(206, headers);
-    stream.pipe(response);
-  }
+  // @Get('stream/:folderKey/:fileKey')
+  // @UseGuards(RoleGuard(access_role.read))
+  // @UseInterceptors(RangeInterceptor)
+  // async streamFile(
+  //   @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+  //   @Query('resolution', ParseResolutionPipe) resolution: string,
+  //   @Query('range', ParseRangePipe) start: number,
+  //   @Res() response: Response,
+  // ): Promise<void> {
+  //   const { stream, end, fileSize } = await this.fileService.stream(
+  //     fileKey,
+  //     start,
+  //     resolution,
+  //   );
+  //   const headers = {
+  //     'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+  //     'Accept-Ranges': 'bytes',
+  //     'Content-Length': end - start,
+  //     'Content-Type': 'video/mp4',
+  //   };
+  //   response.writeHead(206, headers);
+  //   stream.pipe(response);
+  // }
 
   @Delete(':folderKey/:fileKey')
   @UseGuards(RoleGuard(access_role.delete))

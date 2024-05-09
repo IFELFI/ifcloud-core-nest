@@ -17,6 +17,9 @@ import { FileModule } from './modules/file.module';
     JwtModule.register({
       global: true,
       secret: process.env.TOKEN_SECRET,
+      verifyOptions: {
+        issuer: process.env.TOKEN_ISSUER,
+      },
     }),
   ],
 })

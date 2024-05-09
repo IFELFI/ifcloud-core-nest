@@ -2,17 +2,12 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
-import {
-  expiredUserToken,
-  postgresClient,
-  prismaService,
-  testUserToken,
-  testUserTokenPayload,
-} from './setup-e2e';
+import { postgresClient, prismaService, setupData } from './setup-e2e';
 import { PrismaService } from 'src/services/prisma.service';
 
 describe('User', () => {
   let app: INestApplication;
+  let data: Awaited<ReturnType<typeof setupData>>;
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -30,104 +25,185 @@ describe('User', () => {
     await app.close();
   });
 
-  /**
-   * Success handling
-   */
+  describe('[GET] /user', () => {
+    beforeEach(async () => {
+      data = await setupData(postgresClient, true);
+    });
 
-  // Create user success handling
-  it('should create a user', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/user/enroll')
-      .set('Authorization', `Bearer ${testUserToken}`)
-      .send({});
+    it('should get a user', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
 
-    expect(response.status).toBe(201);
-    expect(response.text).toBe('User created');
+      expect(response.status).toBe(200);
+      expect(response.text).toBe('User found');
+    });
+    it('should not get a user if Authorization header is not given', async () => {
+      const response = await request(app.getHttpServer()).get('/user').send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Authorization header is missing');
+    });
+    it('should not get a user if Token is expired', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', `Bearer ${data.accessToken.expired}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not get a user if Token payload is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not get a user if Token secret is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not get a user if user does not exist', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe('User does not exist');
+    });
   });
 
-  // Delete user success handling
-  it('should delete a user', async () => {
-    await createUser();
-    const response = await request(app.getHttpServer())
-      .delete('/user')
-      .set('Authorization', `Bearer ${testUserToken}`)
-      .send({});
+  describe('[POST] /user/enroll', () => {
+    it('should create a user', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
 
-    expect(response.status).toBe(200);
-    expect(response.text).toBe('User deleted');
+      expect(response.status).toBe(201);
+      expect(response.text).toBe('User created');
+    });
+    it('should not create a user if Authorization header is not given', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Authorization header is missing');
+    });
+    it('should not create a user if Token is expired', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .set('Authorization', `Bearer ${data.accessToken.expired}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not create a user if Token payload is wrong', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not create a user if Token secret is wrong', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not create a user if user already exists', async () => {
+      data = await setupData(postgresClient, true);
+      const response = await request(app.getHttpServer())
+        .get('/user/enroll')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
+
+      expect(response.status).toBe(409);
+      expect(response.body.message).toBe('User already exists');
+    });
   });
 
-  /**
-   * Error handling
-   */
+  describe('[DELETE] /user', () => {
+    beforeEach(async () => {
+      data = await setupData(postgresClient, true);
+    });
 
-  // Create user failure handling
-  it('should not create a user if Authorization header is not given', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/user/enroll')
-      .send({});
+    it('should delete a user', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
 
-    expect(response.status).toBe(401);
-    expect(response.body.message).toBe('Authorization header is missing');
+      expect(response.status).toBe(200);
+      expect(response.text).toBe('User deleted');
+    });
+    it('should not delete a user if Authorization header is not given', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Authorization header is missing');
+    });
+    it('should not delete a user if Token is expired', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .set('Authorization', `Bearer ${data.accessToken.expired}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not delete a user if Token payload is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not delete a user if Token secret is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
+        .send({});
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not delete a user if user does not exist', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .delete('/user')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send({});
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe('User does not exist');
+    });
   });
-
-  it('should not create a user if Token is expired', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/user/enroll')
-      .set('Authorization', `Bearer ${expiredUserToken}`)
-      .send({});
-
-    expect(response.status).toBe(401);
-    expect(response.body.message).toBe('Invalid token');
-  });
-
-  // Delete user failure handling
-  it('should not delete a user if Authorization header is not given', async () => {
-    await createUser();
-    const response = await request(app.getHttpServer())
-      .delete('/user')
-      .send({});
-
-    expect(response.status).toBe(401);
-    expect(response.body.message).toBe('Authorization header is missing');
-  });
-
-  it('should not delete a user if Token is expired', async () => {
-    await createUser();
-    const response = await request(app.getHttpServer())
-      .delete('/user')
-      .set('Authorization', `Bearer ${expiredUserToken}`)
-      .send({});
-
-    expect(response.status).toBe(401);
-    expect(response.body.message).toBe('Invalid token');
-  });
-
-  it('should not delete a user if user does not exist', async () => {
-    const response = await request(app.getHttpServer())
-      .delete('/user')
-      .set('Authorization', `Bearer ${testUserToken}`)
-      .send({});
-
-    expect(response.status).toBe(404);
-    expect(response.body.message).toBe('User does not exist');
-  });
-
-  /**
-   * Functions for testing
-   */
-  const createUser = async () => {
-    const payload = testUserTokenPayload;
-    await postgresClient.query(
-      `INSERT INTO "member"."users" (uuid_key) VALUES ('${payload.uuidKey}')`,
-    );
-    const testUser = await postgresClient.query(
-      `SELECT id FROM "member"."users" WHERE uuid_key = '${testUserTokenPayload.uuidKey}'`,
-    );
-    if (testUser.rowCount !== 1) {
-      throw new Error('User does not exist');
-    }
-    const testUserId = testUser.rows[0].id;
-    return testUserId;
-  };
 });

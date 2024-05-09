@@ -2,9 +2,10 @@ import typia, { tags } from 'typia';
 import { IUserRequestQuery } from './request.interface';
 import { Request } from 'express';
 
+export type FileName = string & tags.Pattern<'^[a-zA-Z0-9_.-]{1,200}$'>;
+
 export interface IUploadFileRequestBody {
-  fileName: string &
-    tags.Pattern<'^[a-zA-Z0-9_.-]{1,200}[.][a-zA-Z0-9]{1,20}$'>;
+  fileName: FileName;
   totalChunks: string & tags.Pattern<'^[1-9][0-9]*$'>;
   chunkNumber: string & tags.Pattern<'^[0-9]+$'>;
 }
@@ -13,8 +14,7 @@ export const validateUploadFileRequestBody =
   typia.createValidate<IUploadFileRequestBody>();
 
 export interface IRenameFileRequestBody {
-  fileName: string &
-    tags.Pattern<'^[a-zA-Z0-9_.-]{1,200}[.][a-zA-Z0-9]{1,20}$'>;
+  fileName: FileName;
 }
 
 export const validateRenameFileRequestBody =

@@ -89,8 +89,8 @@ describe('FolderController', () => {
 
   it('should rename a folder', async () => {
     folderService.updateName = jest.fn().mockResolvedValue(true);
-    expect(await controller.renameFolder('1234', 'test')).toEqual(
-      'Folder renamed',
-    );
+    expect(
+      await controller.renameFolder('1234', { folderName: 'test ' }),
+    ).toEqual('Folder renamed');
   });
 });

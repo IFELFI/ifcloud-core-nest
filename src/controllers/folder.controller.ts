@@ -18,7 +18,9 @@ import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import {
   ICreateFolderRequestBody,
+  IRenameFolderRequestBody,
   validateCreateFolderRequestBody,
+  validateRenameFolderRequestBody,
 } from 'src/interfaces/folder.interface';
 import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FolderService } from 'src/services/folder.service';
@@ -48,12 +50,9 @@ export class FolderController {
   @HttpCode(201)
   async createRootFolder(
     @Query('userId', ParseIntPipe) userId: number,
-    @Body(new TypiaValidationPipe(validateCreateFolderRequestBody))
-    createFolder: ICreateFolderRequestBody,
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
   ): Promise<string> {
-    const folderName = createFolder.folderName;
-
-    await this.folderService.create(folderName, undefined, userId);
+    await this.folderService.create(uuidKey, null, userId);
 
     return 'Root folder created';
   }
@@ -93,7 +92,7 @@ export class FolderController {
   @HttpCode(200)
   async moveFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-    @Query('target', new ParseUUIDPipe()) targetFolderKey: string,
+    @Query('targetKey', new ParseUUIDPipe()) targetFolderKey: string,
   ): Promise<string> {
     await this.folderService.updateParent(folderKey, targetFolderKey);
 
@@ -105,9 +104,10 @@ export class FolderController {
   @HttpCode(200)
   async renameFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
-    @Body('folderName') folderName: string,
+    @Body(new TypiaValidationPipe(validateRenameFolderRequestBody))
+    renameFolder: IRenameFolderRequestBody,
   ): Promise<string> {
-    await this.folderService.updateName(folderKey, folderName);
+    await this.folderService.updateName(folderKey, renameFolder.folderName);
 
     return 'Folder renamed';
   }

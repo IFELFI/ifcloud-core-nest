@@ -2,7 +2,7 @@ import { Request } from 'express';
 import { tags } from 'typia';
 
 export interface IBaseRequestQuery {
-  uuidKey?: string & tags.Pattern<'^[a-zA-Z0-9_-]{1,255}$'>;
+  uuidKey: string & tags.Format<'uuid'>;
 }
 
 export interface IBaseRequest
