@@ -8,10 +8,7 @@ import 'dotenv/config';
 async function bootstrap() {
   await setup();
   const app = await NestFactory.create(AppModule, {
-    cors: {
-      origin: 'localhost',
-      credentials: true,
-    },
+    cors: true
   });
   const port = process.env.PORT;
   if (!port) {
