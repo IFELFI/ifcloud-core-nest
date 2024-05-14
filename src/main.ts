@@ -7,7 +7,9 @@ import 'dotenv/config';
 
 async function bootstrap() {
   await setup();
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    cors: true
+  });
   const port = process.env.PORT;
   if (!port) {
     throw new Error('PORT is not defined');
