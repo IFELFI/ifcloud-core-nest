@@ -42,11 +42,11 @@ describe('Folder', () => {
     data = await setupData(postgresClient, true);
   });
 
-  describe('[POST] /folder/create', () => {
+  describe('[POST] /folder', () => {
     describe('root folder', () => {
       it('should create a root folder', async () => {
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send();
 
@@ -55,7 +55,7 @@ describe('Folder', () => {
       });
       it('should not create a root folder if Authorization header is not given', async () => {
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .send();
 
         expect(response.status).toBe(401);
@@ -63,7 +63,7 @@ describe('Folder', () => {
       });
       it('should not create a root folder if Token is expired', async () => {
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .set('Authorization', `Bearer ${data.accessToken.expired}`)
           .send();
 
@@ -72,7 +72,7 @@ describe('Folder', () => {
       });
       it('should not create a root folder if Token payload is wrong', async () => {
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
           .send();
 
@@ -81,7 +81,7 @@ describe('Folder', () => {
       });
       it('should not create a root folder if Token secret is wrong', async () => {
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
           .send();
 
@@ -91,7 +91,7 @@ describe('Folder', () => {
       it('should not create a root folder if user does not exist', async () => {
         data = await setupData(postgresClient, false);
         const response = await request(app.getHttpServer())
-          .post('/folder/create')
+          .post('/folder/root')
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send();
 
@@ -109,7 +109,7 @@ describe('Folder', () => {
       });
       it('should create a sub folder', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({ folderName: 'test_folder' });
 
@@ -118,7 +118,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if Authorization header is not given', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .send({ folderName: 'test_folder' });
 
         expect(response.status).toBe(401);
@@ -126,7 +126,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if Token is expired', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.expired}`)
           .send({ folderName: 'test_folder' });
 
@@ -135,7 +135,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if Token payload is wrong', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
           .send({ folderName: 'test_folder' });
 
@@ -144,7 +144,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if Token secret is wrong', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
           .send({ folderName: 'test_folder' });
 
@@ -154,7 +154,7 @@ describe('Folder', () => {
       it('should not create a sub folder if user does not exist', async () => {
         data = await setupData(postgresClient, false);
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({ folderName: 'test_folder' });
 
@@ -163,7 +163,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if folderName is not given', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({});
 
@@ -174,7 +174,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if folderName is empty', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({ folderName: '' });
 
@@ -185,7 +185,7 @@ describe('Folder', () => {
       });
       it('should not create a sub folder if folderName is too long', async () => {
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({ folderName: 'a'.repeat(256) });
 
@@ -205,7 +205,7 @@ describe('Folder', () => {
           root.folder.id,
         );
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${data.accessToken.normal}`)
           .send({ folderName: 'test_folder' });
 
@@ -222,7 +222,7 @@ describe('Folder', () => {
         };
         const accessToken = data.createToken(payload);
         const response = await request(app.getHttpServer())
-          .post(`/folder/create/${root.folder.folder_key}`)
+          .post(`/folder/${root.folder.folder_key}`)
           .set('Authorization', `Bearer ${accessToken.normal}`)
           .send({ folderName: 'test_folder' });
 
@@ -251,7 +251,7 @@ describe('Folder', () => {
       subFile = await createFile(
         data.user.id,
         BigInt(1),
-        BigInt(1234),
+        root.folder.id,
         'dummy1',
       );
     });
@@ -350,6 +350,98 @@ describe('Folder', () => {
       expect(response.body.message).toBe(
         'User does not have the required role',
       );
+    });
+  });
+
+  describe('[GET] /folder/root', () => {
+    let root: Awaited<ReturnType<typeof createRootFolder>>;
+    let subFolder: Awaited<ReturnType<typeof createFolder>>;
+    let subFile: Awaited<ReturnType<typeof createFile>>;
+    beforeEach(async () => {
+      if (!data.user) {
+        throw new Error('User not found');
+      }
+      root = await createRootFolder(data.user.id, data.user.uuid_key);
+      subFolder = await createFolder(
+        BigInt(1),
+        data.user.id,
+        'dummy1',
+        root.folder.id,
+      );
+      subFile = await createFile(
+        data.user.id,
+        BigInt(1),
+        root.folder.id,
+        'dummy1',
+      );
+    });
+    it('should read a root folder', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send();
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('files');
+      expect(response.body).toHaveProperty('folders');
+      expect(response.body.folders).toEqual([
+        {
+          folderKey: subFolder.folder.folder_key,
+          folderName: 'dummy1',
+        },
+      ]);
+      expect(response.body.files).toEqual([
+        {
+          fileKey: subFile.file.file_key,
+          fileName: 'dummy1',
+          enabled: true,
+        },
+      ]);
+    });
+    it('should not read a root folder if Authorization header is not given', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .send();
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Authorization header is missing');
+    });
+    it('should not read a root folder if Token is expired', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .set('Authorization', `Bearer ${data.accessToken.expired}`)
+        .send();
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not read a root folder if Token payload is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`)
+        .send();
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not read a root folder if Token secret is wrong', async () => {
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .set('Authorization', `Bearer ${data.accessToken.wrongSecret}`)
+        .send();
+
+      expect(response.status).toBe(401);
+      expect(response.body.message).toBe('Invalid token');
+    });
+    it('should not read a root folder if user does not exist', async () => {
+      data = await setupData(postgresClient, false);
+      const response = await request(app.getHttpServer())
+        .get('/folder/root')
+        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .send();
+
+      expect(response.status).toBe(404);
+      expect(response.body.message).toBe('User does not exist');
     });
   });
 
