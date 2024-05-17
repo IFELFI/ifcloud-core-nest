@@ -87,6 +87,24 @@ export class FolderController {
     return this.folderService.read(folderKey);
   }
 
+  @Get('root')
+  @HttpCode(200)
+  async readRootFolder(
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
+  ): Promise<{
+    folders: Array<{
+      folderKey: string;
+      folderName: string;
+    }>;
+    files: Array<{
+      fileKey: string;
+      fileName: string;
+      enabled: boolean;
+    }>;
+  }> {
+    return this.folderService.readRoot(uuidKey);
+  }
+
   @Patch('move/:folderKey')
   @UseGuards(RoleGuard(access_role.update, true, access_role.update))
   @HttpCode(200)

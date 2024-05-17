@@ -116,11 +116,11 @@ export class FolderService {
 
   /**
    * Read folder
-   * @param folderKey Target folder key
+   * @param folderId Folder ID
    * @param userId User ID
    * @returns Folders and files data
    */
-  async read(folderKey: string): Promise<{
+  async read(folderId: bigint): Promise<{
     folders: Array<{
       folderKey: string;
       folderName: string;
@@ -132,19 +132,10 @@ export class FolderService {
     }>;
   }> {
     return this.prisma.$transaction(async (tx) => {
-      const targetFolder = await tx.folders.findUnique({
-        where: {
-          folder_key: folderKey,
-        },
-      });
-      if (!targetFolder) {
-        throw new NotFoundException('Folder does not exist');
-      }
-
       const folders = await tx.folders
         .findMany({
           where: {
-            parent_folder_id: targetFolder.id,
+            parent_folder_id: folderId,
           },
         })
         .then((folders) => {
@@ -159,7 +150,7 @@ export class FolderService {
       const files = await tx.files
         .findMany({
           where: {
-            parent_folder_id: targetFolder.id,
+            parent_folder_id: folderId,
           },
         })
         .then((files) => {
@@ -179,6 +170,36 @@ export class FolderService {
     });
   }
 
+  async readFolderByKey(folderKey: string): Promise<typeof this.read> {
+    const folder = await this.prisma.folders.findUnique({
+      where: {
+        folder_key: folderKey,
+      },
+    });
+    if (!folder) {
+      throw new NotFoundException('Folder does not exist');
+    }
+    return this.read(folder.id);
+  }
+
+  /**
+   * Get root folder key by user ID
+   * @param userKey User key
+   * @returns Root folder key
+   */
+  async getRootFolderKey(userKey: string): Promise<string> {
+    const folder = await this.prisma.folders.findFirst({
+      where: {
+        parent_folder_id: null,
+        folder_name: userKey,
+      },
+    });
+    if (!folder) {
+      throw new NotFoundException('Root folder does not exist');
+    }
+    return folder.folder_key;
+  }
+  
   /**
    * Update folder parent
    * @param folderKey Folder key
