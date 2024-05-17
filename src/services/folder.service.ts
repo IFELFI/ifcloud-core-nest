@@ -117,10 +117,9 @@ export class FolderService {
   /**
    * Read folder
    * @param folderId Folder ID
-   * @param userId User ID
    * @returns Folders and files data
    */
-  async read(folderId: bigint): Promise<{
+  private async read(folderId: bigint): Promise<{
     folders: Array<{
       folderKey: string;
       folderName: string;
@@ -170,7 +169,12 @@ export class FolderService {
     });
   }
 
-  async readFolderByKey(folderKey: string): Promise<typeof this.read> {
+  /**
+   * Read folder by key
+   * @param folderKey Folder key
+   * @returns Folders and files data
+   */
+  async readFolderByKey(folderKey: string): ReturnType<typeof this.read> {
     const folder = await this.prisma.folders.findUnique({
       where: {
         folder_key: folderKey,
@@ -179,15 +183,16 @@ export class FolderService {
     if (!folder) {
       throw new NotFoundException('Folder does not exist');
     }
-    return this.read(folder.id);
+    const result = await this.read(folder.id);
+    return result;
   }
 
   /**
    * Get root folder key by user ID
    * @param userKey User key
-   * @returns Root folder key
+   * @returns Root folder
    */
-  async getRootFolderKey(userKey: string): Promise<string> {
+  async readRootFolder(userKey: string): ReturnType<typeof this.read> {
     const folder = await this.prisma.folders.findFirst({
       where: {
         parent_folder_id: null,
@@ -197,9 +202,10 @@ export class FolderService {
     if (!folder) {
       throw new NotFoundException('Root folder does not exist');
     }
-    return folder.folder_key;
+    const result = await this.read(folder.id);
+    return result;
   }
-  
+
   /**
    * Update folder parent
    * @param folderKey Folder key
