@@ -42,55 +42,99 @@ describe('FolderController', () => {
     expect(checkRoleService).toBeDefined();
   });
 
-  /**
-   * Success handling
-   * Test if the controller is successfully done
-   */
-  it('should create a folder', async () => {
-    const createFolderRequestBody: ICreateFolderRequestBody = {
-      folderName: 'test',
-    };
-    folderService.create = jest.fn().mockResolvedValue({ folderKey: uuidv4() });
-    expect(
-      await controller.createFolder(uuidv4(), 1, createFolderRequestBody),
-    ).toEqual('Folder created');
-  });
-
-  it('should delete a folder', async () => {
-    folderService.delete = jest.fn().mockResolvedValue(true);
-    expect(await controller.deleteFolder('1234')).toEqual('Folder deleted');
-  });
-
-  it('should read a folder', async () => {
-    const folders: Array<{
-      folderKey: string;
-      folderName: string;
-    }> = [{ folderKey: '1234', folderName: 'test' }];
-    const files: Array<{
-      fileKey: string;
-      fileName: string;
-    }> = [{ fileKey: '1234', fileName: 'test' }];
-
-    folderService.read = jest.fn().mockResolvedValue({
-      folders,
-      files,
-    });
-
-    expect(await controller.readFolder('1234')).toEqual({
-      folders,
-      files,
+  describe('createFolder', () => {
+    it('should create a folder', async () => {
+      const createFolderRequestBody: ICreateFolderRequestBody = {
+        folderName: 'test',
+      };
+      folderService.create = jest
+        .fn()
+        .mockResolvedValue({ folderKey: uuidv4() });
+      expect(
+        await controller.createFolder(uuidv4(), 1, createFolderRequestBody),
+      ).toEqual('Folder created');
     });
   });
 
-  it('should update parent folder', async () => {
-    folderService.updateParent = jest.fn().mockResolvedValue(true);
-    expect(await controller.moveFolder('1234', '5678')).toEqual('Folder moved');
+  describe('createRootFolder', () => {
+    it('should create a root folder', async () => {
+      folderService.create = jest
+        .fn()
+        .mockResolvedValue({ folderKey: uuidv4() });
+      expect(await controller.createRootFolder(1, uuidv4())).toEqual(
+        'Root folder created',
+      );
+    });
   });
 
-  it('should rename a folder', async () => {
-    folderService.updateName = jest.fn().mockResolvedValue(true);
-    expect(
-      await controller.renameFolder('1234', { folderName: 'test ' }),
-    ).toEqual('Folder renamed');
+  describe('deleteFolder', () => {
+    it('should delete a folder', async () => {
+      folderService.delete = jest.fn().mockResolvedValue(true);
+      expect(await controller.deleteFolder('1234')).toEqual('Folder deleted');
+    });
+  });
+
+  describe('readFolder', () => {
+    it('should read a folder', async () => {
+      const folders: Array<{
+        folderKey: string;
+        folderName: string;
+      }> = [{ folderKey: '1234', folderName: 'test' }];
+      const files: Array<{
+        fileKey: string;
+        fileName: string;
+      }> = [{ fileKey: '1234', fileName: 'test' }];
+
+      folderService.readFolderByKey = jest.fn().mockResolvedValue({
+        folders,
+        files,
+      });
+
+      expect(await controller.readFolder('1234')).toEqual({
+        folders,
+        files,
+      });
+    });
+  });
+
+  describe('readRootFolder', () => {
+    it('should read root folder', async () => {
+      const folders: Array<{
+        folderKey: string;
+        folderName: string;
+      }> = [{ folderKey: '1234', folderName: 'test' }];
+      const files: Array<{
+        fileKey: string;
+        fileName: string;
+      }> = [{ fileKey: '1234', fileName: 'test' }];
+
+      folderService.readRootFolder = jest.fn().mockResolvedValue({
+        folders,
+        files,
+      });
+
+      expect(await controller.readRootFolder(uuidv4())).toEqual({
+        folders,
+        files,
+      });
+    });
+  });
+
+  describe('moveFolder', () => {
+    it('should move folder', async () => {
+      folderService.updateParent = jest.fn().mockResolvedValue(true);
+      expect(await controller.moveFolder('1234', '5678')).toEqual(
+        'Folder moved',
+      );
+    });
+  });
+
+  describe('renameFolder', () => {
+    it('should rename a folder', async () => {
+      folderService.updateName = jest.fn().mockResolvedValue(true);
+      expect(
+        await controller.renameFolder('1234', { folderName: 'test ' }),
+      ).toEqual('Folder renamed');
+    });
   });
 });

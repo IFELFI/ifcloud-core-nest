@@ -84,7 +84,7 @@ export class FolderController {
       enabled: boolean;
     }>;
   }> {
-    return this.folderService.read(folderKey);
+    return this.folderService.readFolderByKey(folderKey);
   }
 
   @Get('root')
@@ -102,7 +102,7 @@ export class FolderController {
       enabled: boolean;
     }>;
   }> {
-    return this.folderService.readRoot(uuidKey);
+    return this.folderService.readRootFolder(uuidKey);
   }
 
   @Patch('move/:folderKey')
