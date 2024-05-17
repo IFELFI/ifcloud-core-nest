@@ -116,11 +116,10 @@ export class FolderService {
 
   /**
    * Read folder
-   * @param folderKey Target folder key
-   * @param userId User ID
+   * @param folderId Folder ID
    * @returns Folders and files data
    */
-  async read(folderKey: string): Promise<{
+  private async read(folderId: bigint): Promise<{
     folders: Array<{
       folderKey: string;
       folderName: string;
@@ -132,19 +131,10 @@ export class FolderService {
     }>;
   }> {
     return this.prisma.$transaction(async (tx) => {
-      const targetFolder = await tx.folders.findUnique({
-        where: {
-          folder_key: folderKey,
-        },
-      });
-      if (!targetFolder) {
-        throw new NotFoundException('Folder does not exist');
-      }
-
       const folders = await tx.folders
         .findMany({
           where: {
-            parent_folder_id: targetFolder.id,
+            parent_folder_id: folderId,
           },
         })
         .then((folders) => {
@@ -159,7 +149,7 @@ export class FolderService {
       const files = await tx.files
         .findMany({
           where: {
-            parent_folder_id: targetFolder.id,
+            parent_folder_id: folderId,
           },
         })
         .then((files) => {
@@ -177,6 +167,43 @@ export class FolderService {
         files,
       };
     });
+  }
+
+  /**
+   * Read folder by key
+   * @param folderKey Folder key
+   * @returns Folders and files data
+   */
+  async readFolderByKey(folderKey: string): ReturnType<typeof this.read> {
+    const folder = await this.prisma.folders.findUnique({
+      where: {
+        folder_key: folderKey,
+      },
+    });
+    if (!folder) {
+      throw new NotFoundException('Folder does not exist');
+    }
+    const result = await this.read(folder.id);
+    return result;
+  }
+
+  /**
+   * Get root folder key by user ID
+   * @param userKey User key
+   * @returns Root folder
+   */
+  async readRootFolder(userKey: string): ReturnType<typeof this.read> {
+    const folder = await this.prisma.folders.findFirst({
+      where: {
+        parent_folder_id: null,
+        folder_name: userKey,
+      },
+    });
+    if (!folder) {
+      throw new NotFoundException('Root folder does not exist');
+    }
+    const result = await this.read(folder.id);
+    return result;
   }
 
   /**

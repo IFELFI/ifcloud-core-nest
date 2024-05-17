@@ -30,7 +30,17 @@ import { FolderService } from 'src/services/folder.service';
 export class FolderController {
   constructor(private folderService: FolderService) {}
 
-  @Post('create/:folderKey')
+  @Post('root')
+  @HttpCode(201)
+  async createRootFolder(
+    @Query('userId', ParseIntPipe) userId: number,
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
+  ): Promise<string> {
+    await this.folderService.create(uuidKey, null, userId);
+
+    return 'Root folder created';
+  }
+  @Post(':folderKey')
   @UseGuards(RoleGuard(access_role.create))
   @HttpCode(201)
   async createFolder(
@@ -46,17 +56,6 @@ export class FolderController {
     return 'Folder created';
   }
 
-  @Post('create')
-  @HttpCode(201)
-  async createRootFolder(
-    @Query('userId', ParseIntPipe) userId: number,
-    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
-  ): Promise<string> {
-    await this.folderService.create(uuidKey, null, userId);
-
-    return 'Root folder created';
-  }
-
   @Delete(':folderKey')
   @UseGuards(RoleGuard(access_role.delete))
   @HttpCode(200)
@@ -66,6 +65,24 @@ export class FolderController {
     await this.folderService.delete(folderKey);
 
     return 'Folder deleted';
+  }
+
+  @Get('root')
+  @HttpCode(200)
+  async readRootFolder(
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
+  ): Promise<{
+    folders: Array<{
+      folderKey: string;
+      folderName: string;
+    }>;
+    files: Array<{
+      fileKey: string;
+      fileName: string;
+      enabled: boolean;
+    }>;
+  }> {
+    return await this.folderService.readRootFolder(uuidKey);
   }
 
   @Get(':folderKey')
@@ -84,7 +101,7 @@ export class FolderController {
       enabled: boolean;
     }>;
   }> {
-    return this.folderService.read(folderKey);
+    return await this.folderService.readFolderByKey(folderKey);
   }
 
   @Patch('move/:folderKey')
