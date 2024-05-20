@@ -256,6 +256,122 @@ describe('FolderService', () => {
     });
   });
 
+  describe('readFolderByKey', () => {
+    beforeEach(() => {
+      service['read'] = jest.fn().mockResolvedValue({
+        folders: [],
+        files: [],
+      });
+    });
+
+    it('should read a folder by key', async () => {
+      const folderKey = uuidv4();
+      const folder: folders = {
+        id: BigInt(1),
+        folder_name: 'test',
+        parent_folder_id: null,
+        folder_key: folderKey,
+      };
+      prismaService.folders.findUnique.mockResolvedValue(folder);
+      expect(await service.readFolderByKey(folderKey)).toEqual({
+        folders: [],
+        files: [],
+      });
+    });
+
+    it('should throw an not found error if folder is not exist when reading a folder by key', async () => {
+      const folderKey = uuidv4();
+      prismaService.folders.findUnique.mockResolvedValue(null);
+
+      await expect(service.readFolderByKey(folderKey)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('readRootFolder', () => {
+    const userKey = uuidv4();
+
+    beforeEach(() => {
+      service['read'] = jest.fn().mockResolvedValue({
+        folders: [],
+        files: [],
+      });
+    });
+
+    it('should read a root folder', async () => {
+      const folder: folders = {
+        id: BigInt(1),
+        folder_name: 'test',
+        parent_folder_id: null,
+        folder_key: uuidv4(),
+      };
+      prismaService.folders.findFirst.mockResolvedValue(folder);
+      expect(await service.readRootFolder(userKey)).toEqual({
+        folders: [],
+        files: [],
+      });
+    });
+
+    it('should throw an not found error if root folder is not exist when reading a root folder', async () => {
+      prismaService.folders.findFirst.mockResolvedValue(null);
+
+      await expect(service.readRootFolder(userKey)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
+  describe('getRootFolderKey', () => {
+    it('should get a root folder key', async () => {
+      const userKey = uuidv4();
+      const rootFolder: folders[] = [
+        {
+          id: BigInt(1),
+          folder_name: 'test',
+          parent_folder_id: null,
+          folder_key: uuidv4(),
+        },
+      ];
+      prismaService.folders.findMany.mockResolvedValue(rootFolder);
+      expect(await service.getRootFolderKey(userKey)).toEqual(
+        rootFolder[0].folder_key,
+      );
+    });
+
+    it('should throw an not found error if root folder is not exist when getting a root folder key', async () => {
+      const userKey = uuidv4();
+      prismaService.folders.findMany.mockResolvedValue([]);
+
+      await expect(service.getRootFolderKey(userKey)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+
+    it('should throw an internal server error if multiple root folders are found when getting a root folder key', async () => {
+      const userKey = uuidv4();
+      const rootFolder: folders[] = [
+        {
+          id: BigInt(1),
+          folder_name: 'test',
+          parent_folder_id: null,
+          folder_key: uuidv4(),
+        },
+        {
+          id: BigInt(2),
+          folder_name: 'test',
+          parent_folder_id: null,
+          folder_key: uuidv4(),
+        },
+      ];
+      prismaService.folders.findMany.mockResolvedValue(rootFolder);
+
+      await expect(service.getRootFolderKey(userKey)).rejects.toThrow(
+        InternalServerErrorException,
+      );
+    });
+  });
+
   describe('updateParent', () => {
     it('should update a folder parent', async () => {
       const folderKey = uuidv4();

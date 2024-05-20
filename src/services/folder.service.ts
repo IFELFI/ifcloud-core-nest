@@ -191,6 +191,7 @@ export class FolderService {
    * Get root folder key by user ID
    * @param userKey User key
    * @returns Root folder
+   * @deprecated Use getRootFolderKey instead
    */
   async readRootFolder(userKey: string): ReturnType<typeof this.read> {
     const folder = await this.prisma.folders.findFirst({
@@ -204,6 +205,27 @@ export class FolderService {
     }
     const result = await this.read(folder.id);
     return result;
+  }
+
+  /**
+   * Get root folder key by user key
+   * @param userKey User key
+   * @returns Root folder key
+   */
+  async getRootFolderKey(userKey: string): Promise<string> {
+    const rootFolder = await this.prisma.folders.findMany({
+      where: {
+        parent_folder_id: null,
+        folder_name: userKey,
+      },
+    });
+    if (rootFolder.length === 0) {
+      throw new NotFoundException('Root folder does not exist');
+    }
+    if (rootFolder.length > 1) {
+      throw new InternalServerErrorException('Multiple root folders found');
+    }
+    return rootFolder[0].folder_key;
   }
 
   /**
