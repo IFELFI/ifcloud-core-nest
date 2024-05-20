@@ -47,23 +47,19 @@ describe('FolderController', () => {
       const createFolderRequestBody: ICreateFolderRequestBody = {
         folderName: 'test',
       };
-      folderService.create = jest
-        .fn()
-        .mockResolvedValue({ folderKey: uuidv4() });
+      const folderKey = uuidv4();
+      folderService.create = jest.fn().mockResolvedValue({ folderKey });
       expect(
         await controller.createFolder(uuidv4(), 1, createFolderRequestBody),
-      ).toEqual('Folder created');
+      ).toEqual(folderKey);
     });
   });
 
   describe('createRootFolder', () => {
     it('should create a root folder', async () => {
-      folderService.create = jest
-        .fn()
-        .mockResolvedValue({ folderKey: uuidv4() });
-      expect(await controller.createRootFolder(1, uuidv4())).toEqual(
-        'Root folder created',
-      );
+      const folderKey = uuidv4();
+      folderService.create = jest.fn().mockResolvedValue({ folderKey });
+      expect(await controller.createRootFolder(1, uuidv4())).toEqual(folderKey);
     });
   });
 
@@ -117,6 +113,13 @@ describe('FolderController', () => {
         folders,
         files,
       });
+    });
+  });
+
+  describe('getRootFolderKey', () => {
+    it('should get root folder key', async () => {
+      folderService.getRootFolderKey = jest.fn().mockResolvedValue('1234');
+      expect(await controller.getRootFolderKey(uuidv4())).toEqual('1234');
     });
   });
 
