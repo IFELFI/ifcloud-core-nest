@@ -73,13 +73,13 @@ describe('FolderController', () => {
   describe('readFolder', () => {
     it('should read a folder', async () => {
       const folders: Array<{
-        folderKey: string;
-        folderName: string;
-      }> = [{ folderKey: '1234', folderName: 'test' }];
+        key: string;
+        name: string;
+      }> = [{ key: '1234', name: 'test' }];
       const files: Array<{
-        fileKey: string;
-        fileName: string;
-      }> = [{ fileKey: '1234', fileName: 'test' }];
+        key: string;
+        name: string;
+      }> = [{ key: '1234', name: 'test' }];
 
       folderService.readFolderByKey = jest.fn().mockResolvedValue({
         folders,
@@ -96,13 +96,13 @@ describe('FolderController', () => {
   describe('readRootFolder', () => {
     it('should read root folder', async () => {
       const folders: Array<{
-        folderKey: string;
-        folderName: string;
-      }> = [{ folderKey: '1234', folderName: 'test' }];
+        key: string;
+        name: string;
+      }> = [{ key: '1234', name: 'test' }];
       const files: Array<{
-        fileKey: string;
-        fileName: string;
-      }> = [{ fileKey: '1234', fileName: 'test' }];
+        key: string;
+        name: string;
+      }> = [{ key: '1234', name: 'test' }];
 
       folderService.readRootFolder = jest.fn().mockResolvedValue({
         folders,

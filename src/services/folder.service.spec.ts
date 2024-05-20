@@ -241,14 +241,14 @@ describe('FolderService', () => {
       expect(await service['read'](folder.id)).toEqual({
         folders: findFolders.map((folder) => {
           return {
-            folderKey: folder.folder_key,
-            folderName: folder.folder_name,
+            key: folder.folder_key,
+            name: folder.folder_name,
           };
         }),
         files: findFiles.map((file) => {
           return {
-            fileKey: file.file_key,
-            fileName: file.file_name,
+            key: file.file_key,
+            name: file.file_name,
             enabled: file.enabled,
           };
         }),

@@ -77,12 +77,12 @@ export class FolderController {
     @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
   ): Promise<{
     folders: Array<{
-      folderKey: string;
-      folderName: string;
+      key: string;
+      name: string;
     }>;
     files: Array<{
-      fileKey: string;
-      fileName: string;
+      key: string;
+      name: string;
       enabled: boolean;
     }>;
   }> {
@@ -104,12 +104,12 @@ export class FolderController {
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
   ): Promise<{
     folders: Array<{
-      folderKey: string;
-      folderName: string;
+      key: string;
+      name: string;
     }>;
     files: Array<{
-      fileKey: string;
-      fileName: string;
+      key: string;
+      name: string;
       enabled: boolean;
     }>;
   }> {
