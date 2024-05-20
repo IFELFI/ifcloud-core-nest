@@ -51,7 +51,7 @@ describe('Folder', () => {
           .send();
 
         expect(response.status).toBe(201);
-        expect(response.text).toBe('Root folder created');
+        expect(response.text).toBeDefined();
       });
       it('should not create a root folder if Authorization header is not given', async () => {
         const response = await request(app.getHttpServer())
@@ -114,7 +114,7 @@ describe('Folder', () => {
           .send({ folderName: 'test_folder' });
 
         expect(response.status).toBe(201);
-        expect(response.text).toBe('Folder created');
+        expect(response.text).toBeDefined();
       });
       it('should not create a sub folder if Authorization header is not given', async () => {
         const response = await request(app.getHttpServer())

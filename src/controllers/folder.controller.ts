@@ -36,9 +36,9 @@ export class FolderController {
     @Query('userId', ParseIntPipe) userId: number,
     @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
   ): Promise<string> {
-    await this.folderService.create(uuidKey, null, userId);
+    const result = await this.folderService.create(uuidKey, null, userId);
 
-    return 'Root folder created';
+    return result.folderKey;
   }
   @Post(':folderKey')
   @UseGuards(RoleGuard(access_role.create))
@@ -51,9 +51,13 @@ export class FolderController {
   ): Promise<string> {
     const folderName = createFolder.folderName;
 
-    await this.folderService.create(folderName, folderKey, userId);
+    const result = await this.folderService.create(
+      folderName,
+      folderKey,
+      userId,
+    );
 
-    return 'Folder created';
+    return result.folderKey;
   }
 
   @Delete(':folderKey')
