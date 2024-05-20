@@ -121,12 +121,12 @@ export class FolderService {
    */
   private async read(folderId: bigint): Promise<{
     folders: Array<{
-      folderKey: string;
-      folderName: string;
+      key: string;
+      name: string;
     }>;
     files: Array<{
-      fileKey: string;
-      fileName: string;
+      key: string;
+      name: string;
       enabled: boolean;
     }>;
   }> {
@@ -140,8 +140,8 @@ export class FolderService {
         .then((folders) => {
           return folders.map((folder) => {
             return {
-              folderKey: folder.folder_key,
-              folderName: folder.folder_name,
+              key: folder.folder_key,
+              name: folder.folder_name,
             };
           });
         });
@@ -155,8 +155,8 @@ export class FolderService {
         .then((files) => {
           return files.map((file) => {
             return {
-              fileKey: file.file_key,
-              fileName: file.file_name,
+              key: file.file_key,
+              name: file.file_name,
               enabled: file.enabled,
             };
           });

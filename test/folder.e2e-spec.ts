@@ -266,14 +266,14 @@ describe('Folder', () => {
       expect(response.body).toHaveProperty('folders');
       expect(response.body.folders).toEqual([
         {
-          folderKey: subFolder.folder.folder_key,
-          folderName: 'dummy1',
+          key: subFolder.folder.folder_key,
+          name: 'dummy1',
         },
       ]);
       expect(response.body.files).toEqual([
         {
-          fileKey: subFile.file.file_key,
-          fileName: 'dummy1',
+          key: subFile.file.file_key,
+          name: 'dummy1',
           enabled: true,
         },
       ]);
@@ -386,14 +386,14 @@ describe('Folder', () => {
       expect(response.body).toHaveProperty('folders');
       expect(response.body.folders).toEqual([
         {
-          folderKey: subFolder.folder.folder_key,
-          folderName: 'dummy1',
+          key: subFolder.folder.folder_key,
+          name: 'dummy1',
         },
       ]);
       expect(response.body.files).toEqual([
         {
-          fileKey: subFile.file.file_key,
-          fileName: 'dummy1',
+          key: subFile.file.file_key,
+          name: 'dummy1',
           enabled: true,
         },
       ]);
