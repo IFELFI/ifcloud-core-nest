@@ -120,6 +120,13 @@ describe('FolderController', () => {
     });
   });
 
+  describe('getRootFolderKey', () => {
+    it('should get root folder key', async () => {
+      folderService.getRootFolderKey = jest.fn().mockResolvedValue('1234');
+      expect(await controller.getRootFolderKey(uuidv4())).toEqual('1234');
+    });
+  });
+
   describe('moveFolder', () => {
     it('should move folder', async () => {
       folderService.updateParent = jest.fn().mockResolvedValue(true);
