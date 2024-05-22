@@ -146,7 +146,7 @@ describe('File', () => {
     it('should not upload a file if file name is invalid', async () => {
       const response = await uploadFile(
         testBuffer,
-        'a'.repeat(256),
+        'a'.repeat(257),
         folderData.folder.folder_key,
         'Bearer ' + data.accessToken.normal,
       );
@@ -465,7 +465,7 @@ describe('File', () => {
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
         .set('Authorization', `Bearer ${data.accessToken.normal}`)
-        .send({ fileName: 'a'.repeat(256) });
+        .send({ fileName: 'a'.repeat(257) });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
         'Validation failed for $input.fileName',

@@ -2,7 +2,8 @@ import typia, { tags } from 'typia';
 import { IUserRequestQuery } from './request.interface';
 import { Request } from 'express';
 
-export type FileName = string & tags.Pattern<'^[a-zA-Z0-9_.-]{1,200}$'>;
+export type FileName = string &
+  tags.Pattern<'^(?=.{1,256}$)\\.?[a-zA-Z0-9_\\-()]+(\\.[a-zA-Z0-9_\\-()]+)*(\\.[a-zA-Z0-9]{1,4})?$'>;
 
 export interface IUploadFileRequestBody {
   fileName: FileName;
