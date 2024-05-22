@@ -3,7 +3,7 @@ import { IUserRequestQuery } from './request.interface';
 import { Request } from 'express';
 
 export type FileName = string &
-  tags.Pattern<'^(?=.{1,256}$)\\.?[a-zA-Z0-9_\\-()]+(\\.[a-zA-Z0-9_\\-()]+)*(\\.[a-zA-Z0-9]{1,4})?$'>;
+  tags.Pattern<'^(?=.{1,256}$)\\.?[a-zA-Z0-9_\\-().]+(\\.[a-zA-Z0-9]{1,4})?$'>;
 
 export interface IUploadFileRequestBody {
   fileName: FileName;
