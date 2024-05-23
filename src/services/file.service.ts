@@ -78,7 +78,7 @@ export class FileService {
         });
     }
 
-    await this.uploadChunk(chunk, chunkNumber, totalChunks, tempFile.file_key);
+    await this.uploadChunk(chunk, chunkNumber, tempFile.file_key);
 
     let allChunkUploaded = false;
     for (let i = 0; i < totalChunks; i++) {
@@ -136,6 +136,11 @@ export class FileService {
             file_id: uploadedFile.id,
             uploader_id: userId,
             byte_size: fileStats.size,
+          },
+        });
+        await tx.temp_files.delete({
+          where: {
+            temp_file_name: tempFileName,
           },
         });
         return uploadedFile;
@@ -269,14 +274,12 @@ export class FileService {
    * Upload chunk
    * @param chunk Chunk buffer
    * @param chunkNumber Number of chunk
-   * @param totalChunks Total number of chunks
    * @param fileKey File key
    * @returns { isLast: boolean }
    */
   private async uploadChunk(
     chunk: Buffer,
     chunkNumber: number,
-    totalChunks: number,
     fileKey: string,
   ): Promise<void> {
     const chunkDirPath = `${this.chunkDir}/${fileKey}`;
