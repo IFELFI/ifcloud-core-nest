@@ -320,9 +320,10 @@ describe('File', () => {
         folderData.folder.id,
         'test.jpg',
       );
+      const extName = path.extname(uploadedFile.file.file_name);
       fs.mkdirSync(originDir, { recursive: true });
       fs.writeFileSync(
-        `${originDir}/${uploadedFile.file.file_key}`,
+        `${originDir}/${uploadedFile.file.file_key}${extName}`,
         testBuffer,
       );
     });
@@ -372,7 +373,7 @@ describe('File', () => {
         .delete(`/file/${folderData.folder.folder_key}/${uuidv4()}`)
         .set('Authorization', `Bearer ${data.accessToken.normal}`);
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe('File does not exist');
+      expect(response.body.message).toBe('File does not exist in database');
     });
   });
 
