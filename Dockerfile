@@ -1,6 +1,6 @@
 FROM node:21-alpine
 LABEL title="ifcloud-core"
-LABEL version="1.2.4"
+LABEL version="1.2.5"
 LABEL maintainer="ifelfi"
 
 RUN apk add --no-cache ffmpeg g++ make py3-pip

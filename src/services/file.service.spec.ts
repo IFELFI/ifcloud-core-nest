@@ -354,7 +354,6 @@ describe('FileService', () => {
   describe('uploadChunk', () => {
     const chunk = Buffer.from('test');
     const chunkNumber = 0;
-    const totalChunks = 2;
     const fileKey = uuidv4();
 
     beforeEach(() => {
@@ -365,18 +364,18 @@ describe('FileService', () => {
 
     it('should upload chunk', async () => {
       expect(
-        service['uploadChunk'](chunk, chunkNumber, totalChunks, fileKey),
+        service['uploadChunk'](chunk, chunkNumber, fileKey),
       ).resolves.toBeUndefined();
     });
     it('should throw InternalServerErrorException if failed to write chunk', async () => {
       jest.spyOn(fs.promises, 'writeFile').mockRejectedValue(new Error());
       await expect(
-        service['uploadChunk'](chunk, chunkNumber, totalChunks, fileKey),
+        service['uploadChunk'](chunk, chunkNumber, fileKey),
       ).rejects.toThrow(InternalServerErrorException);
     });
     it('should make directory if it does not exist', async () => {
       jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
-      await service['uploadChunk'](chunk, chunkNumber, totalChunks, fileKey);
+      await service['uploadChunk'](chunk, chunkNumber, fileKey);
       expect(fs.mkdirSync).toHaveBeenCalled();
     });
   });

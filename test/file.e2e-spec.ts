@@ -246,7 +246,7 @@ describe('File', () => {
       );
       fs.mkdirSync(originDir, { recursive: true });
       fs.writeFileSync(
-        `${originDir}/${uploadedFile.file.file_key}`,
+        `${originDir}/${uploadedFile.file.file_key}${path.extname(uploadedFile.file.file_name)}`,
         testBuffer,
       );
     });
@@ -298,7 +298,9 @@ describe('File', () => {
       expect(response.body.message).toBe('File does not exist');
     });
     it('should not download a file if file does not exist in storage', async () => {
-      await fs.promises.rm(`${originDir}/${uploadedFile.file.file_key}`);
+      await fs.promises.rm(
+        `${originDir}/${uploadedFile.file.file_key}${path.extname(uploadedFile.file.file_name)}`,
+      );
       const response = await request(app.getHttpServer())
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,

@@ -78,7 +78,7 @@ export class FileService {
         });
     }
 
-    await this.uploadChunk(chunk, chunkNumber, totalChunks, tempFile.file_key);
+    await this.uploadChunk(chunk, chunkNumber, tempFile.file_key);
 
     let allChunkUploaded = false;
     for (let i = 0; i < totalChunks; i++) {
@@ -138,6 +138,11 @@ export class FileService {
             byte_size: fileStats.size,
           },
         });
+        await tx.temp_files.delete({
+          where: {
+            temp_file_name: tempFileName,
+          },
+        });
         return uploadedFile;
       });
       return { isDone: true, fileKey: uploadedFile.file_key };
@@ -159,7 +164,8 @@ export class FileService {
     if (!file) {
       throw new NotFoundException('File does not exist');
     }
-    const originPath = path.join(this.originDir, fileKey);
+    const originFileName = `${fileKey}${path.extname(file.file_name)}`;
+    const originPath = path.join(this.originDir, originFileName);
     if (!fs.existsSync(originPath)) {
       this.prisma.files.delete({
         where: {
@@ -269,14 +275,12 @@ export class FileService {
    * Upload chunk
    * @param chunk Chunk buffer
    * @param chunkNumber Number of chunk
-   * @param totalChunks Total number of chunks
    * @param fileKey File key
    * @returns { isLast: boolean }
    */
   private async uploadChunk(
     chunk: Buffer,
     chunkNumber: number,
-    totalChunks: number,
     fileKey: string,
   ): Promise<void> {
     const chunkDirPath = `${this.chunkDir}/${fileKey}`;
