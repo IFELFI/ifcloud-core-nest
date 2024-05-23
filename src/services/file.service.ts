@@ -176,9 +176,18 @@ export class FileService {
    * @param fileKey File key
    */
   async deleteFile(fileKey: string): Promise<void> {
-    const originPath = path.join(this.originDir, fileKey);
+    const file = await this.prisma.files.findUnique({
+      where: {
+        file_key: fileKey,
+      },
+    });
+    if (!file) {
+      throw new NotFoundException('File does not exist in database');
+    }
+    const originFileName = `${fileKey}${path.extname(file.file_name)}`;
+    const originPath = path.join(this.originDir, originFileName);
     if (!fs.existsSync(originPath)) {
-      throw new NotFoundException('File does not exist');
+      throw new NotFoundException('File does not exist in storage');
     }
     await fs.promises.rm(originPath).catch(() => {
       throw new InternalServerErrorException('Failed to delete file');
@@ -189,10 +198,7 @@ export class FileService {
           file_key: fileKey,
         },
       })
-      .catch((error) => {
-        if (error.code === 'P2025') {
-          throw new NotFoundException('File does not exist');
-        }
+      .catch(() => {
         throw new InternalServerErrorException('Failed to delete file');
       });
   }
