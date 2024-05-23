@@ -164,7 +164,8 @@ export class FileService {
     if (!file) {
       throw new NotFoundException('File does not exist');
     }
-    const originPath = path.join(this.originDir, fileKey);
+    const originFileName = `${fileKey}${path.extname(file.file_name)}`;
+    const originPath = path.join(this.originDir, originFileName);
     if (!fs.existsSync(originPath)) {
       this.prisma.files.delete({
         where: {
