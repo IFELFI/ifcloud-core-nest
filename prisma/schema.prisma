@@ -41,6 +41,7 @@ model files {
   enabled          Boolean    @default(true)
   file_info        file_info?
   folders          folders    @relation(fields: [parent_folder_id], references: [id], onDelete: Cascade, map: "fk_parent_folder_id")
+  stream           stream[]
 
   @@unique([file_name, parent_folder_id], map: "uni_child_file_name")
   @@schema("cloud")
@@ -71,6 +72,17 @@ model folders {
   user_role        user_role[]
 
   @@unique([parent_folder_id, folder_name], map: "uni_child_folder_name")
+  @@schema("cloud")
+}
+
+model stream {
+  id                   BigInt      @id @default(autoincrement())
+  file_id              BigInt
+  enabled              Boolean     @default(false)
+  origin_resolution    resolution
+  activated_resolution resolution?
+  files                files       @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+
   @@schema("cloud")
 }
 
@@ -124,6 +136,19 @@ enum access_role {
   read
   update
   delete
+
+  @@schema("public")
+}
+
+enum resolution {
+  r240
+  r360
+  r480
+  r720
+  r1080
+  r1440
+  r2160
+  r4320
 
   @@schema("public")
 }
