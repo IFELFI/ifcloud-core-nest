@@ -47,7 +47,7 @@ beforeAll(async () => {
   });
   await postgresClient.connect();
   const databaseUrl = `postgresql://${postgresClient.user}:${postgresClient.password}@${postgresClient.host}:${postgresClient.port}/${postgresClient.database}`;
-  execSync(`npx prisma migrate dev`, {
+  execSync(`npx prisma migrate dev --name 0_init`, {
     env: { ...process.env, DATABASE_URL: databaseUrl },
   });
   prismaService = new PrismaService({

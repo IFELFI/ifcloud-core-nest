@@ -13,6 +13,9 @@ CREATE SCHEMA IF NOT EXISTS "temp";
 -- CreateEnum
 CREATE TYPE "public"."access_role" AS ENUM ('create', 'read', 'update', 'delete');
 
+-- CreateEnum
+CREATE TYPE "public"."resolution" AS ENUM ('r240', 'r360', 'r480', 'r720', 'r1080', 'r1440', 'r2160', 'r4320');
+
 -- CreateTable
 CREATE TABLE "cloud"."external_access" (
     "id" BIGSERIAL NOT NULL,
@@ -65,6 +68,17 @@ CREATE TABLE "cloud"."folders" (
     "folder_key" UUID NOT NULL DEFAULT gen_random_uuid(),
 
     CONSTRAINT "pk_folders" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "cloud"."stream" (
+    "id" BIGSERIAL NOT NULL,
+    "file_id" BIGINT NOT NULL,
+    "enabled" BOOLEAN NOT NULL DEFAULT false,
+    "origin_resolution" "public"."resolution" NOT NULL,
+    "activated_resolution" "public"."resolution",
+
+    CONSTRAINT "stream_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -163,6 +177,9 @@ ALTER TABLE "cloud"."folder_info" ADD CONSTRAINT "fk_owner_id" FOREIGN KEY ("own
 
 -- AddForeignKey
 ALTER TABLE "cloud"."folders" ADD CONSTRAINT "fk_parent_folder_id" FOREIGN KEY ("parent_folder_id") REFERENCES "cloud"."folders"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "cloud"."stream" ADD CONSTRAINT "fk_file_id" FOREIGN KEY ("file_id") REFERENCES "cloud"."files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "cloud"."user_role" ADD CONSTRAINT "fk_folder_id" FOREIGN KEY ("folder_id") REFERENCES "cloud"."folders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
