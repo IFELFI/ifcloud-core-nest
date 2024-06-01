@@ -82,7 +82,7 @@ export class FileController {
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
     @Res() response: Response,
   ): Promise<void> {
-    const stream = await this.fileService.download(fileKey);
+    const stream = await this.fileService.getOriginStream(fileKey);
     response.status(200);
     stream.pipe(response);
   }

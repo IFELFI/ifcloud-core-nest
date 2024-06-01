@@ -88,7 +88,7 @@ describe('FileController', () => {
   it('should download a file', async () => {
     const fileKey = uuidv4();
     const stream = fs.createReadStream('./test/sample/sample-video.mp4');
-    fileService.download = jest.fn().mockResolvedValue(stream);
+    fileService.getOriginStream = jest.fn().mockResolvedValue(stream);
     await controller.downloadFile(fileKey, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });
