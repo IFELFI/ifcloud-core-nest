@@ -192,7 +192,7 @@ describe('FileService', () => {
     });
   });
 
-  describe('download', () => {
+  describe('getOriginStream', () => {
     const file: files = {
       id: BigInt(1),
       file_name: 'test.txt',
@@ -209,30 +209,48 @@ describe('FileService', () => {
       } as any);
     });
 
-    it('should download file', async () => {
-      const result = await service.download(file.file_key);
+    it('should get file stream', async () => {
+      const result = await service.getOriginStream(file.file_key);
       expect(result).toBeDefined();
     });
     it('should throw NotFoundException if file not found in database', async () => {
       prismaService.files.findUnique.mockResolvedValueOnce(null);
-      await expect(service.download(file.file_key)).rejects.toThrow(
+      await expect(service.getOriginStream(file.file_key)).rejects.toThrow(
         NotFoundException,
       );
     });
     it('should throw InternalServerException if file not found in storage', async () => {
       jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
-      await expect(service.download(file.file_key)).rejects.toThrow(
+      await expect(service.getOriginStream(file.file_key)).rejects.toThrow(
         InternalServerErrorException,
       );
     });
   });
 
-  describe('readChunk', () => {
-    // beforeEach(() => {
-    //   jest.spyOn(fs, 'createReadStream').mockReturnValue({
-    //     pipe: jest.fn(),
-    //   } as any);
-    // });
+  describe('getChunkStream', () => {
+    const fileKey = uuidv4();
+
+    beforeEach(() => {
+      jest.spyOn(fs, 'existsSync').mockReturnValue(true);
+      jest.spyOn(fs, 'createReadStream').mockReturnValue({
+        pipe: jest.fn(),
+      } as any);
+    });
+
+    it('should get chunk stream', async () => {
+      const result = await service.getChunkStream(
+        fileKey,
+        'r1080',
+        'file_000.ts',
+      );
+      expect(result).toBeDefined();
+    });
+    it('should throw NotFoundException if chunk not found', async () => {
+      jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
+      await expect(
+        service.getChunkStream(fileKey, 'r1080', 'file_000.ts'),
+      ).rejects.toThrow(NotFoundException);
+    });
   });
 
   describe('deleteFile', () => {

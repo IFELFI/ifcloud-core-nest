@@ -177,7 +177,7 @@ export class FileService implements OnModuleInit {
    * @param fileKey File key
    * @returns { ReadStream }
    */
-  async download(fileKey: string): Promise<ReadStream> {
+  async getOriginStream(fileKey: string): Promise<ReadStream> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -207,7 +207,7 @@ export class FileService implements OnModuleInit {
    * @param chunkFileName Chunk file name
    * @returns { ReadStream }
    */
-  async readChunk(
+  async getChunkStream(
     fileKey: string,
     resolution: resolution,
     chunkFileName: string,
