@@ -26,6 +26,8 @@ export interface TestTokenPayload {
   imageUrl: string;
 }
 
+export const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
+
 let postgresContainer: StartedPostgreSqlContainer;
 let postgresClient: Client;
 let prismaService: PrismaService;
@@ -93,6 +95,7 @@ afterAll(async () => {
   await prismaService.$disconnect();
   await postgresClient.end();
   await postgresContainer.stop();
+  await fs.promises.rm(baseDir, { recursive: true });
 });
 
 afterEach(async () => {
