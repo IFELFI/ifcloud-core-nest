@@ -23,7 +23,7 @@ describe('File', () => {
   let uploadedFile: Awaited<ReturnType<typeof createFile>>;
   let altUser: Awaited<ReturnType<typeof data.createTestUser>>;
   let altUserToken: Awaited<ReturnType<typeof data.createToken>>;
-  const baseDir = process.env.STORAGE_PATH || 'testStorage';
+  const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
   const originDir = path.join(baseDir, 'origin');
 
   const sampleImageName = 'uploaded-image.jpg';

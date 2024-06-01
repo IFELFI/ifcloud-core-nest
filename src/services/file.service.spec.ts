@@ -227,6 +227,14 @@ describe('FileService', () => {
     });
   });
 
+  describe('readChunk', () => {
+    // beforeEach(() => {
+    //   jest.spyOn(fs, 'createReadStream').mockReturnValue({
+    //     pipe: jest.fn(),
+    //   } as any);
+    // });
+  });
+
   describe('deleteFile', () => {
     const file: files = {
       id: BigInt(1),
