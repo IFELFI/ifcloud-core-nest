@@ -7,11 +7,13 @@ import {
 import { PrismaService } from './prisma.service';
 import fs, { ReadStream } from 'fs';
 import path from 'path';
+import { resolution } from '@prisma/client';
 
 @Injectable()
 export class FileService {
   private readonly baseDir = process.env.STORAGE_PATH || 'storage';
   private readonly originDir = path.join(this.baseDir, 'origin');
+  private readonly videoDir = path.join(this.baseDir, 'videos');
   private readonly chunkDir = path.join(this.baseDir, 'chunk');
 
   constructor(private prisma: PrismaService) {}
@@ -177,6 +179,28 @@ export class FileService {
     const fileStream = fs.createReadStream(originPath);
     return fileStream;
   }
+
+  /**
+   * Read chunk
+   * @param fileKey File key
+   * @param resolution Resolution
+   * @param chunkFileName Chunk file name
+   * @returns { ReadStream }
+   */
+  async readChunk(
+    fileKey: string,
+    resolution: resolution,
+    chunkFileName: string,
+  ): Promise<ReadStream> {
+    const videoDir = path.join(this.videoDir, fileKey);
+    const chunkPath = path.join(videoDir, resolution, chunkFileName);
+    if (!fs.existsSync(chunkPath)) {
+      throw new NotFoundException('Chunk does not exist in storage');
+    }
+    const chunkStream = fs.createReadStream(chunkPath);
+    return chunkStream;
+  }
+
   /**
    * Delete file
    * @param fileKey File key
