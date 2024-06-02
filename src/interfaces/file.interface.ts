@@ -1,6 +1,7 @@
 import typia, { tags } from 'typia';
 import { IUserRequestQuery } from './request.interface';
 import { Request } from 'express';
+import { resolution } from '@prisma/client';
 
 export type FileName = string &
   tags.Pattern<'^(?=.{1,256}$)\\.?[a-zA-Z0-9_\\-().]+(\\.[a-zA-Z0-9]{1,4})?$'>;
@@ -28,10 +29,4 @@ export interface IFileRangeQuery extends IUserRequestQuery {
 export interface IFileRangeRequest
   extends Request<any, any, any, IFileRangeQuery> {}
 
-export type VideoResolution =
-  | '144p'
-  | '240p'
-  | '360p'
-  | '480p'
-  | '720p'
-  | '1080p';
+export const validateResolution = typia.createValidate<resolution>();

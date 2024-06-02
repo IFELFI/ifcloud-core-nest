@@ -16,7 +16,8 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { access_role } from '@prisma/client';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { access_role, resolution } from '@prisma/client';
 import { Response } from 'express';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
@@ -25,6 +26,7 @@ import {
   IRenameFileRequestBody,
   IUploadFileRequestBody,
   validateRenameFileRequestBody,
+  validateResolution,
   validateUploadFileRequestBody,
 } from 'src/interfaces/file.interface';
 import { FileValidatePipe } from 'src/pipes/file.validate.pipe';
@@ -110,6 +112,24 @@ export class FileController {
   //   response.writeHead(206, headers);
   //   stream.pipe(response);
   // }
+
+  @Get('loadChunk/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.read))
+  async loadChunk(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Query('resolution', new TypiaValidationPipe(validateResolution))
+    resolution: resolution,
+    @Query('chunkFileName') chunkFileName: string,
+    @Res() response: Response,
+  ): Promise<void> {
+    const stream = await this.fileService.getChunkStream(
+      fileKey,
+      resolution,
+      chunkFileName,
+    );
+    response.status(200);
+    stream.pipe(response);
+  }
 
   @Delete(':folderKey/:fileKey')
   @UseGuards(RoleGuard(access_role.delete))
