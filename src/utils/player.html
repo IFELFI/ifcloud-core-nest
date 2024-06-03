@@ -10,6 +10,20 @@
   <script src="https://cdn.jsdelivr.net/npm/hls.js@1"></script>
   <script>
     const video = document.getElementById('video');
-    const videoSrc = '/video/master.m3u8';
+    const videoSrc = 'http://localhost:10921/videos/stream/master.m3u8';
+
+    if (Hls.isSupported()) {
+      const hls = new Hls();
+      hls.loadSource(videoSrc);
+      hls.attachMedia(video);
+      hls.on(Hls.Events.MANIFEST_PARSED, function() {
+        video.play();
+      });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = videoSrc;
+      video.addEventListener('loadedmetadata', function() {
+        video.play();
+      });
+    }
   </script>
 </html>
