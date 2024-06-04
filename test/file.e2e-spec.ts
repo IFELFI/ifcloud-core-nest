@@ -67,7 +67,6 @@ describe('File', () => {
     if (!data.user) {
       throw new Error('User not found');
     }
-    // Root Folder
     folderData = await createFolder(
       BigInt(1),
       data.user.id,
