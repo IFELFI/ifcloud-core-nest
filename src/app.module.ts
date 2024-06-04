@@ -15,6 +15,7 @@ import { VideoModule } from './modules/video.module';
     UserModule,
     FolderModule,
     FileModule,
+    VideoModule,
     JwtModule.register({
       global: true,
       secret: process.env.TOKEN_SECRET,
@@ -22,7 +23,6 @@ import { VideoModule } from './modules/video.module';
         issuer: process.env.TOKEN_ISSUER,
       },
     }),
-    VideoModule,
   ],
 })
 export class AppModule {}
