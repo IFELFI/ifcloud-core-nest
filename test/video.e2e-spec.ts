@@ -12,6 +12,7 @@ import { AppModule } from 'src/app.module';
 import { v4 as uuidv4 } from 'uuid';
 import { TokenPayloadData } from 'src/interfaces/token.interface';
 import request from 'supertest';
+import fs from 'fs';
 
 describe('Video', () => {
   let app: INestApplication;
@@ -79,15 +80,62 @@ describe('Video', () => {
           `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
         )
         .set('Authorization', `Bearer ${data.accessToken.normal}`);
-
       expect(response.status).toBe(200);
     });
     it('should return 401 if no token', async () => {
       const response = await request(app.getHttpServer()).get(
         `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
       );
-
       expect(response.status).toBe(401);
+    });
+    it('should return 401 if invalid token', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
+        )
+        .set('Authorization', 'Bearer invalid');
+      expect(response.status).toBe(401);
+    });
+    it('should return 401 if expired token', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.expired}`);
+      expect(response.status).toBe(401);
+    });
+    it('should return 401 if wrong payload token', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.wrongPayload}`);
+      expect(response.status).toBe(401);
+    });
+    it('should return 404 if folder not found', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${uuidv4()}/${videoData.file.file_key}/master.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+      expect(response.status).toBe(404);
+    });
+    it('should return 404 if file not found', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${uuidv4()}/master.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+      expect(response.status).toBe(404);
+    });
+    it('should return 404 if master playlist not found', async () => {
+      fs.unlinkSync(videoData.path + '/master.m3u8');
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+      expect(response.status).toBe(404);
     });
     it('should return 403 if not owner', async () => {
       const response = await request(app.getHttpServer())
@@ -95,8 +143,29 @@ describe('Video', () => {
           `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/master.m3u8`,
         )
         .set('Authorization', `Bearer ${altUserToken.normal}`);
-
       expect(response.status).toBe(403);
+    });
+  });
+
+  describe('[GET] /video/stream/:folderKey/:fileKey/:resolution/:fileName', () => {
+    // const r360 = 'res_360p';
+    // const r720 = 'res_720p';
+    const r1080 = 'res_1080p';
+    it('should return 200 with index.m3u8 of resolution 1080p', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/${r1080}/index.m3u8`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+      expect(response.status).toBe(200);
+    });
+    it('should return 200 with file_000.ts of resolution 1080p', async () => {
+      const response = await request(app.getHttpServer())
+        .get(
+          `/videos/stream/${folderData.folder.folder_key}/${videoData.file.file_key}/${r1080}/file_000.ts`,
+        )
+        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+      expect(response.status).toBe(200);
     });
   });
 });

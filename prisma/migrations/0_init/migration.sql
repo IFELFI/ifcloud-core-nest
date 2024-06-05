@@ -14,7 +14,7 @@ CREATE SCHEMA IF NOT EXISTS "temp";
 CREATE TYPE "public"."access_role" AS ENUM ('create', 'read', 'update', 'delete');
 
 -- CreateEnum
-CREATE TYPE "public"."resolution" AS ENUM ('r240', 'r360', 'r480', 'r720', 'r1080', 'r1440', 'r2160', 'r4320');
+CREATE TYPE "public"."resolution" AS ENUM ('res_240p', 'res_360p', 'res_480p', 'res_720p', 'res_1080p', 'res_1440p', 'res_2160p', 'res_4320p');
 
 -- CreateTable
 CREATE TABLE "cloud"."external_access" (
@@ -75,8 +75,7 @@ CREATE TABLE "cloud"."stream" (
     "id" BIGSERIAL NOT NULL,
     "file_id" BIGINT NOT NULL,
     "enabled" BOOLEAN NOT NULL DEFAULT false,
-    "origin_resolution" "public"."resolution" NOT NULL,
-    "activated_resolution" "public"."resolution",
+    "activated_resolutions" "public"."resolution"[],
 
     CONSTRAINT "stream_pkey" PRIMARY KEY ("id")
 );
@@ -141,6 +140,9 @@ CREATE UNIQUE INDEX "uni_folder_key" ON "cloud"."folders"("folder_key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_child_folder_name" ON "cloud"."folders"("parent_folder_id", "folder_name");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_stream" ON "cloud"."stream"("file_id");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_users" ON "member"."users"("uuid_key");

@@ -258,5 +258,6 @@ export const createStreamVideoFile = async (
   return {
     file: file.rows[0],
     fileInfo: fileInfo.rows[0],
+    path: `${baseDir}/video/${fileKey}`,
   };
 };

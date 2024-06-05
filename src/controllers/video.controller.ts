@@ -16,8 +16,6 @@ import { UserGuard } from 'src/guards/user.guard';
 import fs from 'fs';
 import { Response } from 'express';
 import { storagePath } from 'src/utils/storagePath';
-import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
-import { validateResolution } from 'src/interfaces/file.interface';
 
 @Controller('videos')
 @UseGuards(AuthGuard, UserGuard)
@@ -33,6 +31,9 @@ export class VideoController {
   ): Promise<void> {
     const videoDir = storagePath.videoDir;
     const videoPath = `${videoDir}/${fileKey}/master.m3u8`;
+    if (!fs.existsSync(videoPath)) {
+      throw new NotFoundException('Master playlist not found');
+    }
     const masterPlaylist = fs.readFileSync(videoPath, 'utf8');
     res.send(masterPlaylist);
   }
@@ -42,8 +43,7 @@ export class VideoController {
   @HttpCode(200)
   async streamVideoFile(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
-    @Param('resolution', new TypiaValidationPipe(validateResolution))
-    resolution: string,
+    @Param('resolution') resolution: string,
     @Param('fileName') fileName: string,
     @Res() res: Response,
   ): Promise<void> {
