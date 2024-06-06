@@ -21,6 +21,16 @@ import { storagePath } from 'src/utils/storagePath';
 @UseGuards(AuthGuard, UserGuard)
 export class VideoController {
   constructor() {}
+  @Get('/stream/generate/:folderKey/:fileKey')
+  @UseGuards(RoleGuard(access_role.create))
+  @HttpCode(200)
+  async generateStream(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+    @Res() res: Response,
+  ): Promise<void> {
+    // Generate HLS stream
+  }
+
   @Get('/stream/:folderKey/:fileKey/master.m3u8')
   @UseGuards(RoleGuard(access_role.read))
   @HttpCode(200)
