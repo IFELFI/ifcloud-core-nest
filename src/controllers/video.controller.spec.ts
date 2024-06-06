@@ -4,6 +4,7 @@ import { UserService } from 'src/services/user.service';
 import { CheckRoleService } from 'src/services/checkRole.service';
 import { PrismaService } from 'src/services/prisma.service';
 import { JwtService } from '@nestjs/jwt';
+import { VideoService } from 'src/services/video.service';
 
 describe('VideoController', () => {
   let controller: VideoController;
@@ -11,7 +12,13 @@ describe('VideoController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [VideoController],
-      providers: [UserService, PrismaService, CheckRoleService, JwtService],
+      providers: [
+        UserService,
+        PrismaService,
+        CheckRoleService,
+        JwtService,
+        VideoService,
+      ],
     }).compile();
     controller = module.get<VideoController>(VideoController);
   });

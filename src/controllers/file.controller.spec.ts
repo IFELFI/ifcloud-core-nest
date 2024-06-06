@@ -9,13 +9,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { JwtService } from '@nestjs/jwt';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { UserGuard } from 'src/guards/user.guard';
-import { path } from '@ffmpeg-installer/ffmpeg';
-import ffmpeg from 'fluent-ffmpeg';
 import fs from 'fs';
 import { Response } from 'express';
 import { mockDeep } from 'jest-mock-extended';
-
-ffmpeg.setFfmpegPath(path);
 
 describe('FileController', () => {
   let controller: FileController;

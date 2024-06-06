@@ -3,7 +3,6 @@ import {
   Get,
   Header,
   HttpCode,
-  NotFoundException,
   Param,
   ParseUUIDPipe,
   Res,
@@ -13,22 +12,22 @@ import { access_role } from '@prisma/client';
 import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
-import fs from 'fs';
 import { Response } from 'express';
-import { storagePath } from 'src/utils/storagePath';
+import { VideoService } from 'src/services/video.service';
 
 @Controller('videos')
 @UseGuards(AuthGuard, UserGuard)
 export class VideoController {
-  constructor() {}
+  constructor(private videoService: VideoService) {}
   @Get('/stream/generate/:folderKey/:fileKey')
   @UseGuards(RoleGuard(access_role.create))
   @HttpCode(200)
   async generateStream(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
-    @Res() res: Response,
-  ): Promise<void> {
+  ): Promise<string> {
     // Generate HLS stream
+    this.videoService.convertVideoToHLS(fileKey);
+    return 'Stream generated';
   }
 
   @Get('/stream/:folderKey/:fileKey/master.m3u8')
@@ -39,12 +38,7 @@ export class VideoController {
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
     @Res() res: Response,
   ): Promise<void> {
-    const videoDir = storagePath.videoDir;
-    const videoPath = `${videoDir}/${fileKey}/master.m3u8`;
-    if (!fs.existsSync(videoPath)) {
-      throw new NotFoundException('Master playlist not found');
-    }
-    const masterPlaylist = fs.readFileSync(videoPath, 'utf8');
+    const masterPlaylist = await this.videoService.getMasterPlaylist(fileKey);
     res.send(masterPlaylist);
   }
 
@@ -57,12 +51,11 @@ export class VideoController {
     @Param('fileName') fileName: string,
     @Res() res: Response,
   ): Promise<void> {
-    const videoDir = storagePath.videoDir;
-    const videoPath = `${videoDir}/${fileKey}/${resolution}/${fileName}`;
-    if (!fs.existsSync(videoPath)) {
-      throw new NotFoundException('Video not found');
-    }
-    const videoStream = fs.createReadStream(videoPath);
+    const videoStream = await this.videoService.streamVideoFile(
+      fileKey,
+      resolution,
+      fileName,
+    );
     videoStream.pipe(res);
   }
 }
