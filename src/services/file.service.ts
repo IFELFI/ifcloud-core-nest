@@ -177,7 +177,9 @@ export class FileService implements OnModuleInit {
    * @param fileKey File key
    * @returns { ReadStream }
    */
-  async getOriginStream(fileKey: string): Promise<ReadStream> {
+  async getOriginStream(
+    fileKey: string,
+  ): Promise<{ stream: ReadStream; length: number }> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -197,7 +199,10 @@ export class FileService implements OnModuleInit {
       throw new InternalServerErrorException('File does not exist in storage');
     }
     const fileStream = fs.createReadStream(originPath);
-    return fileStream;
+    return {
+      stream: fileStream,
+      length: fs.statSync(originPath).size,
+    };
   }
 
   /**
