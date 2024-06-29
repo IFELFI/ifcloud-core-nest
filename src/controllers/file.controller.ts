@@ -40,7 +40,7 @@ export class FileController {
   @UseInterceptors(
     FileInterceptor('file', {
       limits: {
-        fileSize: 1024 * 1024 * 1024,
+        fileSize: 1024 * 1024 * 50,
         fieldSize: 1024 * 1024 * 20,
       },
     }),

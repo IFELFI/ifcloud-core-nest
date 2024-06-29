@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './filters/httpException.filter';
 import { PrismaExceptionFilter } from './filters/prismaException.filter';
 import 'dotenv/config';
+import { json, urlencoded } from 'express';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -12,6 +13,8 @@ async function bootstrap() {
   if (!port) {
     throw new Error('PORT is not defined');
   }
+  app.use(json({ limit: '50mb' }));
+  app.use(urlencoded({ extended: true, limit: '50mb' }));
   app.useGlobalFilters(new HttpExceptionFilter(), new PrismaExceptionFilter());
   await app.listen(Number(port));
 }
