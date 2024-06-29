@@ -37,7 +37,13 @@ export class FileController {
   constructor(private fileService: FileService) {}
 
   @Post('upload/:folderKey')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 10,
+      },
+    }),
+  )
   @UseGuards(RoleGuard(access_role.create))
   @HttpCode(201)
   async uploadFile(
