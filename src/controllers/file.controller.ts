@@ -37,7 +37,14 @@ export class FileController {
   constructor(private fileService: FileService) {}
 
   @Post('upload/:folderKey')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      limits: {
+        fileSize: 1024 * 1024 * 50,
+        fieldSize: 1024 * 1024 * 20,
+      },
+    }),
+  )
   @UseGuards(RoleGuard(access_role.create))
   @HttpCode(201)
   async uploadFile(
@@ -82,34 +89,11 @@ export class FileController {
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
     @Res() response: Response,
   ): Promise<void> {
-    const stream = await this.fileService.download(fileKey);
+    const { stream, length } = await this.fileService.getOriginStream(fileKey);
     response.status(200);
+    response.setHeader('Content-Length', length);
     stream.pipe(response);
   }
-
-  // @Get('stream/:folderKey/:fileKey')
-  // @UseGuards(RoleGuard(access_role.read))
-  // @UseInterceptors(RangeInterceptor)
-  // async streamFile(
-  //   @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
-  //   @Query('resolution', ParseResolutionPipe) resolution: string,
-  //   @Query('range', ParseRangePipe) start: number,
-  //   @Res() response: Response,
-  // ): Promise<void> {
-  //   const { stream, end, fileSize } = await this.fileService.stream(
-  //     fileKey,
-  //     start,
-  //     resolution,
-  //   );
-  //   const headers = {
-  //     'Content-Range': `bytes ${start}-${end}/${fileSize}`,
-  //     'Accept-Ranges': 'bytes',
-  //     'Content-Length': end - start,
-  //     'Content-Type': 'video/mp4',
-  //   };
-  //   response.writeHead(206, headers);
-  //   stream.pipe(response);
-  // }
 
   @Delete(':folderKey/:fileKey')
   @UseGuards(RoleGuard(access_role.delete))

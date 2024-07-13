@@ -26,6 +26,8 @@ export interface TestTokenPayload {
   imageUrl: string;
 }
 
+export const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
+
 let postgresContainer: StartedPostgreSqlContainer;
 let postgresClient: Client;
 let prismaService: PrismaService;
@@ -93,6 +95,7 @@ afterAll(async () => {
   await prismaService.$disconnect();
   await postgresClient.end();
   await postgresContainer.stop();
+  await fs.promises.rm(baseDir, { recursive: true });
 });
 
 afterEach(async () => {
@@ -213,7 +216,7 @@ export const createFile = async (
     `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize}) RETURNING *`,
   );
   if (fileBuffer) {
-    const baseDir = process.env.FILE_UPLOAD_DIR || 'uploads';
+    const baseDir = process.env.BASE_STORAGE_PATH || 'storage';
     const extName = path.extname(fileName);
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir);
@@ -227,5 +230,34 @@ export const createFile = async (
   return {
     file: file.rows[0],
     fileInfo: fileInfo.rows[0],
+  };
+};
+
+export const createStreamVideoFile = async (
+  userId: number,
+  fileId: bigint,
+  parentFolderId: bigint,
+  fileName: string,
+  enabled: boolean = true,
+  byteSize: number = 100,
+) => {
+  const fileKey = uuidv4();
+  const file = await postgresClient.query<files, files[]>(
+    `INSERT INTO "cloud"."files" (id, parent_folder_id, file_name, enabled, file_key) VALUES (${fileId}, ${parentFolderId}, '${fileName}', ${enabled}, '${fileKey}') RETURNING *`,
+  );
+  const fileInfo = await postgresClient.query<file_info, file_info[]>(
+    `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize}) RETURNING *`,
+  );
+  const baseDir = process.env.BASE_STORAGE_PATH || 'storage';
+  if (!fs.existsSync(baseDir)) {
+    fs.mkdirSync(baseDir);
+  }
+  fs.cpSync(`${__dirname}/sample/video`, `${baseDir}/video/${fileKey}`, {
+    recursive: true,
+  });
+  return {
+    file: file.rows[0],
+    fileInfo: fileInfo.rows[0],
+    path: `${baseDir}/video/${fileKey}`,
   };
 };

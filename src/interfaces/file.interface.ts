@@ -27,11 +27,3 @@ export interface IFileRangeQuery extends IUserRequestQuery {
 
 export interface IFileRangeRequest
   extends Request<any, any, any, IFileRangeQuery> {}
-
-export type VideoResolution =
-  | '144p'
-  | '240p'
-  | '360p'
-  | '480p'
-  | '720p'
-  | '1080p';

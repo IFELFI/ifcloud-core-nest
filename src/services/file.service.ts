@@ -1,20 +1,42 @@
+import { storagePath } from './../utils/storagePath';
 import {
   ConflictException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  OnModuleInit,
 } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import fs, { ReadStream } from 'fs';
 import path from 'path';
+import { resolution } from '@prisma/client';
 
 @Injectable()
-export class FileService {
-  private readonly baseDir = process.env.STORAGE_PATH || 'storage';
-  private readonly originDir = path.join(this.baseDir, 'origin');
-  private readonly chunkDir = path.join(this.baseDir, 'chunk');
-
+export class FileService implements OnModuleInit {
   constructor(private prisma: PrismaService) {}
+
+  onModuleInit() {
+    if (!fs.existsSync(storagePath.baseDir)) {
+      fs.mkdirSync(storagePath.baseDir, {
+        recursive: true,
+      });
+    }
+    if (!fs.existsSync(storagePath.originDir)) {
+      fs.mkdirSync(storagePath.originDir, {
+        recursive: true,
+      });
+    }
+    if (!fs.existsSync(storagePath.videoDir)) {
+      fs.mkdirSync(storagePath.videoDir, {
+        recursive: true,
+      });
+    }
+    if (!fs.existsSync(storagePath.chunkDir)) {
+      fs.mkdirSync(storagePath.chunkDir, {
+        recursive: true,
+      });
+    }
+  }
 
   /**
    * Upload file
@@ -82,7 +104,7 @@ export class FileService {
 
     let allChunkUploaded = false;
     for (let i = 0; i < totalChunks; i++) {
-      const chunkPath = `${this.chunkDir}/${tempFile.file_key}/${i}`;
+      const chunkPath = `${storagePath.chunkDir}/${tempFile.file_key}/${i}`;
       if (!fs.existsSync(chunkPath)) {
         allChunkUploaded = false;
         break;
@@ -155,7 +177,9 @@ export class FileService {
    * @param fileKey File key
    * @returns { ReadStream }
    */
-  async download(fileKey: string): Promise<ReadStream> {
+  async getOriginStream(
+    fileKey: string,
+  ): Promise<{ stream: ReadStream; length: number }> {
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -165,7 +189,7 @@ export class FileService {
       throw new NotFoundException('File does not exist');
     }
     const originFileName = `${fileKey}${path.extname(file.file_name)}`;
-    const originPath = path.join(this.originDir, originFileName);
+    const originPath = path.join(storagePath.originDir, originFileName);
     if (!fs.existsSync(originPath)) {
       this.prisma.files.delete({
         where: {
@@ -175,8 +199,33 @@ export class FileService {
       throw new InternalServerErrorException('File does not exist in storage');
     }
     const fileStream = fs.createReadStream(originPath);
-    return fileStream;
+    return {
+      stream: fileStream,
+      length: fs.statSync(originPath).size,
+    };
   }
+
+  /**
+   * Read chunk
+   * @param fileKey File key
+   * @param resolution Resolution
+   * @param chunkFileName Chunk file name
+   * @returns { ReadStream }
+   */
+  async getChunkStream(
+    fileKey: string,
+    resolution: resolution,
+    chunkFileName: string,
+  ): Promise<ReadStream> {
+    const videoDir = path.join(storagePath.videoDir, fileKey);
+    const chunkPath = path.join(videoDir, resolution, chunkFileName);
+    if (!fs.existsSync(chunkPath)) {
+      throw new NotFoundException('Chunk does not exist in storage');
+    }
+    const chunkStream = fs.createReadStream(chunkPath);
+    return chunkStream;
+  }
+
   /**
    * Delete file
    * @param fileKey File key
@@ -191,7 +240,7 @@ export class FileService {
       throw new NotFoundException('File does not exist in database');
     }
     const originFileName = `${fileKey}${path.extname(file.file_name)}`;
-    const originPath = path.join(this.originDir, originFileName);
+    const originPath = path.join(storagePath.originDir, originFileName);
     if (!fs.existsSync(originPath)) {
       throw new NotFoundException('File does not exist in storage');
     }
@@ -283,7 +332,7 @@ export class FileService {
     chunkNumber: number,
     fileKey: string,
   ): Promise<void> {
-    const chunkDirPath = `${this.chunkDir}/${fileKey}`;
+    const chunkDirPath = `${storagePath.chunkDir}/${fileKey}`;
     if (!fs.existsSync(chunkDirPath)) {
       fs.mkdirSync(chunkDirPath, {
         recursive: true,
@@ -306,11 +355,6 @@ export class FileService {
     fileKey: string,
     totalChunks: number,
   ): Promise<string> {
-    if (!fs.existsSync(this.originDir)) {
-      fs.mkdirSync(this.originDir, {
-        recursive: true,
-      });
-    }
     const tempFile = await this.prisma.temp_files.findUnique({
       where: {
         file_key: fileKey,
@@ -320,8 +364,8 @@ export class FileService {
       throw new NotFoundException('Temp file not found');
     }
     const extName = path.extname(tempFile.temp_file_name);
-    const chunkDirPath = `${this.chunkDir}/${fileKey}`;
-    const originFilePath = `${this.originDir}/${fileKey}${extName}`;
+    const chunkDirPath = `${storagePath.chunkDir}/${fileKey}`;
+    const originFilePath = `${storagePath.originDir}/${fileKey}${extName}`;
     const writeStream = fs.createWriteStream(originFilePath);
 
     for (let i = 0; i < totalChunks; i++) {

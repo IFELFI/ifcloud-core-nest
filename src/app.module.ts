@@ -4,6 +4,7 @@ import { FolderModule } from './modules/folder.module';
 import { UserModule } from './modules/user.module';
 import { JwtModule } from '@nestjs/jwt';
 import { FileModule } from './modules/file.module';
+import { VideoModule } from './modules/video.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { FileModule } from './modules/file.module';
     UserModule,
     FolderModule,
     FileModule,
+    VideoModule,
     JwtModule.register({
       global: true,
       secret: process.env.TOKEN_SECRET,

@@ -41,7 +41,7 @@ model files {
   enabled          Boolean    @default(true)
   file_info        file_info?
   folders          folders    @relation(fields: [parent_folder_id], references: [id], onDelete: Cascade, map: "fk_parent_folder_id")
-  stream           stream[]
+  stream           stream?
 
   @@unique([file_name, parent_folder_id], map: "uni_child_file_name")
   @@schema("cloud")
@@ -76,12 +76,11 @@ model folders {
 }
 
 model stream {
-  id                   BigInt      @id @default(autoincrement())
-  file_id              BigInt
-  enabled              Boolean     @default(false)
-  origin_resolution    resolution
-  activated_resolution resolution?
-  files                files       @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  id                    BigInt       @id @default(autoincrement())
+  file_id               BigInt       @unique(map: "uni_stream")
+  enabled               Boolean      @default(false)
+  activated_resolutions resolution[]
+  files                 files        @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
 
   @@schema("cloud")
 }
@@ -141,14 +140,14 @@ enum access_role {
 }
 
 enum resolution {
-  r240
-  r360
-  r480
-  r720
-  r1080
-  r1440
-  r2160
-  r4320
+  res_240p
+  res_360p
+  res_480p
+  res_720p
+  res_1080p
+  res_1440p
+  res_2160p
+  res_4320p
 
   @@schema("public")
 }

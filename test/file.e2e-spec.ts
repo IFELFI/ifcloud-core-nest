@@ -4,6 +4,7 @@ import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
 import { PrismaService } from 'src/services/prisma.service';
 import {
+  baseDir,
   createFile,
   createFolder,
   postgresClient,
@@ -23,7 +24,6 @@ describe('File', () => {
   let uploadedFile: Awaited<ReturnType<typeof createFile>>;
   let altUser: Awaited<ReturnType<typeof data.createTestUser>>;
   let altUserToken: Awaited<ReturnType<typeof data.createToken>>;
-  const baseDir = process.env.STORAGE_PATH || 'testStorage';
   const originDir = path.join(baseDir, 'origin');
 
   const sampleImageName = 'uploaded-image.jpg';
@@ -67,17 +67,12 @@ describe('File', () => {
     if (!data.user) {
       throw new Error('User not found');
     }
-    // Root Folder
     folderData = await createFolder(
       BigInt(1),
       data.user.id,
       data.user.uuid_key,
       null,
     );
-  });
-
-  afterAll(async () => {
-    await fs.promises.rm(baseDir, { recursive: true });
   });
 
   describe('[POST] /file/upload/:folderKey', () => {
