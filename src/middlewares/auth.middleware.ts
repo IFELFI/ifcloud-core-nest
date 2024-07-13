@@ -13,7 +13,7 @@ export class AuthMiddleware implements NestMiddleware {
     if (gatewaySecret !== process.env.GATEWAY_SECRET) {
       throw new UnauthorizedException('Invalid gateway secret');
     }
-    const uuidKey = req.headers['x-uuid-key'] as string;
+    const uuidKey = req.headers['x-uuid'] as string;
     if (!uuidKey) {
       throw new UnauthorizedException('Invalid uuid key');
     }
