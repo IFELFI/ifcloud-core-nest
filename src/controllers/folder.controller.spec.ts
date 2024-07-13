@@ -5,7 +5,6 @@ import { PrismaService } from 'src/services/prisma.service';
 import { FolderController } from './folder.controller';
 import { v4 as uuidv4 } from 'uuid';
 import { CheckRoleService } from 'src/services/checkRole.service';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 
@@ -22,8 +21,6 @@ describe('FolderController', () => {
       controllers: [FolderController],
       providers: [FolderService, PrismaService, CheckRoleService],
     })
-      .overrideGuard(AuthGuard)
-      .useValue(mockGuards)
       .overrideGuard(UserGuard)
       .useValue(mockGuards)
       .overrideGuard(RoleGuard)

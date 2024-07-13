@@ -9,14 +9,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { access_role } from '@prisma/client';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import { Response } from 'express';
 import { VideoService } from 'src/services/video.service';
 
 @Controller('videos')
-@UseGuards(AuthGuard, UserGuard)
+@UseGuards(UserGuard)
 export class VideoController {
   constructor(private videoService: VideoService) {}
   @Get('/stream/generate/:folderKey/:fileKey')

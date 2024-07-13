@@ -240,7 +240,7 @@ describe('FileService', () => {
     it('should get chunk stream', async () => {
       const result = await service.getChunkStream(
         fileKey,
-        'r1080',
+        'res_1080p',
         'file_000.ts',
       );
       expect(result).toBeDefined();
@@ -248,7 +248,7 @@ describe('FileService', () => {
     it('should throw NotFoundException if chunk not found', async () => {
       jest.spyOn(fs, 'existsSync').mockReturnValueOnce(false);
       await expect(
-        service.getChunkStream(fileKey, 'r1080', 'file_000.ts'),
+        service.getChunkStream(fileKey, 'res_1080p', 'file_000.ts'),
       ).rejects.toThrow(NotFoundException);
     });
   });
