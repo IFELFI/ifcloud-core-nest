@@ -1,10 +1,10 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { FolderModule } from './modules/folder.module';
 import { UserModule } from './modules/user.module';
-import { JwtModule } from '@nestjs/jwt';
 import { FileModule } from './modules/file.module';
 import { VideoModule } from './modules/video.module';
+import { AuthMiddleware } from './middlewares/auth.middleware';
 
 @Module({
   imports: [
@@ -16,13 +16,10 @@ import { VideoModule } from './modules/video.module';
     FolderModule,
     FileModule,
     VideoModule,
-    JwtModule.register({
-      global: true,
-      secret: process.env.TOKEN_SECRET,
-      verifyOptions: {
-        issuer: process.env.TOKEN_ISSUER,
-      },
-    }),
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('*');
+  }
+}

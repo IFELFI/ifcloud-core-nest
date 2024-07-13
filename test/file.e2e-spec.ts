@@ -1,4 +1,3 @@
-import { TokenPayloadData } from 'src/interfaces/token.interface';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
@@ -7,9 +6,8 @@ import {
   baseDir,
   createFile,
   createFolder,
-  postgresClient,
   prismaService,
-  setupData,
+  setUsers,
 } from './setup-e2e';
 import { v4 as uuidv4 } from 'uuid';
 import request from 'supertest';
@@ -19,11 +17,9 @@ import path from 'path';
 
 describe('File', () => {
   let app: INestApplication;
-  let data: Awaited<ReturnType<typeof setupData>>;
+  let data: Awaited<ReturnType<typeof setUsers>>;
   let folderData: Awaited<ReturnType<typeof createFolder>>;
   let uploadedFile: Awaited<ReturnType<typeof createFile>>;
-  let altUser: Awaited<ReturnType<typeof data.createTestUser>>;
-  let altUserToken: Awaited<ReturnType<typeof data.createToken>>;
   const originDir = path.join(baseDir, 'origin');
 
   const sampleImageName = 'uploaded-image.jpg';
@@ -52,27 +48,13 @@ describe('File', () => {
   // Create User and Folder for testing
   beforeEach(async () => {
     // Create Data for testing
-    data = await setupData(postgresClient, true);
+    data = await setUsers();
     // Create Second User
-    altUser = await data.createTestUser(uuidv4());
-    const altUserTokenPayload: TokenPayloadData = {
-      uuidKey: altUser.uuid_key,
-      email: 'test2@iflefi.com',
-      nickname: 'test2',
-      imageUrl: null,
-    };
-    altUserToken = data.createToken(altUserTokenPayload);
-
     // Create Folder
     if (!data.user) {
       throw new Error('User not found');
     }
-    folderData = await createFolder(
-      BigInt(1),
-      data.user.id,
-      data.user.uuid_key,
-      null,
-    );
+    folderData = await createFolder(data.user.id, data.user.uuid_key, null);
   });
 
   describe('[POST] /file/upload/:folderKey', () => {
@@ -81,7 +63,7 @@ describe('File', () => {
         sampleImage,
         sampleImageName,
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('File uploaded');
@@ -91,37 +73,17 @@ describe('File', () => {
         sampleVideo,
         sampleVideoName,
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(201);
       expect(response.body.message).toBe('File uploaded');
-    });
-    it('should not upload a file if Authorization header is not given', async () => {
-      const response = await uploadFile(
-        testBuffer,
-        'test',
-        folderData.folder.folder_key,
-        '',
-      );
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Authorization header is missing');
-    });
-    it('should not upload a file if Token is expired', async () => {
-      const response = await uploadFile(
-        testBuffer,
-        'test',
-        folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.expired,
-      );
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Invalid token');
     });
     it('should not upload a file if user does not have create role', async () => {
       const response = await uploadFile(
         testBuffer,
         'test',
         folderData.folder.folder_key,
-        'Bearer ' + altUserToken.normal,
+        data.altUser.uuid_key,
       );
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
@@ -133,7 +95,7 @@ describe('File', () => {
         testBuffer,
         '',
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('Invalid file');
@@ -143,7 +105,7 @@ describe('File', () => {
         testBuffer,
         'a'.repeat(257),
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -153,7 +115,8 @@ describe('File', () => {
     it('should not upload a file if file is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .field('fileName', 'test');
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('Invalid file');
@@ -161,7 +124,8 @@ describe('File', () => {
     it('should not upload a file if chunkNumber is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .attach('file', testBuffer, { filename: 'test' })
         .field('totalChunks', 1)
         .field('fileName', 'test');
@@ -173,7 +137,8 @@ describe('File', () => {
     it('should not upload a file if totalChunks is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .attach('file', testBuffer, { filename: 'test' })
         .field('chunkNumber', 0)
         .field('fileName', 'test');
@@ -189,7 +154,7 @@ describe('File', () => {
         1,
         'test',
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -203,7 +168,7 @@ describe('File', () => {
         -1,
         'test',
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -215,13 +180,13 @@ describe('File', () => {
         testBuffer,
         'test',
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       const response = await uploadFile(
         testBuffer,
         'test',
         folderData.folder.folder_key,
-        'Bearer ' + data.accessToken.normal,
+        data.user.uuid_key,
       );
       expect(response.status).toBe(409);
       expect(response.body.message).toBe('File already exists');
@@ -238,16 +203,10 @@ describe('File', () => {
         BigInt(1),
         folderData.folder.id,
         'test.jpg',
-      );
-      fs.mkdirSync(originDir, { recursive: true });
-      fs.writeFileSync(
-        `${originDir}/${uploadedFile.file.file_key}${path.extname(uploadedFile.file.file_name)}`,
+        true,
+        100,
         testBuffer,
       );
-    });
-
-    afterEach(async () => {
-      await fs.promises.rm(originDir, { recursive: true });
     });
 
     it('should download a file', async () => {
@@ -255,31 +214,18 @@ describe('File', () => {
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key);
+
       expect(response.status).toBe(200);
-    });
-    it('should not download a file if Authorization header is not given', async () => {
-      const response = await request(app.getHttpServer()).get(
-        `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-      );
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Authorization header is missing');
-    });
-    it('should not download a file if Token is expired', async () => {
-      const response = await request(app.getHttpServer())
-        .get(
-          `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .set('Authorization', `Bearer ${data.accessToken.expired}`);
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Invalid token');
     });
     it('should not download a file if user does not have read role', async () => {
       const response = await request(app.getHttpServer())
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${altUserToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.altUser.uuid_key);
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
         'User does not have the required role',
@@ -288,7 +234,8 @@ describe('File', () => {
     it('should not download a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .get(`/file/download/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
     });
@@ -300,7 +247,8 @@ describe('File', () => {
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key);
       expect(response.status).toBe(500);
       expect(response.body.message).toBe('File does not exist in storage');
     });
@@ -325,41 +273,24 @@ describe('File', () => {
       );
     });
 
-    afterEach(async () => {
-      await fs.promises.rm(originDir, { recursive: true });
-    });
-
     it('should delete a file', async () => {
       const response = await request(app.getHttpServer())
         .delete(
           `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key);
+
       expect(response.status).toBe(200);
       expect(response.text).toBe('File deleted');
-    });
-    it('should not delete a file if Authorization header is not given', async () => {
-      const response = await request(app.getHttpServer()).delete(
-        `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-      );
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Authorization header is missing');
-    });
-    it('should not delete a file if Token is expired', async () => {
-      const response = await request(app.getHttpServer())
-        .delete(
-          `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .set('Authorization', `Bearer ${data.accessToken.expired}`);
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Invalid token');
     });
     it('should not delete a file if user does not have delete role', async () => {
       const response = await request(app.getHttpServer())
         .delete(
           `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${altUserToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.altUser.uuid_key);
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
         'User does not have the required role',
@@ -368,7 +299,8 @@ describe('File', () => {
     it('should not delete a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .delete(`/file/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`);
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist in database');
     });
@@ -392,45 +324,24 @@ describe('File', () => {
       );
     });
 
-    afterEach(async () => {
-      await fs.promises.rm(originDir, { recursive: true });
-    });
-
     it('should rename a file', async () => {
       const response = await request(app.getHttpServer())
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(200);
       expect(response.text).toBe('File renamed');
-    });
-    it('should not rename a file if Authorization header is not given', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .send({ fileName: 'test2.jpg' });
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Authorization header is missing');
-    });
-    it('should not rename a file if Token is expired', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .set('Authorization', `Bearer ${data.accessToken.expired}`)
-        .send({ fileName: 'test2.jpg' });
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Invalid token');
     });
     it('should not rename a file if user does not have update role', async () => {
       const response = await request(app.getHttpServer())
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${altUserToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.altUser.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
@@ -440,7 +351,8 @@ describe('File', () => {
     it('should not rename a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/file/rename/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
@@ -450,7 +362,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .send({ fileName: '' });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -462,7 +375,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .send({ fileName: 'a'.repeat(257) });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -483,7 +397,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(409);
       expect(response.body.message).toBe('File already exists');
@@ -508,15 +423,10 @@ describe('File', () => {
         testBuffer,
       );
       targetFolderData = await createFolder(
-        BigInt(2),
         data.user.id,
         data.user.uuid_key,
         null,
       );
-    });
-
-    afterEach(async () => {
-      await fs.promises.rm(originDir, { recursive: true });
     });
 
     it('should move a file', async () => {
@@ -524,36 +434,19 @@ describe('File', () => {
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(200);
       expect(response.text).toBe('File moved');
-    });
-    it('should not move a file if Authorization header is not given', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(
-          `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .query({ targetKey: targetFolderData.folder.folder_key });
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Authorization header is missing');
-    });
-    it('should not move a file if Token is expired', async () => {
-      const response = await request(app.getHttpServer())
-        .patch(
-          `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
-        .set('Authorization', `Bearer ${data.accessToken.expired}`)
-        .query({ targetKey: targetFolderData.folder.folder_key });
-      expect(response.status).toBe(401);
-      expect(response.body.message).toBe('Invalid token');
     });
     it('should not move a file if user does not have update role', async () => {
       const response = await request(app.getHttpServer())
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${altUserToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.altUser.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
@@ -563,7 +456,8 @@ describe('File', () => {
     it('should not move a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/file/move/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
@@ -573,7 +467,8 @@ describe('File', () => {
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('Authorization', `Bearer ${data.accessToken.normal}`)
+        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+        .set('x-uuid-key', data.user.uuid_key)
         .query({ targetKey: uuidv4() });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Folder does not exist');
@@ -586,11 +481,12 @@ describe('File', () => {
     totalChunks: number,
     fileName: string,
     folderKey: string,
-    userToken: string,
+    userUUIDKey: string,
   ) => {
     const response = await request(app.getHttpServer())
       .post(`/file/upload/${folderKey}`)
-      .set('Authorization', `${userToken}`)
+      .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
+      .set('x-uuid-key', `${userUUIDKey}`)
       .attach('file', chunk, { filename: fileName })
       .field('chunkNumber', chunkNumber)
       .field('totalChunks', totalChunks)
@@ -602,7 +498,7 @@ describe('File', () => {
     file: Buffer,
     fileName: string,
     folderKey: string,
-    userToken: string,
+    userUUIDKey: string,
     chunkSize: number = 1024 * 1024,
   ) => {
     const totalChunks = Math.ceil(file.length / chunkSize);
@@ -616,7 +512,7 @@ describe('File', () => {
         totalChunks,
         fileName,
         folderKey,
-        userToken,
+        userUUIDKey,
       );
       if (response.status === 206) continue;
       else return { status: response.status, body: response.body };

@@ -4,7 +4,7 @@ import {
   createStreamVideoFile,
   postgresClient,
   prismaService,
-  setupData,
+  setUsers,
 } from './setup-e2e';
 import { Test } from '@nestjs/testing';
 import { PrismaService } from 'src/services/prisma.service';
@@ -16,7 +16,7 @@ import fs from 'fs';
 
 describe('Video', () => {
   let app: INestApplication;
-  let data: Awaited<ReturnType<typeof setupData>>;
+  let data: Awaited<ReturnType<typeof setUsers>>;
   let folderData: Awaited<ReturnType<typeof createFolder>>;
   let videoData: Awaited<ReturnType<typeof createStreamVideoFile>>;
   let altUser: Awaited<ReturnType<typeof data.createTestUser>>;
@@ -41,7 +41,7 @@ describe('Video', () => {
   // Create Streaming Video for testing
   beforeEach(async () => {
     // Create Data for testing
-    data = await setupData(postgresClient, true);
+    data = await setUsers(postgresClient, true);
 
     // Create Second User
     altUser = await data.createTestUser(uuidv4());

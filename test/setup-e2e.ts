@@ -1,4 +1,3 @@
-import { TokenPayloadData } from './../src/interfaces/token.interface';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
@@ -6,7 +5,6 @@ import {
 import { execSync } from 'child_process';
 import { Client } from 'pg';
 import { PrismaService } from 'src/services/prisma.service';
-import jwt from 'jsonwebtoken';
 import { v4 as uuidv4 } from 'uuid';
 import {
   file_info,
@@ -31,11 +29,6 @@ export const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
 let postgresContainer: StartedPostgreSqlContainer;
 let postgresClient: Client;
 let prismaService: PrismaService;
-let testUserToken: string;
-let expiredUserToken: string;
-let testUserTokenPayload: TestTokenPayload;
-let wrongUserTokenPayload: TestTokenPayload;
-let wrongUserToken: string;
 
 beforeAll(async () => {
   // Start a PostgreSQL container
@@ -59,36 +52,6 @@ beforeAll(async () => {
       },
     },
   });
-  // Create a test user token
-  if (!process.env.TOKEN_SECRET) {
-    throw new Error('TOKEN_SECRET not set');
-  }
-
-  testUserTokenPayload = {
-    uuidKey: uuidv4(),
-    email: 'test@test.email',
-    nickname: 'test',
-    imageUrl: '',
-  };
-
-  testUserToken = jwt.sign(testUserTokenPayload, process.env.TOKEN_SECRET);
-  expiredUserToken = jwt.sign(
-    {
-      uuidKey: uuidv4(),
-      email: 'test@test.email',
-      nickname: 'test',
-      imageUrl: '',
-    },
-    process.env.TOKEN_SECRET,
-    { expiresIn: '0s' },
-  );
-  wrongUserTokenPayload = {
-    uuidKey: uuidv4(),
-    email: 'test@test.email',
-    nickname: 'test',
-    imageUrl: '',
-  };
-  wrongUserToken = jwt.sign(wrongUserTokenPayload, process.env.TOKEN_SECRET);
 });
 
 afterAll(async () => {
@@ -106,21 +69,9 @@ afterEach(async () => {
 });
 
 jest.setTimeout(10000);
-export {
-  testUserToken,
-  testUserTokenPayload,
-  expiredUserToken,
-  wrongUserToken,
-  wrongUserTokenPayload,
-  prismaService,
-  postgresClient,
-  postgresContainer,
-};
+export { prismaService, postgresClient, postgresContainer };
 
-export const setupData = async (
-  postgresClient: Client,
-  createUser: boolean = true,
-) => {
+export const setUsers = async () => {
   const createTestUser = async (uuidKey: string) => {
     const user = await postgresClient.query<users, users[]>(
       `INSERT INTO "member"."users" (uuid_key) VALUES ('${uuidKey}') RETURNING *`,
@@ -128,69 +79,36 @@ export const setupData = async (
     return user.rows[0];
   };
 
-  const uuidKey = uuidv4();
-
   let user: users | null = null;
-  if (createUser) {
-    user = await createTestUser(uuidKey);
+  let altUser: users | null = null;
+
+  user = await createTestUser(uuidv4());
+  altUser = await createTestUser(uuidv4());
+
+  if (!user || !altUser) {
+    throw new Error('User not created');
   }
-
-  const payload: TokenPayloadData = {
-    uuidKey: uuidKey,
-    email: 'test@ifelfi.com',
-    nickname: 'test',
-    imageUrl: null,
-  };
-
-  const createToken = (payload: TokenPayloadData) => {
-    if (!process.env.TOKEN_SECRET) {
-      throw new Error('TOKEN_SECRET not set');
-    }
-    return {
-      normal: jwt.sign(payload, process.env.TOKEN_SECRET, {
-        expiresIn: '1h',
-        issuer: 'ifelfi.com',
-      }),
-      expired: jwt.sign(payload, process.env.TOKEN_SECRET, {
-        expiresIn: '0s',
-        issuer: 'ifelfi.com',
-      }),
-      wrongPayload: jwt.sign({ wrong: 'payload' }, process.env.TOKEN_SECRET, {
-        expiresIn: '1h',
-        issuer: 'ifelfi.com',
-      }),
-      wrongSecret: jwt.sign(payload, 'wrong secret', {
-        expiresIn: '1h',
-        issuer: 'ifelfi.com',
-      }),
-    };
-  };
-
-  const accessToken = createToken(payload);
 
   return {
     user,
-    accessToken,
-    createTestUser,
-    createToken,
+    altUser,
   };
 };
 
 export const createFolder = async (
-  folderId: bigint,
   userId: number,
   folderName: string,
   parentFolderId: bigint | null,
 ) => {
   const folderKey = uuidv4();
   const folder = await postgresClient.query<folders, folders[]>(
-    `INSERT INTO "cloud"."folders" (id, folder_key, folder_name, parent_folder_id) VALUES (${folderId}, '${folderKey}', '${folderName}', ${parentFolderId}) RETURNING *`,
+    `INSERT INTO "cloud"."folders" (folder_key, folder_name, parent_folder_id) VALUES ('${folderKey}', '${folderName}', ${parentFolderId}) RETURNING *`,
   );
   const folderInfo = await postgresClient.query<folder_info, folder_info[]>(
-    `INSERT INTO "cloud"."folder_info" (folder_id, owner_id) VALUES (${folderId}, ${userId}) RETURNING *`,
+    `INSERT INTO "cloud"."folder_info" (folder_id, owner_id) VALUES (${folder.rows[0].id}, ${userId}) RETURNING *`,
   );
   const userRole = await postgresClient.query<user_role, user_role[]>(
-    `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${userId}, ${folderId}, '{create,read,update,delete}') RETURNING *`,
+    `INSERT INTO "cloud"."user_role" (user_id, folder_id, role) VALUES (${userId}, ${folder.rows[0].id}, '{create,read,update,delete}') RETURNING *`,
   );
   return {
     folder: folder.rows[0],
@@ -216,7 +134,6 @@ export const createFile = async (
     `INSERT INTO "cloud"."file_info" (file_id, uploader_id, byte_size) VALUES (${fileId}, ${userId}, ${byteSize}) RETURNING *`,
   );
   if (fileBuffer) {
-    const baseDir = process.env.BASE_STORAGE_PATH || 'storage';
     const extName = path.extname(fileName);
     if (!fs.existsSync(baseDir)) {
       fs.mkdirSync(baseDir);
@@ -226,6 +143,9 @@ export const createFile = async (
       `${baseDir}/origin/${fileKey}${extName}`,
       fileBuffer,
     );
+  }
+  if (!file.rows[0] || !fileInfo.rows[0]) {
+    throw new Error('File not created');
   }
   return {
     file: file.rows[0],

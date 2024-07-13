@@ -18,7 +18,6 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { access_role } from '@prisma/client';
 import { Response } from 'express';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import {
@@ -32,7 +31,7 @@ import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FileService } from 'src/services/file.service';
 
 @Controller('file')
-@UseGuards(AuthGuard, UserGuard)
+@UseGuards(UserGuard)
 export class FileController {
   constructor(private fileService: FileService) {}
 

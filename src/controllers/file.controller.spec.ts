@@ -6,8 +6,6 @@ import { PrismaService } from 'src/services/prisma.service';
 import { FileController } from './file.controller';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
-import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import fs from 'fs';
 import { Response } from 'express';
@@ -19,9 +17,8 @@ describe('FileController', () => {
   let checkRoleService: CheckRoleService;
   const res = mockDeep<Response>({
     status: jest.fn().mockImplementation(() => res),
-    writeHead: jest.fn().mockImplementation((status, headers) => {
+    writeHead: jest.fn().mockImplementation((status) => {
       res.status(status);
-      res.headers = headers;
     }),
   });
   const mockGuards = {
@@ -31,10 +28,8 @@ describe('FileController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FileController],
-      providers: [FileService, PrismaService, CheckRoleService, JwtService],
+      providers: [FileService, PrismaService, CheckRoleService],
     })
-      .overrideGuard(AuthGuard)
-      .useValue(mockGuards)
       .overrideGuard(UserGuard)
       .useValue(mockGuards)
       .compile();
@@ -84,7 +79,9 @@ describe('FileController', () => {
   it('should download a file', async () => {
     const fileKey = uuidv4();
     const stream = fs.createReadStream('./test/sample/sample-video.mp4');
-    fileService.getOriginStream = jest.fn().mockResolvedValue(stream);
+    fileService.getOriginStream = jest
+      .fn()
+      .mockResolvedValue({ stream, length: 104857600 });
     await controller.downloadFile(fileKey, res);
     expect(res.status).toHaveBeenCalledWith(200);
   });

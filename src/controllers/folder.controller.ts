@@ -13,7 +13,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { access_role } from '@prisma/client';
-import { AuthGuard } from 'src/guards/auth.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { UserGuard } from 'src/guards/user.guard';
 import {
@@ -26,7 +25,7 @@ import { TypiaValidationPipe } from 'src/pipes/validation.pipe';
 import { FolderService } from 'src/services/folder.service';
 
 @Controller('folder')
-@UseGuards(AuthGuard, UserGuard)
+@UseGuards(UserGuard)
 export class FolderController {
   constructor(private folderService: FolderService) {}
 

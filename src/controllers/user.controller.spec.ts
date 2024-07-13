@@ -2,7 +2,6 @@ import { UserService } from 'src/services/user.service';
 import { UserController } from './user.controller';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from 'src/services/prisma.service';
-import { JwtService } from '@nestjs/jwt';
 import { v4 as uuidv4 } from 'uuid';
 
 describe('UserController', () => {
@@ -12,7 +11,7 @@ describe('UserController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [UserController],
-      providers: [UserService, PrismaService, JwtService],
+      providers: [UserService, PrismaService],
     }).compile();
 
     controller = module.get<UserController>(UserController);
