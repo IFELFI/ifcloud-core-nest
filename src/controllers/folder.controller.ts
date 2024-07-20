@@ -110,6 +110,15 @@ export class FolderController {
     return await this.folderService.readFolderInfo(folderKey);
   }
 
+  @Get(':folderKey/path')
+  @UseGuards(RoleGuard(access_role.read))
+  @HttpCode(200)
+  async readFolderPath(
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+  ): Promise<string[]> {
+    return await this.folderService.getFolderPath(folderKey);
+  }
+
   @Get(':folderKey')
   @UseGuards(RoleGuard(access_role.read))
   @HttpCode(200)

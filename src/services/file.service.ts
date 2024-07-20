@@ -241,12 +241,6 @@ export class FileService implements OnModuleInit {
     }
     const originFileName = `${fileKey}${path.extname(file.file_name)}`;
     const originPath = path.join(storagePath.originDir, originFileName);
-    if (!fs.existsSync(originPath)) {
-      throw new NotFoundException('File does not exist in storage');
-    }
-    await fs.promises.rm(originPath).catch(() => {
-      throw new InternalServerErrorException('Failed to delete file');
-    });
     await this.prisma.files
       .delete({
         where: {
@@ -256,6 +250,12 @@ export class FileService implements OnModuleInit {
       .catch(() => {
         throw new InternalServerErrorException('Failed to delete file');
       });
+    if (!fs.existsSync(originPath)) {
+      throw new NotFoundException('File does not exist in storage');
+    }
+    await fs.promises.rm(originPath).catch(() => {
+      throw new InternalServerErrorException('Failed to delete file');
+    });
   }
 
   /**

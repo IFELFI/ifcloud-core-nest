@@ -129,6 +129,39 @@ export class FolderService {
     });
   }
 
+  async getFolderPath(folderKey: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const path: string[] = [];
+      let currentFolderId = folder.id;
+      while (currentFolderId) {
+        const currentFolder = await tx.folders.findUnique({
+          where: {
+            id: currentFolderId,
+          },
+        });
+        if (!currentFolder) {
+          throw new NotFoundException('Folder does not exist');
+        }
+        if (!currentFolder.parent_folder_id) {
+          path.unshift('/');
+          break;
+        } else {
+          path.unshift(currentFolder.folder_name);
+        }
+        currentFolderId = currentFolder.parent_folder_id;
+      }
+      return path;
+    });
+  }
+
   /**
    * Delete folder
    * @param folderKey Folder key
