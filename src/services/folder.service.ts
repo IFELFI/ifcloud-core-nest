@@ -76,6 +76,60 @@ export class FolderService {
   }
 
   /**
+   * Read folder info
+   * @param folderKey Folder key
+   * @returns Folder info
+   */
+  async readFolderInfo(folderKey: string): Promise<{
+    key: string;
+    name: string;
+    info: { createDate: Date; updateDate: Date };
+    parentKey: string;
+  }> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const folderInfo = await tx.folder_info.findUnique({
+        where: {
+          folder_id: folder.id,
+        },
+      });
+      if (!folderInfo) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const output = {
+        key: folder.folder_key,
+        name: folder.folder_name,
+        info: {
+          createDate: folderInfo.create_date,
+          updateDate: folderInfo.update_date,
+        },
+        parentKey: '',
+      };
+      if (!folder.parent_folder_id) {
+        return output;
+      } else {
+        const parentFolder = await tx.folders.findUnique({
+          where: {
+            id: folder.parent_folder_id,
+          },
+        });
+        if (!parentFolder) {
+          throw new NotFoundException('Parent folder does not exist');
+        }
+        output.parentKey = parentFolder.folder_key;
+        return output;
+      }
+    });
+  }
+
+  /**
    * Delete folder
    * @param folderKey Folder key
    * @param userId User ID

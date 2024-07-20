@@ -372,10 +372,17 @@ export class FileService implements OnModuleInit {
       const chunkPath = `${chunkDirPath}/${i}`;
       const chunk = await fs.promises.readFile(chunkPath);
       writeStream.write(chunk);
-      await fs.promises.unlink(chunkPath).catch(() => {
-        throw new InternalServerErrorException('Failed to delete chunk');
-      });
     }
+    // delete chunk directory
+    await fs.promises
+      .rm(chunkDirPath, {
+        recursive: true,
+      })
+      .catch(() => {
+        throw new InternalServerErrorException(
+          'Failed to delete chunk directory',
+        );
+      });
     writeStream.end();
     return originFilePath;
   }
