@@ -139,7 +139,7 @@ export class FolderController {
   }
 
   @Patch('move/:folderKey')
-  @UseGuards(RoleGuard(access_role.update, true, access_role.update))
+  @UseGuards(RoleGuard(access_role.update, 'folder', true, access_role.update))
   @HttpCode(200)
   async moveFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,

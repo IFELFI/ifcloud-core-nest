@@ -13,9 +13,9 @@ import { CheckRoleService } from 'src/services/checkRole.service';
 
 export function RoleGuard(
   role: access_role,
+  type: 'folder' | 'file' = 'folder',
   checkTarget: boolean = false,
   targetRole: access_role = access_role.update,
-  type: 'folder' | 'file' = 'folder',
 ): Type<CanActivate> {
   @Injectable()
   class RoleGuard implements CanActivate {

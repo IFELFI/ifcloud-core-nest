@@ -24,7 +24,7 @@ export interface TestTokenPayload {
   imageUrl: string;
 }
 
-export const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
+export const baseDir = process.env.STORAGE_PATH as string;
 
 let postgresContainer: StartedPostgreSqlContainer;
 let postgresClient: Client;

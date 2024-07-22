@@ -213,9 +213,7 @@ describe('File', () => {
 
     it('should download a file', async () => {
       const response = await request(app.getHttpServer())
-        .get(
-          `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .get(`/file/download/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key);
 
@@ -223,9 +221,7 @@ describe('File', () => {
     });
     it('should not download a file if user does not have read role', async () => {
       const response = await request(app.getHttpServer())
-        .get(
-          `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .get(`/file/download/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.altUser.uuid_key);
       expect(response.status).toBe(403);
@@ -235,7 +231,7 @@ describe('File', () => {
     });
     it('should not download a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
-        .get(`/file/download/${folderData.folder.folder_key}/${uuidv4()}`)
+        .get(`/file/download/${uuidv4()}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(404);
@@ -246,9 +242,7 @@ describe('File', () => {
         `${originDir}/${uploadedFile.file.file_key}${path.extname(uploadedFile.file.file_name)}`,
       );
       const response = await request(app.getHttpServer())
-        .get(
-          `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .get(`/file/download/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(500);
@@ -277,9 +271,7 @@ describe('File', () => {
 
     it('should delete a file', async () => {
       const response = await request(app.getHttpServer())
-        .delete(
-          `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .delete(`/file/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key);
 
@@ -288,9 +280,7 @@ describe('File', () => {
     });
     it('should not delete a file if user does not have delete role', async () => {
       const response = await request(app.getHttpServer())
-        .delete(
-          `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .delete(`/file/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.altUser.uuid_key);
       expect(response.status).toBe(403);
@@ -300,11 +290,11 @@ describe('File', () => {
     });
     it('should not delete a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
-        .delete(`/file/${folderData.folder.folder_key}/${uuidv4()}`)
+        .delete(`/file/${uuidv4()}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(404);
-      expect(response.body.message).toBe('File does not exist in database');
+      expect(response.body.message).toBe('File does not exist');
     });
   });
 
@@ -328,9 +318,7 @@ describe('File', () => {
 
     it('should rename a file', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/rename/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
@@ -339,9 +327,7 @@ describe('File', () => {
     });
     it('should not rename a file if user does not have update role', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/rename/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.altUser.uuid_key)
         .send({ fileName: 'test2.jpg' });
@@ -352,7 +338,7 @@ describe('File', () => {
     });
     it('should not rename a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/file/rename/${folderData.folder.folder_key}/${uuidv4()}`)
+        .patch(`/file/rename/${uuidv4()}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
@@ -361,9 +347,7 @@ describe('File', () => {
     });
     it('should not rename a file if file name is not given', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/rename/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: '' });
@@ -374,9 +358,7 @@ describe('File', () => {
     });
     it('should not rename a file if file name is invalid', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/rename/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'a'.repeat(257) });
@@ -396,9 +378,7 @@ describe('File', () => {
         'test2.jpg',
       );
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/rename/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
@@ -433,9 +413,7 @@ describe('File', () => {
 
     it('should move a file', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/move/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
@@ -444,9 +422,7 @@ describe('File', () => {
     });
     it('should not move a file if user does not have update role', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/move/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.altUser.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
@@ -457,7 +433,7 @@ describe('File', () => {
     });
     it('should not move a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
-        .patch(`/file/move/${folderData.folder.folder_key}/${uuidv4()}`)
+        .patch(`/file/move/${uuidv4()}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
@@ -466,9 +442,7 @@ describe('File', () => {
     });
     it('should not move a file if target folder does not exist', async () => {
       const response = await request(app.getHttpServer())
-        .patch(
-          `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
-        )
+        .patch(`/file/move/${uploadedFile.file.file_key}`)
         .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
         .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: uuidv4() });
