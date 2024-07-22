@@ -5,12 +5,13 @@ import { UserModule } from './modules/user.module';
 import { FileModule } from './modules/file.module';
 import { VideoModule } from './modules/video.module';
 import { AuthMiddleware } from './middlewares/auth.middleware';
+import { validate } from './config';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
+      validate: validate,
       isGlobal: true,
-      envFilePath: '.env',
     }),
     UserModule,
     FolderModule,

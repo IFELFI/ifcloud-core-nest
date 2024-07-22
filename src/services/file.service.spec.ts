@@ -11,6 +11,7 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 
 describe('FileService', () => {
   let service: FileService;
@@ -18,7 +19,24 @@ describe('FileService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FileService, PrismaService, CheckRoleService],
+      providers: [
+        FileService,
+        PrismaService,
+        CheckRoleService,
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn(() => {
+              return {
+                base: 'test',
+                origin: 'origin',
+                chunk: 'chunk',
+                video: 'video',
+              };
+            }),
+          },
+        },
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(mockDeep(PrismaClient))
@@ -418,7 +436,7 @@ describe('FileService', () => {
       jest
         .spyOn(fs.promises, 'readFile')
         .mockResolvedValue(Buffer.from('test'));
-      jest.spyOn(fs.promises, 'unlink').mockResolvedValue();
+      jest.spyOn(fs.promises, 'rm').mockResolvedValue();
     });
 
     it('should merge chunks', async () => {
@@ -426,7 +444,7 @@ describe('FileService', () => {
       expect(result).toEqual(expect.any(String));
     });
     it('should throw InternalServerErrorException if failed to delete chunk', async () => {
-      jest.spyOn(fs.promises, 'unlink').mockRejectedValue(new Error());
+      jest.spyOn(fs.promises, 'rm').mockRejectedValue(new Error());
       await expect(
         service['mergeChunks'](fileKey, totalChunks),
       ).rejects.toThrow(InternalServerErrorException);

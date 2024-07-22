@@ -2,7 +2,12 @@ import request from 'supertest';
 import { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { AppModule } from 'src/app.module';
-import { prismaService, setUsers } from './setup-e2e';
+import {
+  gatewayKeyName,
+  prismaService,
+  setUsers,
+  uuidKeyName,
+} from './setup-e2e';
 import { PrismaService } from 'src/services/prisma.service';
 import { v4 as uuidV4 } from 'uuid';
 
@@ -34,8 +39,8 @@ describe('User', () => {
     it('should get a user', async () => {
       const response = await request(app.getHttpServer())
         .get('/user')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({});
 
       expect(response.status).toBe(200);
@@ -44,8 +49,8 @@ describe('User', () => {
     it('should not get a user if user does not exist', async () => {
       const response = await request(app.getHttpServer())
         .get('/user')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', uuidV4())
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, uuidV4())
         .send({});
 
       expect(response.status).toBe(404);
@@ -57,8 +62,8 @@ describe('User', () => {
     it('should create a user', async () => {
       const response = await request(app.getHttpServer())
         .get('/user/enroll')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', uuidV4())
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, uuidV4())
         .send({});
 
       expect(response.status).toBe(201);
@@ -68,8 +73,8 @@ describe('User', () => {
       data = await setUsers();
       const response = await request(app.getHttpServer())
         .get('/user/enroll')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({});
 
       expect(response.status).toBe(409);
@@ -82,8 +87,8 @@ describe('User', () => {
       data = await setUsers();
       const response = await request(app.getHttpServer())
         .delete('/user')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({});
 
       expect(response.status).toBe(200);
@@ -92,8 +97,8 @@ describe('User', () => {
     it('should not delete a user if user does not exist', async () => {
       const response = await request(app.getHttpServer())
         .delete('/user')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', uuidV4())
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, uuidV4())
         .send({});
 
       expect(response.status).toBe(404);

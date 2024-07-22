@@ -181,3 +181,6 @@ export const createStreamVideoFile = async (
     path: `${baseDir}/video/${fileKey}`,
   };
 };
+
+export const gatewayKeyName = process.env.GATEWAY_KEY_NAME as string;
+export const uuidKeyName = process.env.UUID_KEY_NAME as string;

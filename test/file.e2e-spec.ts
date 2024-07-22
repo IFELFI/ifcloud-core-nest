@@ -6,8 +6,10 @@ import {
   baseDir,
   createFile,
   createFolder,
+  gatewayKeyName,
   prismaService,
   setUsers,
+  uuidKeyName,
 } from './setup-e2e';
 import { v4 as uuidv4 } from 'uuid';
 import request from 'supertest';
@@ -115,8 +117,8 @@ describe('File', () => {
     it('should not upload a file if file is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .field('fileName', 'test');
       expect(response.status).toBe(400);
       expect(response.body.message).toBe('Invalid file');
@@ -124,8 +126,8 @@ describe('File', () => {
     it('should not upload a file if chunkNumber is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .attach('file', testBuffer, { filename: 'test' })
         .field('totalChunks', 1)
         .field('fileName', 'test');
@@ -137,8 +139,8 @@ describe('File', () => {
     it('should not upload a file if totalChunks is not given', async () => {
       const response = await request(app.getHttpServer())
         .post(`/file/upload/${folderData.folder.folder_key}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .attach('file', testBuffer, { filename: 'test' })
         .field('chunkNumber', 0)
         .field('fileName', 'test');
@@ -214,8 +216,8 @@ describe('File', () => {
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key);
 
       expect(response.status).toBe(200);
     });
@@ -224,8 +226,8 @@ describe('File', () => {
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.altUser.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.altUser.uuid_key);
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
         'User does not have the required role',
@@ -234,8 +236,8 @@ describe('File', () => {
     it('should not download a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .get(`/file/download/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
     });
@@ -247,8 +249,8 @@ describe('File', () => {
         .get(
           `/file/download/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(500);
       expect(response.body.message).toBe('File does not exist in storage');
     });
@@ -278,8 +280,8 @@ describe('File', () => {
         .delete(
           `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key);
 
       expect(response.status).toBe(200);
       expect(response.text).toBe('File deleted');
@@ -289,8 +291,8 @@ describe('File', () => {
         .delete(
           `/file/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.altUser.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.altUser.uuid_key);
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
         'User does not have the required role',
@@ -299,8 +301,8 @@ describe('File', () => {
     it('should not delete a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .delete(`/file/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key);
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key);
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist in database');
     });
@@ -329,8 +331,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(200);
       expect(response.text).toBe('File renamed');
@@ -340,8 +342,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.altUser.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.altUser.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
@@ -351,8 +353,8 @@ describe('File', () => {
     it('should not rename a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/file/rename/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
@@ -362,8 +364,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: '' });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -375,8 +377,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'a'.repeat(257) });
       expect(response.status).toBe(400);
       expect(response.body.message).toBe(
@@ -397,8 +399,8 @@ describe('File', () => {
         .patch(
           `/file/rename/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send({ fileName: 'test2.jpg' });
       expect(response.status).toBe(409);
       expect(response.body.message).toBe('File already exists');
@@ -434,8 +436,8 @@ describe('File', () => {
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(200);
       expect(response.text).toBe('File moved');
@@ -445,8 +447,8 @@ describe('File', () => {
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.altUser.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.altUser.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(403);
       expect(response.body.message).toBe(
@@ -456,8 +458,8 @@ describe('File', () => {
     it('should not move a file if file does not exist', async () => {
       const response = await request(app.getHttpServer())
         .patch(`/file/move/${folderData.folder.folder_key}/${uuidv4()}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: targetFolderData.folder.folder_key });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('File does not exist');
@@ -467,8 +469,8 @@ describe('File', () => {
         .patch(
           `/file/move/${folderData.folder.folder_key}/${uploadedFile.file.file_key}`,
         )
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .query({ targetKey: uuidv4() });
       expect(response.status).toBe(404);
       expect(response.body.message).toBe('Folder does not exist');
@@ -485,8 +487,8 @@ describe('File', () => {
   ) => {
     const response = await request(app.getHttpServer())
       .post(`/file/upload/${folderKey}`)
-      .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-      .set('x-uuid-key', `${userUUIDKey}`)
+      .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+      .set(uuidKeyName, `${userUUIDKey}`)
       .attach('file', chunk, { filename: fileName })
       .field('chunkNumber', chunkNumber)
       .field('totalChunks', totalChunks)

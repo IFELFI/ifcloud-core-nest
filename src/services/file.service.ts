@@ -1,4 +1,3 @@
-import { storagePath } from './../utils/storagePath';
 import {
   ConflictException,
   Injectable,
@@ -10,29 +9,36 @@ import { PrismaService } from './prisma.service';
 import fs, { ReadStream } from 'fs';
 import path from 'path';
 import { resolution } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { IConfig, IStorageConfig } from 'src/interfaces/config.interface';
 
 @Injectable()
 export class FileService implements OnModuleInit {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private config: ConfigService<IConfig, true>,
+  ) {}
 
   onModuleInit() {
-    if (!fs.existsSync(storagePath.baseDir)) {
-      fs.mkdirSync(storagePath.baseDir, {
+    const storageConfig = this.config.get<IStorageConfig>('storage');
+
+    if (!fs.existsSync(storageConfig.base)) {
+      fs.mkdirSync(storageConfig.base, {
         recursive: true,
       });
     }
-    if (!fs.existsSync(storagePath.originDir)) {
-      fs.mkdirSync(storagePath.originDir, {
+    if (!fs.existsSync(storageConfig.origin)) {
+      fs.mkdirSync(storageConfig.origin, {
         recursive: true,
       });
     }
-    if (!fs.existsSync(storagePath.videoDir)) {
-      fs.mkdirSync(storagePath.videoDir, {
+    if (!fs.existsSync(storageConfig.video)) {
+      fs.mkdirSync(storageConfig.video, {
         recursive: true,
       });
     }
-    if (!fs.existsSync(storagePath.chunkDir)) {
-      fs.mkdirSync(storagePath.chunkDir, {
+    if (!fs.existsSync(storageConfig.chunk)) {
+      fs.mkdirSync(storageConfig.chunk, {
         recursive: true,
       });
     }
@@ -56,6 +62,7 @@ export class FileService implements OnModuleInit {
     chunkNumber: number,
     totalChunks: number,
   ): Promise<{ isDone: boolean; fileKey?: string }> {
+    const storageConfig = this.config.get<IStorageConfig>('storage');
     const tempFileName = `${folderKey}_${userId}_${fileName}`;
 
     let tempFile = await this.prisma.temp_files.findUnique({
@@ -104,7 +111,7 @@ export class FileService implements OnModuleInit {
 
     let allChunkUploaded = false;
     for (let i = 0; i < totalChunks; i++) {
-      const chunkPath = `${storagePath.chunkDir}/${tempFile.file_key}/${i}`;
+      const chunkPath = `${storageConfig.chunk}/${tempFile.file_key}/${i}`;
       if (!fs.existsSync(chunkPath)) {
         allChunkUploaded = false;
         break;
@@ -180,6 +187,7 @@ export class FileService implements OnModuleInit {
   async getOriginStream(
     fileKey: string,
   ): Promise<{ stream: ReadStream; length: number }> {
+    const storageConfig = this.config.get<IStorageConfig>('storage');
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -189,7 +197,7 @@ export class FileService implements OnModuleInit {
       throw new NotFoundException('File does not exist');
     }
     const originFileName = `${fileKey}${path.extname(file.file_name)}`;
-    const originPath = path.join(storagePath.originDir, originFileName);
+    const originPath = path.join(storageConfig.origin, originFileName);
     if (!fs.existsSync(originPath)) {
       this.prisma.files.delete({
         where: {
@@ -217,7 +225,8 @@ export class FileService implements OnModuleInit {
     resolution: resolution,
     chunkFileName: string,
   ): Promise<ReadStream> {
-    const videoDir = path.join(storagePath.videoDir, fileKey);
+    const storageConfig = this.config.get<IStorageConfig>('storage');
+    const videoDir = path.join(storageConfig.video, fileKey);
     const chunkPath = path.join(videoDir, resolution, chunkFileName);
     if (!fs.existsSync(chunkPath)) {
       throw new NotFoundException('Chunk does not exist in storage');
@@ -231,6 +240,7 @@ export class FileService implements OnModuleInit {
    * @param fileKey File key
    */
   async deleteFile(fileKey: string): Promise<void> {
+    const storageConfig = this.config.get<IStorageConfig>('storage');
     const file = await this.prisma.files.findUnique({
       where: {
         file_key: fileKey,
@@ -240,7 +250,7 @@ export class FileService implements OnModuleInit {
       throw new NotFoundException('File does not exist in database');
     }
     const originFileName = `${fileKey}${path.extname(file.file_name)}`;
-    const originPath = path.join(storagePath.originDir, originFileName);
+    const originPath = path.join(storageConfig.origin, originFileName);
     await this.prisma.files
       .delete({
         where: {
@@ -332,7 +342,8 @@ export class FileService implements OnModuleInit {
     chunkNumber: number,
     fileKey: string,
   ): Promise<void> {
-    const chunkDirPath = `${storagePath.chunkDir}/${fileKey}`;
+    const storageConfig = this.config.get<IStorageConfig>('storage');
+    const chunkDirPath = `${storageConfig.chunk}/${fileKey}`;
     if (!fs.existsSync(chunkDirPath)) {
       fs.mkdirSync(chunkDirPath, {
         recursive: true,
@@ -355,6 +366,7 @@ export class FileService implements OnModuleInit {
     fileKey: string,
     totalChunks: number,
   ): Promise<string> {
+    const storageConfig = this.config.get<IStorageConfig>('storage');
     const tempFile = await this.prisma.temp_files.findUnique({
       where: {
         file_key: fileKey,
@@ -364,8 +376,8 @@ export class FileService implements OnModuleInit {
       throw new NotFoundException('Temp file not found');
     }
     const extName = path.extname(tempFile.temp_file_name);
-    const chunkDirPath = `${storagePath.chunkDir}/${fileKey}`;
-    const originFilePath = `${storagePath.originDir}/${fileKey}${extName}`;
+    const chunkDirPath = `${storageConfig.chunk}/${fileKey}`;
+    const originFilePath = `${storageConfig.origin}/${fileKey}${extName}`;
     const writeStream = fs.createWriteStream(originFilePath);
 
     for (let i = 0; i < totalChunks; i++) {

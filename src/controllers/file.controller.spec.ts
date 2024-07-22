@@ -10,6 +10,7 @@ import { UserGuard } from 'src/guards/user.guard';
 import fs from 'fs';
 import { Response } from 'express';
 import { mockDeep } from 'jest-mock-extended';
+import { ConfigModule } from '@nestjs/config';
 
 describe('FileController', () => {
   let controller: FileController;
@@ -28,6 +29,7 @@ describe('FileController', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [FileController],
+      imports: [ConfigModule],
       providers: [FileService, PrismaService, CheckRoleService],
     })
       .overrideGuard(UserGuard)
