@@ -104,10 +104,19 @@ export class FolderController {
   ): Promise<{
     key: string;
     name: string;
-    info: { createDate: Date; updateDate: Date };
     parentKey: string;
+    info: { createDate: Date; updateDate: Date };
   }> {
-    return await this.folderService.readFolderInfo(folderKey);
+    const info = await this.folderService.readFolderInfo(folderKey);
+    return {
+      key: info.key,
+      name: info.name,
+      info: {
+        createDate: info.createDate,
+        updateDate: info.updateDate,
+      },
+      parentKey: info.parentKey,
+    };
   }
 
   @Get(':folderKey/path')

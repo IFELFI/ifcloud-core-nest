@@ -180,6 +180,56 @@ export class FileService implements OnModuleInit {
   }
 
   /**
+   * Get file info
+   * @param fileKey File key
+   * @returns File info
+   */
+  async getFileInfo(fileKey: string): Promise<{
+    fileKey: string;
+    fileName: string;
+    enabled: boolean;
+    byteSize: number;
+    createDate: Date;
+    updateDate: Date;
+    parentFolderKey: string;
+  }> {
+    const file = await this.prisma.files.findUnique({
+      where: {
+        file_key: fileKey,
+      },
+    });
+    if (!file) {
+      throw new NotFoundException('File does not exist');
+    }
+    const fileInfo = await this.prisma.file_info.findUnique({
+      where: {
+        file_id: file.id,
+      },
+    });
+    if (!fileInfo) {
+      throw new NotFoundException('File info does not exist');
+    }
+    const parentFolder = await this.prisma.folders.findUnique({
+      where: {
+        id: file.parent_folder_id,
+      },
+    });
+    if (!parentFolder) {
+      throw new NotFoundException('Parent folder does not exist');
+    }
+
+    return {
+      fileKey: file.file_key,
+      fileName: file.file_name,
+      enabled: file.enabled,
+      byteSize: fileInfo.byte_size,
+      createDate: fileInfo.create_date,
+      updateDate: fileInfo.update_date,
+      parentFolderKey: parentFolder.folder_key,
+    };
+  }
+
+  /**
    * Download file
    * @param fileKey File key
    * @returns { ReadStream }

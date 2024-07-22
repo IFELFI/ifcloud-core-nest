@@ -83,7 +83,8 @@ export class FolderService {
   async readFolderInfo(folderKey: string): Promise<{
     key: string;
     name: string;
-    info: { createDate: Date; updateDate: Date };
+    createDate: Date;
+    updateDate: Date;
     parentKey: string;
   }> {
     return this.prisma.$transaction(async (tx) => {
@@ -106,10 +107,8 @@ export class FolderService {
       const output = {
         key: folder.folder_key,
         name: folder.folder_name,
-        info: {
-          createDate: folderInfo.create_date,
-          updateDate: folderInfo.update_date,
-        },
+        createDate: folderInfo.create_date,
+        updateDate: folderInfo.update_date,
         parentKey: '',
       };
       if (!folder.parent_folder_id) {

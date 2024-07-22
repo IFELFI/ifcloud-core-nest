@@ -94,6 +94,35 @@ export class FileController {
     stream.pipe(response);
   }
 
+  @Get('info/:fileKey')
+  @UseGuards(RoleGuard(access_role.read, 'file'))
+  async getFileInfo(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+  ): Promise<{
+    fileKey: string;
+    fileName: string;
+    enabled: boolean;
+    parentFolderKey: string;
+    info: {
+      byteSize: number;
+      createDate: Date;
+      updateDate: Date;
+    };
+  }> {
+    const info = await this.fileService.getFileInfo(fileKey);
+    return {
+      fileKey: info.fileKey,
+      fileName: info.fileName,
+      enabled: info.enabled,
+      parentFolderKey: info.parentFolderKey,
+      info: {
+        byteSize: info.byteSize,
+        createDate: info.createDate,
+        updateDate: info.updateDate,
+      },
+    };
+  }
+
   @Delete('/:fileKey')
   @UseGuards(RoleGuard(access_role.delete, 'file'))
   @HttpCode(200)
