@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   Type,
   mixin,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { CheckRoleService } from 'src/services/checkRole.service';
 
 export function RoleGuard(
   role: access_role,
+  type: 'folder' | 'file' = 'folder',
   checkTarget: boolean = false,
   targetRole: access_role = access_role.update,
 ): Type<CanActivate> {
@@ -20,33 +22,44 @@ export function RoleGuard(
     constructor(private readonly checkRole: CheckRoleService) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
-      if (!checkTarget) {
-        const request = context.switchToHttp().getRequest<IUserRequest>();
-        const folderKey = request.params.folderKey as string;
-        const userId = request.query.userId;
-        const hasRole = await this.checkRole.check(folderKey, userId, role);
+      const userRequest = context.switchToHttp().getRequest<IUserRequest>();
+      const userId = userRequest.query.userId;
+      if (type === 'file') {
+        const fileKey = userRequest.params.fileKey as string;
+        const hasRole = await this.checkRole.checkFile(fileKey, userId, role);
         if (!hasRole) {
           throw new ForbiddenException('User does not have the required role');
         }
-        return true;
-      } else {
-        const request = context.switchToHttp().getRequest<ITargetRequest>();
-        const folderKey = request.params.folderKey;
-        const targetKey = request.query.targetKey;
-        const userId = request.query.userId;
-        const hasRoleOnFolder = await this.checkRole.check(
+      } else if (type === 'folder') {
+        const folderKey = userRequest.params.folderKey as string;
+        const hasRole = await this.checkRole.checkFolder(
           folderKey,
           userId,
           role,
         );
-        const hasRoleOnTarget = await this.checkRole.check(
+        if (!hasRole) {
+          throw new ForbiddenException('User does not have the required role');
+        }
+      } else {
+        throw new InternalServerErrorException('Invalid type');
+      }
+
+      if (checkTarget) {
+        const targetRequest = context
+          .switchToHttp()
+          .getRequest<ITargetRequest>();
+        const targetKey = targetRequest.query.targetKey;
+        const hasRole = await this.checkRole.checkFolder(
           targetKey,
           userId,
           targetRole,
         );
-        if (!hasRoleOnFolder || !hasRoleOnTarget) {
+        if (!hasRole) {
           throw new ForbiddenException('User does not have the required role');
+        } else {
+          return true;
         }
+      } else {
         return true;
       }
     }

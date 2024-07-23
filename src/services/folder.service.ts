@@ -76,6 +76,92 @@ export class FolderService {
   }
 
   /**
+   * Read folder info
+   * @param folderKey Folder key
+   * @returns Folder info
+   */
+  async readFolderInfo(folderKey: string): Promise<{
+    key: string;
+    name: string;
+    createDate: Date;
+    updateDate: Date;
+    parentKey: string;
+  }> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const folderInfo = await tx.folder_info.findUnique({
+        where: {
+          folder_id: folder.id,
+        },
+      });
+      if (!folderInfo) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const output = {
+        key: folder.folder_key,
+        name: folder.folder_name,
+        createDate: folderInfo.create_date,
+        updateDate: folderInfo.update_date,
+        parentKey: '',
+      };
+      if (!folder.parent_folder_id) {
+        return output;
+      } else {
+        const parentFolder = await tx.folders.findUnique({
+          where: {
+            id: folder.parent_folder_id,
+          },
+        });
+        if (!parentFolder) {
+          throw new NotFoundException('Parent folder does not exist');
+        }
+        output.parentKey = parentFolder.folder_key;
+        return output;
+      }
+    });
+  }
+
+  async getFolderPath(folderKey: string): Promise<string[]> {
+    return this.prisma.$transaction(async (tx) => {
+      const folder = await tx.folders.findUnique({
+        where: {
+          folder_key: folderKey,
+        },
+      });
+      if (!folder) {
+        throw new NotFoundException('Folder does not exist');
+      }
+      const path: string[] = [];
+      let currentFolderId = folder.id;
+      while (currentFolderId) {
+        const currentFolder = await tx.folders.findUnique({
+          where: {
+            id: currentFolderId,
+          },
+        });
+        if (!currentFolder) {
+          throw new NotFoundException('Folder does not exist');
+        }
+        if (!currentFolder.parent_folder_id) {
+          path.unshift('/');
+          break;
+        } else {
+          path.unshift(currentFolder.folder_name);
+        }
+        currentFolderId = currentFolder.parent_folder_id;
+      }
+      return path;
+    });
+  }
+
+  /**
    * Delete folder
    * @param folderKey Folder key
    * @param userId User ID

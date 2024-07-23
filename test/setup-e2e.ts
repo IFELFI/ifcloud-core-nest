@@ -24,7 +24,7 @@ export interface TestTokenPayload {
   imageUrl: string;
 }
 
-export const baseDir = process.env.BASE_STORAGE_PATH || 'testStorage';
+export const baseDir = process.env.STORAGE_PATH as string;
 
 let postgresContainer: StartedPostgreSqlContainer;
 let postgresClient: Client;
@@ -181,3 +181,6 @@ export const createStreamVideoFile = async (
     path: `${baseDir}/video/${fileKey}`,
   };
 };
+
+export const gatewayKeyName = process.env.GATEWAY_KEY_NAME as string;
+export const uuidKeyName = process.env.UUID_KEY_NAME as string;

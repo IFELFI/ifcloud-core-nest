@@ -82,8 +82,8 @@ export class FileController {
     }
   }
 
-  @Get('download/:folderKey/:fileKey')
-  @UseGuards(RoleGuard(access_role.read))
+  @Get('download/:fileKey')
+  @UseGuards(RoleGuard(access_role.read, 'file'))
   async downloadFile(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
     @Res() response: Response,
@@ -94,8 +94,37 @@ export class FileController {
     stream.pipe(response);
   }
 
-  @Delete(':folderKey/:fileKey')
-  @UseGuards(RoleGuard(access_role.delete))
+  @Get('info/:fileKey')
+  @UseGuards(RoleGuard(access_role.read, 'file'))
+  async getFileInfo(
+    @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
+  ): Promise<{
+    fileKey: string;
+    fileName: string;
+    enabled: boolean;
+    parentFolderKey: string;
+    info: {
+      byteSize: number;
+      createDate: Date;
+      updateDate: Date;
+    };
+  }> {
+    const info = await this.fileService.getFileInfo(fileKey);
+    return {
+      fileKey: info.fileKey,
+      fileName: info.fileName,
+      enabled: info.enabled,
+      parentFolderKey: info.parentFolderKey,
+      info: {
+        byteSize: info.byteSize,
+        createDate: info.createDate,
+        updateDate: info.updateDate,
+      },
+    };
+  }
+
+  @Delete('/:fileKey')
+  @UseGuards(RoleGuard(access_role.delete, 'file'))
   @HttpCode(200)
   async deleteFile(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
@@ -104,8 +133,8 @@ export class FileController {
     return 'File deleted';
   }
 
-  @Patch('rename/:folderKey/:fileKey')
-  @UseGuards(RoleGuard(access_role.update))
+  @Patch('rename/:fileKey')
+  @UseGuards(RoleGuard(access_role.update, 'file'))
   @HttpCode(200)
   async renameFile(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,
@@ -116,8 +145,8 @@ export class FileController {
     return 'File renamed';
   }
 
-  @Patch('move/:folderKey/:fileKey')
-  @UseGuards(RoleGuard(access_role.update, true, access_role.update))
+  @Patch('move/:fileKey')
+  @UseGuards(RoleGuard(access_role.update, 'file', true, access_role.update))
   @HttpCode(200)
   async moveFile(
     @Param('fileKey', new ParseUUIDPipe()) fileKey: string,

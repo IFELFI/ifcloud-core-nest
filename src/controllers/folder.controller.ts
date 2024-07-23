@@ -96,6 +96,38 @@ export class FolderController {
     return await this.folderService.getRootFolderKey(uuidKey);
   }
 
+  @Get(':folderKey/info')
+  @UseGuards(RoleGuard(access_role.read))
+  @HttpCode(200)
+  async readFolderInfo(
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+  ): Promise<{
+    key: string;
+    name: string;
+    parentKey: string;
+    info: { createDate: Date; updateDate: Date };
+  }> {
+    const info = await this.folderService.readFolderInfo(folderKey);
+    return {
+      key: info.key,
+      name: info.name,
+      info: {
+        createDate: info.createDate,
+        updateDate: info.updateDate,
+      },
+      parentKey: info.parentKey,
+    };
+  }
+
+  @Get(':folderKey/path')
+  @UseGuards(RoleGuard(access_role.read))
+  @HttpCode(200)
+  async readFolderPath(
+    @Param('folderKey', new ParseUUIDPipe()) folderKey: string,
+  ): Promise<string[]> {
+    return await this.folderService.getFolderPath(folderKey);
+  }
+
   @Get(':folderKey')
   @UseGuards(RoleGuard(access_role.read))
   @HttpCode(200)
@@ -116,7 +148,7 @@ export class FolderController {
   }
 
   @Patch('move/:folderKey')
-  @UseGuards(RoleGuard(access_role.update, true, access_role.update))
+  @UseGuards(RoleGuard(access_role.update, 'folder', true, access_role.update))
   @HttpCode(200)
   async moveFolder(
     @Param('folderKey', new ParseUUIDPipe()) folderKey: string,

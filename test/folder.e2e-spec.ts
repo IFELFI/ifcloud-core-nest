@@ -5,9 +5,11 @@ import { PrismaService } from 'src/services/prisma.service';
 import {
   createFile,
   createFolder,
+  gatewayKeyName,
   postgresClient,
   prismaService,
   setUsers,
+  uuidKeyName,
 } from './setup-e2e';
 import request from 'supertest';
 import { v4 as uuidv4 } from 'uuid';
@@ -46,8 +48,8 @@ describe('Folder', () => {
       it('should create a root folder', async () => {
         const response = await request(app.getHttpServer())
           .post('/folder/root')
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send();
 
         expect(response.status).toBe(201);
@@ -65,8 +67,8 @@ describe('Folder', () => {
       it('should create a sub folder', async () => {
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: 'test_folder' });
 
         expect(response.status).toBe(201);
@@ -75,8 +77,8 @@ describe('Folder', () => {
       it('should not create a sub folder if folderName is not given', async () => {
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({});
 
         expect(response.status).toBe(400);
@@ -87,8 +89,8 @@ describe('Folder', () => {
       it('should not create a sub folder if folderName is empty', async () => {
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: '' });
 
         expect(response.status).toBe(400);
@@ -99,8 +101,8 @@ describe('Folder', () => {
       it('should not create a sub folder if folderName is too long', async () => {
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: 'a'.repeat(256) });
 
         expect(response.status).toBe(400);
@@ -115,8 +117,8 @@ describe('Folder', () => {
         await createFolder(data.user.id, 'test_folder', root.folder.id);
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: 'test_folder' });
 
         expect(response.status).toBe(409);
@@ -125,8 +127,8 @@ describe('Folder', () => {
       it('should not create a sub folder if user does not have role to create the folder', async () => {
         const response = await request(app.getHttpServer())
           .post(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.altUser.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.altUser.uuid_key)
           .send({ folderName: 'test_folder' });
 
         expect(response.status).toBe(403);
@@ -156,8 +158,8 @@ describe('Folder', () => {
     it('should read a folder', async () => {
       const response = await request(app.getHttpServer())
         .get(`/folder/${root.folder.folder_key}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send();
 
       expect(response.status).toBe(200);
@@ -180,8 +182,8 @@ describe('Folder', () => {
     it('should not read a folder if folderKey is wrong', async () => {
       const response = await request(app.getHttpServer())
         .get(`/folder/${uuidv4()}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send();
 
       expect(response.body.message).toBe('Folder does not exist');
@@ -190,8 +192,8 @@ describe('Folder', () => {
     it('should not read a folder if user does not have role to read the folder', async () => {
       const response = await request(app.getHttpServer())
         .get(`/folder/${root.folder.folder_key}`)
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.altUser.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.altUser.uuid_key)
         .send();
 
       expect(response.status).toBe(403);
@@ -222,8 +224,8 @@ describe('Folder', () => {
     it('should read a root folder', async () => {
       const response = await request(app.getHttpServer())
         .get('/folder/root')
-        .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-        .set('x-uuid-key', data.user.uuid_key)
+        .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+        .set(uuidKeyName, data.user.uuid_key)
         .send();
 
       expect(response.status).toBe(200);
@@ -256,8 +258,8 @@ describe('Folder', () => {
       it('should get root folder key', async () => {
         const response = await request(app.getHttpServer())
           .get('/folder/rootKey')
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send();
 
         expect(response.status).toBe(200);
@@ -276,8 +278,8 @@ describe('Folder', () => {
       it('should delete a folder', async () => {
         const response = await request(app.getHttpServer())
           .delete(`/folder/${root.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send();
 
         expect(response.status).toBe(200);
@@ -300,8 +302,8 @@ describe('Folder', () => {
       it('should move a folder', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/move/${subFolder1.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .query({ targetKey: subFolder2.folder.folder_key })
           .send();
 
@@ -311,8 +313,8 @@ describe('Folder', () => {
       it('should not move a folder if folderKey is wrong', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/move/${uuidv4()}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .query({ targetKey: subFolder2.folder.folder_key })
           .send();
 
@@ -322,8 +324,8 @@ describe('Folder', () => {
       it('should not move a folder if targetFolderKey is wrong', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/move/${subFolder1.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .query({ targetKey: uuidv4() })
           .send();
 
@@ -333,8 +335,8 @@ describe('Folder', () => {
       it('should not move a folder if user does not have role to move the folder', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/move/${subFolder1.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.altUser.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.altUser.uuid_key)
           .query({ targetKey: subFolder2.folder.folder_key })
           .send();
 
@@ -360,8 +362,8 @@ describe('Folder', () => {
       it('should rename a folder', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/rename/${subFolder.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: 'dummy2' });
 
         expect(response.status).toBe(200);
@@ -370,8 +372,8 @@ describe('Folder', () => {
       it('should not rename a folder if folderName is not given', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/rename/${subFolder.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({});
 
         expect(response.status).toBe(400);
@@ -382,8 +384,8 @@ describe('Folder', () => {
       it('should not rename a folder if folderName is empty', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/rename/${subFolder.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: '' });
 
         expect(response.status).toBe(400);
@@ -394,8 +396,8 @@ describe('Folder', () => {
       it('should not rename a folder if folderName is too long', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/rename/${subFolder.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.user.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.user.uuid_key)
           .send({ folderName: 'a'.repeat(300) });
 
         expect(response.status).toBe(400);
@@ -406,8 +408,8 @@ describe('Folder', () => {
       it('should not rename a folder if user does not have role to rename the folder', async () => {
         const response = await request(app.getHttpServer())
           .patch(`/folder/rename/${subFolder.folder.folder_key}`)
-          .set('x-gateway-secret', process.env.GATEWAY_SECRET as string)
-          .set('x-uuid-key', data.altUser.uuid_key)
+          .set(gatewayKeyName, process.env.GATEWAY_SECRET as string)
+          .set(uuidKeyName, data.altUser.uuid_key)
           .send({ folderName: 'dummy2' });
 
         expect(response.status).toBe(403);
