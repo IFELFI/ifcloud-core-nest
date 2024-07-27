@@ -164,6 +164,9 @@ CREATE UNIQUE INDEX "uni_child_folder_name" ON "cloud"."folders"("parent_folder_
 CREATE UNIQUE INDEX "uni_stream" ON "cloud"."stream"("file_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "uni_user_role" ON "cloud"."user_role"("user_id", "folder_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "uni_users" ON "member"."users"("uuid_key");
 
 -- CreateIndex
@@ -174,6 +177,12 @@ CREATE UNIQUE INDEX "uni_temp_file_name" ON "temp"."temp_files"("temp_file_name"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_file_key" ON "temp"."temp_files"("file_key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_background" ON "member"."background"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_favorite" ON "member"."favorite"("user_id", "folder_id");
 
 -- AddForeignKey
 ALTER TABLE "cloud"."external_access" ADD CONSTRAINT "fk_access_key_id" FOREIGN KEY ("access_key_id") REFERENCES "temp"."temp_access_key"("id") ON DELETE SET NULL ON UPDATE CASCADE;
