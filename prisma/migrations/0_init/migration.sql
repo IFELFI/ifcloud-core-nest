@@ -120,6 +120,25 @@ CREATE TABLE "temp"."temp_files" (
     CONSTRAINT "pk_temp_files" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "member"."background" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "image_id" BIGINT,
+    "image_url" VARCHAR,
+
+    CONSTRAINT "pk_background" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "member"."favorite" (
+    "id" BIGSERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "folder_id" BIGINT NOT NULL,
+
+    CONSTRAINT "pk_favorite" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_external_access" ON "cloud"."external_access"("folder_id");
 
@@ -191,4 +210,16 @@ ALTER TABLE "cloud"."user_role" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_i
 
 -- AddForeignKey
 ALTER TABLE "temp"."temp_files" ADD CONSTRAINT "fk_uploader_id" FOREIGN KEY ("uploader_id") REFERENCES "member"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "member"."background" ADD CONSTRAINT "fk_image_id" FOREIGN KEY ("image_id") REFERENCES "cloud"."files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."background" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "member"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."favorite" ADD CONSTRAINT "fk_folder_id" FOREIGN KEY ("folder_id") REFERENCES "cloud"."folders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."favorite" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "member"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
