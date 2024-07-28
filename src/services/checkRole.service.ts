@@ -22,10 +22,12 @@ export class CheckRoleService {
     if (!folder) {
       throw new NotFoundException('Folder does not exist');
     }
-    const userRole = await this.prisma.user_role.findFirst({
+    const userRole = await this.prisma.user_role.findUnique({
       where: {
-        folder_id: folder.id,
-        user_id: userId,
+        user_id_folder_id: {
+          folder_id: folder.id,
+          user_id: userId,
+        },
       },
     });
     if (!userRole) {
@@ -54,10 +56,12 @@ export class CheckRoleService {
     if (!file) {
       throw new NotFoundException('File does not exist');
     }
-    const userRole = await this.prisma.user_role.findFirst({
+    const userRole = await this.prisma.user_role.findUnique({
       where: {
-        folder_id: file.parent_folder_id,
-        user_id: userId,
+        user_id_folder_id: {
+          user_id: userId,
+          folder_id: file.parent_folder_id,
+        },
       },
     });
     if (!userRole) {

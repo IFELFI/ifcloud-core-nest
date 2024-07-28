@@ -120,6 +120,25 @@ CREATE TABLE "temp"."temp_files" (
     CONSTRAINT "pk_temp_files" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "member"."background" (
+    "id" SERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "image_id" BIGINT,
+    "image_url" VARCHAR,
+
+    CONSTRAINT "pk_background" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "member"."favorite" (
+    "id" BIGSERIAL NOT NULL,
+    "user_id" INTEGER NOT NULL,
+    "folder_id" BIGINT NOT NULL,
+
+    CONSTRAINT "pk_favorite" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_external_access" ON "cloud"."external_access"("folder_id");
 
@@ -145,6 +164,9 @@ CREATE UNIQUE INDEX "uni_child_folder_name" ON "cloud"."folders"("parent_folder_
 CREATE UNIQUE INDEX "uni_stream" ON "cloud"."stream"("file_id");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "uni_user_role" ON "cloud"."user_role"("user_id", "folder_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "uni_users" ON "member"."users"("uuid_key");
 
 -- CreateIndex
@@ -155,6 +177,12 @@ CREATE UNIQUE INDEX "uni_temp_file_name" ON "temp"."temp_files"("temp_file_name"
 
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_file_key" ON "temp"."temp_files"("file_key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_background" ON "member"."background"("user_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_favorite" ON "member"."favorite"("user_id", "folder_id");
 
 -- AddForeignKey
 ALTER TABLE "cloud"."external_access" ADD CONSTRAINT "fk_access_key_id" FOREIGN KEY ("access_key_id") REFERENCES "temp"."temp_access_key"("id") ON DELETE SET NULL ON UPDATE CASCADE;
@@ -191,4 +219,16 @@ ALTER TABLE "cloud"."user_role" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_i
 
 -- AddForeignKey
 ALTER TABLE "temp"."temp_files" ADD CONSTRAINT "fk_uploader_id" FOREIGN KEY ("uploader_id") REFERENCES "member"."users"("id") ON DELETE NO ACTION ON UPDATE NO ACTION;
+
+-- AddForeignKey
+ALTER TABLE "member"."background" ADD CONSTRAINT "fk_image_id" FOREIGN KEY ("image_id") REFERENCES "cloud"."files"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."background" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "member"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."favorite" ADD CONSTRAINT "fk_folder_id" FOREIGN KEY ("folder_id") REFERENCES "cloud"."folders"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "member"."favorite" ADD CONSTRAINT "fk_user_id" FOREIGN KEY ("user_id") REFERENCES "member"."users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

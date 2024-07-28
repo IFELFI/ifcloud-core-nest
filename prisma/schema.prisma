@@ -34,14 +34,15 @@ model file_info {
 }
 
 model files {
-  id               BigInt     @id(map: "pk_files") @default(autoincrement())
+  id               BigInt       @id(map: "pk_files") @default(autoincrement())
   parent_folder_id BigInt
-  file_key         String     @unique(map: "uni_file_key") @db.Uuid
-  file_name        String     @db.VarChar(256)
-  enabled          Boolean    @default(true)
+  file_key         String       @unique(map: "uni_file_key") @db.Uuid
+  file_name        String       @db.VarChar(256)
+  enabled          Boolean      @default(true)
   file_info        file_info?
-  folders          folders    @relation(fields: [parent_folder_id], references: [id], onDelete: Cascade, map: "fk_parent_folder_id")
+  folders          folders      @relation(fields: [parent_folder_id], references: [id], onDelete: Cascade, map: "fk_parent_folder_id")
   stream           stream?
+  background       background[]
 
   @@unique([file_name, parent_folder_id], map: "uni_child_file_name")
   @@schema("cloud")
@@ -70,6 +71,7 @@ model folders {
   folders          folders?         @relation("foldersTofolders", fields: [parent_folder_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_parent_folder_id")
   other_folders    folders[]        @relation("foldersTofolders")
   user_role        user_role[]
+  favorite         favorite[]
 
   @@unique([parent_folder_id, folder_name], map: "uni_child_folder_name")
   @@schema("cloud")
@@ -93,6 +95,7 @@ model user_role {
   users     users         @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_user_id")
 
   @@id([user_id, folder_id], map: "pk_user_role")
+  @@unique([user_id, folder_id], map: "uni_user_role")
   @@schema("cloud")
 }
 
@@ -102,6 +105,8 @@ model users {
   file_info   file_info[]
   folder_info folder_info[]
   user_role   user_role[]
+  background  background?
+  favorite    favorite[]
   temp_files  temp_files[]
 
   @@schema("member")
@@ -128,6 +133,28 @@ model temp_files {
   users          users    @relation(fields: [uploader_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "fk_uploader_id")
 
   @@schema("temp")
+}
+
+model background {
+  id        Int     @id(map: "pk_background") @default(autoincrement())
+  user_id   Int     @unique(map: "uni_background")
+  image_id  BigInt?
+  image_url String? @db.VarChar
+  files     files?  @relation(fields: [image_id], references: [id], onDelete: Cascade, map: "fk_image_id")
+  users     users   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id")
+
+  @@schema("member")
+}
+
+model favorite {
+  id        BigInt  @id(map: "pk_favorite") @default(autoincrement())
+  user_id   Int
+  folder_id BigInt
+  folders   folders @relation(fields: [folder_id], references: [id], onDelete: Cascade, map: "fk_folder_id")
+  users     users   @relation(fields: [user_id], references: [id], onDelete: Cascade, map: "fk_user_id")
+
+  @@unique([user_id, folder_id], map: "uni_favorite")
+  @@schema("member")
 }
 
 enum access_role {

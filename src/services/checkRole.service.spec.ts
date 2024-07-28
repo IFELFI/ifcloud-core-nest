@@ -50,7 +50,7 @@ describe('CheckRoleService', () => {
         role: ['create', 'update'],
       };
       prismaService.folders.findUnique.mockResolvedValue(folder);
-      prismaService.user_role.findFirst.mockResolvedValue(userRole);
+      prismaService.user_role.findUnique.mockResolvedValue(userRole);
 
       const result = await service.checkFolder(folderKey, userId, role);
       expect(result).toBe(true);
@@ -72,7 +72,7 @@ describe('CheckRoleService', () => {
         role: ['create', 'update'],
       };
       prismaService.folders.findUnique.mockResolvedValue(folder);
-      prismaService.user_role.findFirst.mockResolvedValue(userRole);
+      prismaService.user_role.findUnique.mockResolvedValue(userRole);
 
       const result = await service.checkFolder(folderKey, userId, role);
       expect(result).toBe(false);
@@ -89,7 +89,7 @@ describe('CheckRoleService', () => {
         folder_key: folderKey,
       };
       prismaService.folders.findUnique.mockResolvedValue(folder);
-      prismaService.user_role.findFirst.mockResolvedValue(null);
+      prismaService.user_role.findUnique.mockResolvedValue(null);
 
       const result = await service.checkFolder(folderKey, userId, role);
       expect(result).toBe(false);
@@ -120,7 +120,7 @@ describe('CheckRoleService', () => {
         enabled: true,
       };
       prismaService.files.findUnique.mockResolvedValue(file);
-      prismaService.user_role.findFirst.mockResolvedValue(userRole);
+      prismaService.user_role.findUnique.mockResolvedValue(userRole);
 
       const result = await service.checkFile(fileKey, userId, role);
       expect(result).toBe(true);
@@ -149,7 +149,7 @@ describe('CheckRoleService', () => {
         enabled: true,
       };
       prismaService.files.findUnique.mockResolvedValue(file);
-      prismaService.user_role.findFirst.mockResolvedValue(userRole);
+      prismaService.user_role.findUnique.mockResolvedValue(userRole);
 
       const result = await service.checkFile(fileKey, userId, role);
       expect(result).toBe(false);
@@ -178,7 +178,7 @@ describe('CheckRoleService', () => {
         enabled: true,
       };
       prismaService.files.findUnique.mockResolvedValue(file);
-      prismaService.user_role.findFirst.mockResolvedValue(null);
+      prismaService.user_role.findUnique.mockResolvedValue(null);
 
       const result = await service.checkFile(fileKey, userId, role);
       expect(result).toBe(false);
