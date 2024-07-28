@@ -29,6 +29,11 @@ export class FavoriteService {
     return favoriteFolders;
   }
 
+  /**
+   * Create favorite folder
+   * @param userId User ID
+   * @param folderKey Folder key
+   */
   async createFavorite(userId: number, folderKey: string): Promise<void> {
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({
@@ -50,6 +55,11 @@ export class FavoriteService {
     });
   }
 
+  /**
+   * Delete favorite folder
+   * @param userId User ID
+   * @param folderKey Folder key
+   */
   async deleteFavorite(userId: number, folderKey: string): Promise<void> {
     return this.prisma.$transaction(async (tx) => {
       const folder = await tx.folders.findUnique({

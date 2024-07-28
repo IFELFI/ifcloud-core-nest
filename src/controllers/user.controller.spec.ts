@@ -5,11 +5,13 @@ import { PrismaService } from 'src/services/prisma.service';
 import { v4 as uuidv4 } from 'uuid';
 import { FavoriteService } from 'src/services/favorite.service';
 import { CheckRoleService } from 'src/services/checkRole.service';
+import { BackgroundService } from 'src/services/background.service';
 
 describe('UserController', () => {
   let controller: UserController;
   let userService: UserService;
   let favoriteService: FavoriteService;
+  let backgroundService: BackgroundService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,12 +21,14 @@ describe('UserController', () => {
         PrismaService,
         FavoriteService,
         CheckRoleService,
+        BackgroundService,
       ],
     }).compile();
 
     controller = module.get<UserController>(UserController);
     userService = module.get<UserService>(UserService);
     favoriteService = module.get<FavoriteService>(FavoriteService);
+    backgroundService = module.get<BackgroundService>(BackgroundService);
   });
 
   // Test if the controller is defined
@@ -34,10 +38,6 @@ describe('UserController', () => {
     expect(favoriteService).toBeDefined();
   });
 
-  /**
-   * Success handling
-   * Test if the controller is successfully done
-   */
   it('should get a user', async () => {
     const uuidKey = uuidv4();
     const user = {
@@ -72,39 +72,76 @@ describe('UserController', () => {
     );
   });
 
-  it('should get a favorite folder', async () => {
-    const userId = 1;
-    const folders = [
-      {
-        id: 1,
-        folder_key: uuidv4(),
-        folder_name: 'test',
-      },
-    ];
-    favoriteService.readFavorite = jest.fn().mockResolvedValue(folders);
-    expect(await controller.getFavorite(userId)).toEqual(
-      folders.map((folder) => ({
-        key: folder.folder_key,
-        name: folder.folder_name,
-      })),
-    );
+  describe('Favorite', () => {
+    it('should get a favorite folder', async () => {
+      const userId = 1;
+      const folders = [
+        {
+          id: 1,
+          folder_key: uuidv4(),
+          folder_name: 'test',
+        },
+      ];
+      favoriteService.readFavorite = jest.fn().mockResolvedValue(folders);
+      expect(await controller.getFavorite(userId)).toEqual(
+        folders.map((folder) => ({
+          key: folder.folder_key,
+          name: folder.folder_name,
+        })),
+      );
+    });
+
+    it('should create a favorite folder', async () => {
+      const userId = 1;
+      const folderKey = uuidv4();
+      favoriteService.createFavorite = jest.fn().mockResolvedValue(undefined);
+      expect(await controller.createFavorite(userId, folderKey)).toEqual(
+        'Favorite created',
+      );
+    });
+
+    it('should delete a favorite folder', async () => {
+      const userId = 1;
+      const folderKey = uuidv4();
+      favoriteService.deleteFavorite = jest.fn().mockResolvedValue(undefined);
+      expect(await controller.deleteFavorite(userId, folderKey)).toEqual(
+        'Favorite deleted',
+      );
+    });
   });
 
-  it('should create a favorite folder', async () => {
-    const userId = 1;
-    const folderKey = uuidv4();
-    favoriteService.createFavorite = jest.fn().mockResolvedValue(undefined);
-    expect(await controller.createFavorite(userId, folderKey)).toEqual(
-      undefined,
-    );
-  });
+  describe('Background', () => {
+    it('should get a background image', async () => {
+      const userId = 1;
+      const background = {
+        fileKey: uuidv4(),
+        url: 'test',
+      };
+      backgroundService.readBackground = jest
+        .fn()
+        .mockResolvedValue(background);
+      expect(await controller.getBackground(userId)).toEqual(background);
+    });
 
-  it('should delete a favorite folder', async () => {
-    const userId = 1;
-    const folderKey = uuidv4();
-    favoriteService.deleteFavorite = jest.fn().mockResolvedValue(undefined);
-    expect(await controller.deleteFavorite(userId, folderKey)).toEqual(
-      undefined,
-    );
+    it('should create a background image', async () => {
+      const userId = 1;
+      const fileKey = uuidv4();
+      backgroundService.setBackgroundFile = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      expect(await controller.createBackground(userId, fileKey)).toEqual(
+        'Background created',
+      );
+    });
+
+    it('should delete a background image', async () => {
+      const userId = 1;
+      backgroundService.deleteBackground = jest
+        .fn()
+        .mockResolvedValue(undefined);
+      expect(await controller.deleteBackground(userId)).toEqual(
+        'Background deleted',
+      );
+    });
   });
 });
