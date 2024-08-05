@@ -1,7 +1,7 @@
 FROM node:22-alpine as build
 
 LABEL title="ifauth-member-manager"
-LABEL version="1.4.1"
+LABEL version="1.4.2"
 LABEL maintainer="ifelfi"
 
 WORKDIR /app
