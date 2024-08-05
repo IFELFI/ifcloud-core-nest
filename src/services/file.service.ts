@@ -236,7 +236,7 @@ export class FileService implements OnModuleInit {
    */
   async getOriginStream(
     fileKey: string,
-  ): Promise<{ stream: ReadStream; length: number }> {
+  ): Promise<{ stream: ReadStream; length: number; type: string }> {
     const storageConfig = this.config.get<IStorageConfig>('storage');
     const file = await this.prisma.files.findUnique({
       where: {
@@ -260,6 +260,7 @@ export class FileService implements OnModuleInit {
     return {
       stream: fileStream,
       length: fs.statSync(originPath).size,
+      type: this.getContentType(file.file_name),
     };
   }
 
@@ -447,5 +448,31 @@ export class FileService implements OnModuleInit {
       });
     writeStream.end();
     return originFilePath;
+  }
+
+  /**
+   * Get file content type
+   * @param fileName File name
+   * @returns { string } Content type
+   */
+  private getContentType(fileName: string): string {
+    const ext = path.extname(fileName).toLowerCase();
+    switch (ext) {
+      case '.jpg':
+      case '.jpeg':
+        return 'image/jpeg';
+      case '.png':
+        return 'image/png';
+      case '.gif':
+        return 'image/gif';
+      case '.mp4':
+        return 'video/mp4';
+      case '.webm':
+        return 'video/webm';
+      case '.pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
+    }
   }
 }
