@@ -37,7 +37,7 @@ CREATE TABLE "file"."file_info" (
 CREATE TABLE "file"."file_role" (
     "member_id" INTEGER NOT NULL,
     "file_id" BIGINT NOT NULL,
-    "role" "public"."access_role" NOT NULL DEFAULT 'read',
+    "role" "public"."access_role"[] DEFAULT ARRAY[]::"public"."access_role"[],
 
     CONSTRAINT "pk_file_role" PRIMARY KEY ("member_id","file_id")
 );

@@ -1,10 +1,22 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
+import { validate } from './configs/env.config';
+import { CustomLogger } from './modules/logger.module';
+import { AuthMiddleware } from './middlewares/auth.middleware';
+import { MemberModule } from './modules/member.module';
 
 @Module({
-  imports: [],
-  controllers: [AppController],
-  providers: [AppService],
+  imports: [
+    ConfigModule.forRoot({
+      validate: validate,
+      isGlobal: true,
+    }),
+    CustomLogger,
+    MemberModule,
+  ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(AuthMiddleware).forRoutes('*');
+  }
+}

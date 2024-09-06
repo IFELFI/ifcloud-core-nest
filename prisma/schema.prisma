@@ -34,9 +34,9 @@ model file_info {
 model file_role {
   member_id Int
   file_id   BigInt
-  role      access_role @default(read)
-  file      file        @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
-  member    member      @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_member_id")
+  role      access_role[] @default([])
+  file      file          @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  member    member        @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_member_id")
 
   @@id([member_id, file_id], map: "pk_file_role")
   @@schema("file")
