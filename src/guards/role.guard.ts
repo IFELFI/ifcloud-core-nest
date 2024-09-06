@@ -2,7 +2,7 @@ import { CanActivate, ExecutionContext, mixin, Type } from '@nestjs/common';
 import { access_role } from '@prisma/client';
 import { Request } from 'express';
 import { UserRequestQuery } from 'src/interfaces/request';
-import { FileRoleService } from 'src/services/fileRole.service';
+import { FileRoleService } from 'src/services/file/role.service';
 
 export function RoleGuard(role: access_role): Type<CanActivate> {
   class RoleGuard implements CanActivate {
