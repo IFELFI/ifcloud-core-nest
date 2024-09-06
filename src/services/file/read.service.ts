@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { file, file_info, file_type } from '@prisma/client';
-import { SpecialContainerName } from 'src/schemas/file.schema';
+import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 /**
  * File system explanation
@@ -101,7 +101,7 @@ export class FileReadService {
     const rootFile = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
-        file_name: SpecialContainerName.Enum.root,
+        file_name: SpecialContainerNameSchema.enum.root,
       },
     });
 
