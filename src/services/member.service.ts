@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from './prisma.service';
 import { member, service_status } from '@prisma/client';
 
@@ -22,37 +18,24 @@ export class MemberService {
    */
   async createMember(uuidKey: string): Promise<member> {
     return this.prisma.$transaction(async (tx) => {
-      const member = await tx.member
-        .create({
-          data: {
-            uuid_key: uuidKey,
-          },
-        })
-        .catch((e) => {
-          if (e.code === 'P2002') {
-            throw new ConflictException('Member already exists');
-          }
-          throw new InternalServerErrorException('Failed to create member');
-        });
+      const member = await tx.member.create({
+        data: {
+          uuid_key: uuidKey,
+        },
+      });
 
-      await tx.service_status
-        .create({
-          data: {
-            member: {
-              connect: {
-                id: member.id,
-              },
+      await tx.service_status.create({
+        data: {
+          member: {
+            connect: {
+              id: member.id,
             },
-            available: false,
-            join_date: new Date(),
-            update_date: new Date(),
           },
-        })
-        .catch(() => {
-          throw new InternalServerErrorException(
-            'Failed to create service status',
-          );
-        });
+          available: false,
+          join_date: new Date(),
+          update_date: new Date(),
+        },
+      });
 
       return member;
     });
@@ -68,15 +51,11 @@ export class MemberService {
    * Returns the member
    */
   async getMember(uuidKey: string): Promise<member> {
-    return this.prisma.member
-      .findUniqueOrThrow({
-        where: {
-          uuid_key: uuidKey,
-        },
-      })
-      .catch(() => {
-        throw new InternalServerErrorException('Failed to retrieve member');
-      });
+    return this.prisma.member.findUniqueOrThrow({
+      where: {
+        uuid_key: uuidKey,
+      },
+    });
   }
 
   /**
@@ -90,17 +69,11 @@ export class MemberService {
    */
   async getMemberServiceStatus(uuidKey: string): Promise<service_status> {
     const member = await this.getMember(uuidKey);
-    return this.prisma.service_status
-      .findUniqueOrThrow({
-        where: {
-          member_id: member.id,
-        },
-      })
-      .catch(() => {
-        throw new InternalServerErrorException(
-          'Failed to retrieve service status',
-        );
-      });
+    return this.prisma.service_status.findUniqueOrThrow({
+      where: {
+        member_id: member.id,
+      },
+    });
   }
 
   /**
@@ -118,21 +91,15 @@ export class MemberService {
     available: boolean,
   ): Promise<service_status> {
     const member = await this.getMember(uuidKey);
-    return this.prisma.service_status
-      .update({
-        where: {
-          member_id: member.id,
-        },
-        data: {
-          available,
-          update_date: new Date(),
-        },
-      })
-      .catch(() => {
-        throw new InternalServerErrorException(
-          'Failed to update service status',
-        );
-      });
+    return this.prisma.service_status.update({
+      where: {
+        member_id: member.id,
+      },
+      data: {
+        available,
+        update_date: new Date(),
+      },
+    });
   }
 
   /**
@@ -143,17 +110,10 @@ export class MemberService {
    * deleteMember('123e4567-e89b-12d3-a456-426614174000');
    */
   async deleteMember(uuidKey: string): Promise<member> {
-    return this.prisma.member
-      .delete({
-        where: {
-          uuid_key: uuidKey,
-        },
-      })
-      .catch((e) => {
-        if (e.code === 'P2025') {
-          throw new ConflictException('Member does not exist');
-        }
-        throw new InternalServerErrorException('Failed to delete member');
-      });
+    return this.prisma.member.delete({
+      where: {
+        uuid_key: uuidKey,
+      },
+    });
   }
 }

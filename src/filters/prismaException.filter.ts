@@ -9,10 +9,26 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    const status = 500;
-    // const message = 'Internal server error';
     const message = exception.message;
-    const name = 'PrismaClientKnownRequestError';
+    const name = exception.name;
+
+    let status: number;
+    switch (exception.code) {
+      case 'P2002':
+        status = 409;
+        break;
+      case 'P2003':
+        status = 400;
+        break;
+      case 'P2022':
+      case 'P2025':
+      case 'P2025':
+        status = 404;
+        break;
+      default:
+        status = 500;
+        break;
+    }
 
     const errorResponse: CustomResponse<ErrorResponseData> = {
       status: status,

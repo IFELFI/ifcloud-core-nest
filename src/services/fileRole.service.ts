@@ -22,18 +22,11 @@ export class FileRoleService {
    * Returns the role of the member for the file
    */
   async getRole(memberId: number, fileKey: string) {
-    const file = await this.prisma.file
-      .findUniqueOrThrow({
-        where: {
-          file_key: fileKey,
-        },
-      })
-      .catch((e) => {
-        if (e.code === 'P2025') {
-          throw new NotFoundException('File not found');
-        }
-        throw new InternalServerErrorException();
-      });
+    const file = await this.prisma.file.findUniqueOrThrow({
+      where: {
+        file_key: fileKey,
+      },
+    });
 
     const role = await this.prisma.file_role.findUnique({
       where: {
