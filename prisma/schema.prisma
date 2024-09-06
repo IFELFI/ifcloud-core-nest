@@ -1,0 +1,80 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["file", "member", "public"]
+}
+
+model file {
+  id        BigInt      @id(map: "pk_file") @default(autoincrement())
+  file_key  String      @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  file_name String[]    @db.VarChar(256)
+  type      file_type   @default(block)
+  file_info file_info?
+  file_role file_role[]
+
+  @@schema("file")
+}
+
+model file_info {
+  file_id     BigInt   @id(map: "pk_file_info")
+  owner_id    Int?
+  create_date DateTime @default(now()) @db.Timestamptz(6)
+  update_date DateTime @default(now()) @db.Timestamptz(6)
+  file        file     @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  member      member?  @relation(fields: [owner_id], references: [id], map: "fk_owner_id")
+
+  @@schema("file")
+}
+
+model file_role {
+  member_id Int
+  file_id   BigInt
+  role      access_role @default(read)
+  file      file        @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  member    member      @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_member_id")
+
+  @@id([member_id, file_id], map: "pk_file_role")
+  @@schema("file")
+}
+
+model member {
+  id             Int             @id(map: "pk_member") @default(autoincrement())
+  uuid_key       String          @unique(map: "uni_member_uuid_key") @db.Uuid
+  file_info      file_info[]
+  file_role      file_role[]
+  service_status service_status?
+
+  @@schema("member")
+}
+
+model service_status {
+  member_id   Int      @id(map: "pk_service_status")
+  available   Boolean  @default(false)
+  join_date   DateTime @default(now()) @db.Timestamptz(6)
+  update_date DateTime @default(now()) @db.Timestamptz(6)
+  member      member   @relation(fields: [member_id], references: [id], onDelete: Cascade, map: "fk_member_id")
+
+  @@schema("member")
+}
+
+enum access_role {
+  create
+  read
+  update
+  delete
+
+  @@schema("public")
+}
+
+enum file_type {
+  container
+  block
+  link
+
+  @@schema("public")
+}
