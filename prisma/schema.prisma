@@ -12,8 +12,8 @@ datasource db {
 model file {
   id        BigInt      @id(map: "pk_file") @default(autoincrement())
   file_key  String      @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  file_name String[]    @db.VarChar(256)
   type      file_type   @default(block)
+  file_name String      @db.VarChar(256)
   file_info file_info?
   file_role file_role[]
 
