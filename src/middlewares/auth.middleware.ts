@@ -6,19 +6,19 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NextFunction, Request, Response } from 'express';
-import { envConfig } from 'src/schemas/env.schema';
+import { EnvConfig } from 'src/schemas/env.schema';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
-  constructor(private config: ConfigService<envConfig, true>) {}
+  constructor(private config: ConfigService<EnvConfig, true>) {}
   use(req: Request, res: Response, next: NextFunction) {
-    const gatewayConfig = this.config.get<envConfig['gateway']>('gateway');
-    const keyNameConfig = this.config.get<envConfig['keyName']>('keyName');
+    const gatewayConfig = this.config.get<EnvConfig['gateway']>('gateway');
+    const keyNameConfig = this.config.get<EnvConfig['keyName']>('keyName');
 
     // Check if the gateway secret is valid in production and test environments
     if (
-      this.config.get<envConfig['nodeEnv']>('nodeEnv') === 'production' ||
-      this.config.get<envConfig['nodeEnv']>('nodeEnv') === 'test'
+      this.config.get<EnvConfig['nodeEnv']>('nodeEnv') === 'production' ||
+      this.config.get<EnvConfig['nodeEnv']>('nodeEnv') === 'test'
     ) {
       const gatewaySecret = req.headers[keyNameConfig.gateway] as string;
       if (gatewaySecret !== gatewayConfig.secret) {
@@ -34,7 +34,7 @@ export class AuthMiddleware implements NestMiddleware {
       };
       next();
     } else {
-      const uuidKey = this.config.get<envConfig['test']>('test').uuid;
+      const uuidKey = this.config.get<EnvConfig['test']>('test').uuid;
       if (!uuidKey) {
         throw new InternalServerErrorException('Invalid uuid key');
       }

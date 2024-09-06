@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LoggerModule } from 'nestjs-pino';
-import { envConfig } from 'src/schemas/env.schema';
+import { EnvConfig } from 'src/schemas/env.schema';
 import pino from 'pino';
 
 @Module({
@@ -9,12 +9,12 @@ import pino from 'pino';
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService<envConfig, true>) => ({
+      useFactory: (config: ConfigService<EnvConfig, true>) => ({
         pinoHttp: {
-          level: config.get<envConfig['log']>('log').level,
+          level: config.get<EnvConfig['log']>('log').level,
         },
         stream: pino.destination({
-          dest: config.get<envConfig['log']>('log').dest,
+          dest: config.get<EnvConfig['log']>('log').dest,
           sync: false,
         }),
       }),

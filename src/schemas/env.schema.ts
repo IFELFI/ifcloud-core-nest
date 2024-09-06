@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const envConfigSchema = z.object({
+export const EnvConfigSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('development'),
   log: z.object({
     level: z
@@ -23,4 +23,4 @@ export const envConfigSchema = z.object({
   }),
 });
 
-export type envConfig = z.infer<typeof envConfigSchema>;
+export type EnvConfig = z.infer<typeof EnvConfigSchema>;
