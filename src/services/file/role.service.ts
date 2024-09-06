@@ -1,18 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma.service';
 import { access_role } from '@prisma/client';
 
 @Injectable()
 export class FileRoleService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get the role of a member for a file
    * @param memberId - The ID of the member
    * @param fileKey - The key of the file
    * @returns The role of the member for the file
-   * @throws NotFoundException if the file is not found
-   * @throws InternalServerErrorException if the role could not be retrieved
    * @example
    * getRole(1, '123e4567-e89b-12d3-a456-426614174000');
    * Returns the role of the member for the file

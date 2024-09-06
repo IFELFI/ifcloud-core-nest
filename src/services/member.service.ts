@@ -4,14 +4,12 @@ import { member, service_status } from '@prisma/client';
 
 @Injectable()
 export class MemberService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new member
    * @param uuidKey - The UUID key of the member
    * @returns The created member
-   * @throws ConflictException if the member already exists
-   * @throws InternalServerErrorException if the member or service status could not be created
    * @example
    * createMember('123e4567-e89b-12d3-a456-426614174000');
    * Returns the created member
@@ -45,7 +43,6 @@ export class MemberService {
    * Get a member by UUID key
    * @param uuidKey - The UUID key of the member
    * @returns The member
-   * @throws InternalServerErrorException if the member could not be retrieved
    * @example
    * getMember('123e4567-e89b-12d3-a456-426614174000');
    * Returns the member
@@ -62,7 +59,6 @@ export class MemberService {
    * Get the service status of a member by UUID key
    * @param uuidKey - The UUID key of the member
    * @returns The service status
-   * @throws InternalServerErrorException if the service status could not be retrieved
    * @example
    * getMemberServiceStatus('123e4567-e89b-12d3-a456-426614174000');
    * Returns the service status
@@ -81,7 +77,6 @@ export class MemberService {
    * @param uuidKey - The UUID key of the member
    * @param available - The availability status of the member
    * @returns The updated service status
-   * @throws InternalServerErrorException if the service status could not be updated
    * @example
    * updateMemberServiceStatus('123e4567-e89b-12d3-a456-426614174000', true);
    * Returns the updated service status
@@ -105,7 +100,6 @@ export class MemberService {
   /**
    * Delete a member by UUID key
    * @param uuidKey - The UUID key of the member
-   * @throws InternalServerErrorException if the member could not be deleted
    * @example
    * deleteMember('123e4567-e89b-12d3-a456-426614174000');
    */

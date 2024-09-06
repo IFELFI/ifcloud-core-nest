@@ -1,5 +1,5 @@
 import { file, file_role, PrismaClient } from '@prisma/client';
-import { FileRoleService } from '../fileRole.service';
+import { FileRoleService } from './role.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma.service';
@@ -35,6 +35,7 @@ describe('FileRoleService', () => {
         file_key: fileKey,
         type: 'block',
         file_name: 'file.txt',
+        owner_id: 1,
       };
 
       const role: file_role = {
@@ -72,6 +73,7 @@ describe('FileRoleService', () => {
         file_key: fileKey,
         type: 'block',
         file_name: 'file.txt',
+        owner_id: 1,
       };
 
       const fileRole: file_role = {
@@ -98,6 +100,7 @@ describe('FileRoleService', () => {
         file_key: fileKey,
         type: 'block',
         file_name: 'file.txt',
+        owner_id: 1,
       };
 
       const fileRole: file_role = {
