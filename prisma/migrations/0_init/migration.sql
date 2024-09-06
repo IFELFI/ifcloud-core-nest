@@ -17,8 +17,8 @@ CREATE TYPE "public"."file_type" AS ENUM ('container', 'block', 'link');
 CREATE TABLE "file"."file" (
     "id" BIGSERIAL NOT NULL,
     "file_key" UUID NOT NULL DEFAULT gen_random_uuid(),
-    "file_name" VARCHAR(256)[],
     "type" "public"."file_type" NOT NULL DEFAULT 'block',
+    "file_name" VARCHAR(256) NOT NULL,
 
     CONSTRAINT "pk_file" PRIMARY KEY ("id")
 );
