@@ -6,6 +6,8 @@ import {
 import { PrismaService } from '../prisma.service';
 import { file, file_info, file_type } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
+import { ConfigService } from '@nestjs/config';
+import { EnvConfig } from 'src/schemas/env.schema';
 
 /**
  * File system explanation
@@ -18,7 +20,10 @@ import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 @Injectable()
 export class FileReadService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService<EnvConfig, true>,
+  ) {}
 
   /**
    * Get a file by key
@@ -219,5 +224,70 @@ export class FileReadService {
         },
       },
     });
+  }
+
+  /**
+   * Find a file by file name
+   * @param fileId - The ID of the file
+   * @param fileName - The name of the file
+   * @param maxDepth - The maximum depth to search
+   * @returns The files with the file name
+   * @example
+   * findFileByFileName('123e4567-e89b-12d3-a456-426614174000', 'file.txt');
+   * Returns the files with the file
+   */
+  async findFileByFileName(
+    fileId: bigint,
+    fileName: string,
+    maxDepth: number = 20,
+  ): Promise<file[] | null> {
+    const depthRange = this.config.get<EnvConfig['closure']>('closure').depth;
+    const queue: bigint[] = [fileId];
+    let currentDepth = 0;
+
+    while (queue.length > 0 && currentDepth <= maxDepth) {
+      // Get the current file ID
+      const currentFileId = queue.shift();
+      if (!currentFileId) {
+        break;
+      }
+
+      // Get the current file closures
+      const currentFileClosures = await this.prisma.file_closure.findMany({
+        where: {
+          ancestor_id: currentFileId,
+        },
+      });
+
+      // Add the descendant files to search list
+      const targetFileIds = currentFileClosures
+        .filter((closure) => closure.depth <= depthRange)
+        .map((closure) => closure.descendant_id);
+
+      if (targetFileIds.length !== 0) {
+        const targetFile = await this.prisma.file.findMany({
+          where: {
+            id: {
+              in: targetFileIds,
+            },
+            file_name: fileName,
+          },
+        });
+        if (targetFile.length !== 0) {
+          return targetFile;
+        }
+      }
+
+      // Add the descendant files to the queue
+      const queueFileIds = currentFileClosures
+        .filter((closure) => closure.depth === depthRange)
+        .map((closure) => closure.descendant_id);
+
+      queue.push(...queueFileIds);
+
+      currentDepth += depthRange;
+    }
+
+    return null;
   }
 }
