@@ -20,6 +20,9 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     test: {
       uuid: raw.TEST_UUID as EnvConfig['test']['uuid'],
     },
+    closure: {
+      depth: raw.CLOSURE_DEPTH as EnvConfig['closure']['depth'],
+    },
   };
 
   const result = EnvConfigSchema.safeParse(config);
