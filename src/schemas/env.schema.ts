@@ -21,6 +21,9 @@ export const EnvConfigSchema = z.object({
   test: z.object({
     uuid: z.optional(z.string()),
   }),
+  closure: z.object({
+    depth: z.number().default(3),
+  }),
 });
 
 export type EnvConfig = z.infer<typeof EnvConfigSchema>;
