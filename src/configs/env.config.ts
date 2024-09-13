@@ -11,15 +11,12 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     database: {
       url: raw.DATABASE_URL as EnvConfig['database']['url'],
     },
+    redis: {
+      host: raw.REDIS_HOST as EnvConfig['redis']['host'],
+      port: raw.REDIS_PORT as EnvConfig['redis']['port'],
+    },
     cors: {
       origin: raw.CORS_ORIGIN as EnvConfig['cors']['origin'],
-    },
-    session: {
-      name: raw.SESSION_NAME as EnvConfig['session']['name'],
-      secret: raw.SESSION_SECRET as EnvConfig['session']['secret'],
-      storage: {
-        url: raw.SESSION_STORAGE_URL as EnvConfig['session']['storage']['url'],
-      },
     },
     gateway: {
       secret: raw.GATEWAY_SECRET as EnvConfig['gateway']['secret'],
@@ -32,7 +29,10 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
       uuid: raw.TEST_UUID as EnvConfig['test']['uuid'],
     },
     closure: {
-      depth: raw.CLOSURE_DEPTH as EnvConfig['closure']['depth'],
+      depth: parseInt(
+        raw.CLOSURE_DEPTH as string,
+        10,
+      ) as EnvConfig['closure']['depth'],
     },
   };
 
@@ -42,5 +42,5 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     throw new Error(result.error.message);
   }
 
-  return config;
+  return result.data;
 }

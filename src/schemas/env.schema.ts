@@ -10,17 +10,14 @@ export const EnvConfigSchema = z.object({
     dest: z.string().default('logs/app.log'),
   }),
   cors: z.object({
-    origin: z.string(),
+    origin: z.string().default('*'),
   }),
   database: z.object({
     url: z.string(),
   }),
-  session: z.object({
-    name: z.string(),
-    secret: z.string(),
-    storage: z.object({
-      url: z.optional(z.string()),
-    }),
+  redis: z.object({
+    host: z.string().default('localhost'),
+    port: z.number().default(6379),
   }),
   gateway: z.object({
     secret: z.string(),
