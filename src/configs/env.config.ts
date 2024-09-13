@@ -3,12 +3,20 @@ import { EnvConfig, EnvConfigSchema } from 'src/schemas/env.schema';
 export function validate(raw: Record<string, unknown>): EnvConfig {
   const config: EnvConfig = {
     nodeEnv: raw.NODE_ENV as EnvConfig['nodeEnv'],
+    port: raw.PORT as EnvConfig['port'],
     log: {
       level: raw.LOG_LEVEL as EnvConfig['log']['level'],
       dest: raw.LOG_DEST as EnvConfig['log']['dest'],
     },
     database: {
       url: raw.DATABASE_URL as EnvConfig['database']['url'],
+    },
+    redis: {
+      host: raw.REDIS_HOST as EnvConfig['redis']['host'],
+      port: raw.REDIS_PORT as EnvConfig['redis']['port'],
+    },
+    cors: {
+      origin: raw.CORS_ORIGIN as EnvConfig['cors']['origin'],
     },
     gateway: {
       secret: raw.GATEWAY_SECRET as EnvConfig['gateway']['secret'],
@@ -20,6 +28,12 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     test: {
       uuid: raw.TEST_UUID as EnvConfig['test']['uuid'],
     },
+    closure: {
+      depth: parseInt(
+        raw.CLOSURE_DEPTH as string,
+        10,
+      ) as EnvConfig['closure']['depth'],
+    },
   };
 
   const result = EnvConfigSchema.safeParse(config);
@@ -28,5 +42,5 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     throw new Error(result.error.message);
   }
 
-  return config;
+  return result.data;
 }

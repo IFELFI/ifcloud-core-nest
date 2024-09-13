@@ -6,7 +6,9 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { MemberGuard } from 'src/guards/member.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { MemberService } from 'src/services/member.service';
 
@@ -40,6 +42,7 @@ export class MemberController {
 
   @Delete()
   @HttpCode(200)
+  @UseGuards(MemberGuard)
   async deleteMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
     const data = await this.memberService.deleteMember(uuidKey);
     const response: CustomResponse<typeof data> = {

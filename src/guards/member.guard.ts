@@ -10,7 +10,7 @@ import { ValidRequestQuery } from 'src/interfaces/request';
 import { MemberService } from 'src/services/member.service';
 
 @Injectable()
-export class UserGuard implements CanActivate {
+export class MemberGuard implements CanActivate {
   constructor(private readonly memberService: MemberService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
