@@ -6,7 +6,7 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
-  schemas  = ["file", "member", "public"]
+  schemas  = ["file", "member", "public", "temp_file"]
 }
 
 model file {
@@ -51,6 +51,7 @@ model member {
   file           file[]
   file_role      file_role[]
   service_status service_status?
+  temp_file      temp_file[]
 
   @@schema("member")
 }
@@ -75,6 +76,18 @@ model file_closure {
 
   @@id([ancestor_id, descendant_id], map: "pk_file_closure")
   @@schema("file")
+}
+
+model temp_file {
+  id          BigInt   @id(map: "pk_temp_file") @default(autoincrement())
+  owner_id    Int
+  file_key    String   @unique(map: "uni_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  file_name   String   @db.VarChar(256)
+  byte_size   Int      @default(0)
+  create_date DateTime @default(now()) @db.Timestamptz(6)
+  member      member   @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
+
+  @@schema("temp_file")
 }
 
 enum access_role {
