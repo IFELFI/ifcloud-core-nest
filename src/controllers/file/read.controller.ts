@@ -10,11 +10,28 @@ import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileReadService } from 'src/services/file/read.service';
+import { TokenService } from 'src/services/storage/token.service';
 
 @Controller('file/read')
 @UseGuards(MemberGuard)
 export class FileReadController {
-  constructor(private readonly fileReadService: FileReadService) {}
+  constructor(
+    private readonly fileReadService: FileReadService,
+    private readonly tokenService: TokenService,
+  ) {}
+
+  @Get('storage/:fileKey')
+  @HttpCode(200)
+  @UseGuards(RoleGuard('read'))
+  async getFile(@Param('fileKey') fileKey: string) {
+    const data = await this.tokenService.issueReadToken(fileKey);
+    const response: CustomResponse<typeof data> = {
+      status: 200,
+      message: 'Token issued',
+      data: data,
+    };
+    return response;
+  }
 
   @Get('info/:fileKey')
   @HttpCode(200)

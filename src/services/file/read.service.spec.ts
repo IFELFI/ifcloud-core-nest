@@ -10,6 +10,7 @@ import {
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma.service';
 import { SpecialContainerNameSchema } from '../../../src/schemas/file.schema';
+import { ConfigService } from '@nestjs/config';
 
 describe('ReadService', () => {
   let service: FileReadService;
@@ -37,7 +38,7 @@ describe('ReadService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FileReadService, PrismaService],
+      providers: [FileReadService, PrismaService, ConfigService],
     })
       .overrideProvider(PrismaService)
       .useValue(mockDeep(PrismaClient))
