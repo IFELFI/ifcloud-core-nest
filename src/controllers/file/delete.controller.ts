@@ -7,11 +7,13 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { access_role } from '@prisma/client';
+import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileDeleteService } from 'src/services/file/delete.service';
 
 @Controller('file/delete')
+@UseGuards(MemberGuard)
 export class FileDeleteController {
   constructor(private readonly fileDeleteService: FileDeleteService) {}
 

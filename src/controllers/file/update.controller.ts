@@ -8,12 +8,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { access_role } from '@prisma/client';
+import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileRoleService } from 'src/services/file/role.service';
 import { FileUpdateService } from 'src/services/file/update.service';
 
 @Controller('file/update')
+@UseGuards(MemberGuard)
 export class FileUpdateController {
   constructor(
     private readonly fileUpdateService: FileUpdateService,

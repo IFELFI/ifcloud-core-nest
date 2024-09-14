@@ -6,6 +6,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { access_role } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
@@ -22,7 +23,7 @@ export class FileReadController {
 
   @Get('storage/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getFile(@Param('fileKey') fileKey: string) {
     const data = await this.tokenService.issueReadToken(fileKey);
     const response: CustomResponse<typeof data> = {
@@ -35,7 +36,7 @@ export class FileReadController {
 
   @Get('info/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getFileInfo(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getFileInfo(file.id);
@@ -77,7 +78,7 @@ export class FileReadController {
 
   @Get('find/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async findFile(
     @Param('fileKey') fileKey: string,
     @Query('fileName') fileName: string,
