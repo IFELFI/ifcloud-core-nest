@@ -20,6 +20,7 @@ model file {
   file_closure_file_closure_descendant_idTofile file_closure[] @relation("file_closure_descendant_idTofile")
   file_info                                     file_info?
   file_role                                     file_role[]
+  temp_file                                     temp_file[]
 
   @@schema("file")
 }
@@ -85,6 +86,8 @@ model temp_file {
   file_name   String   @db.VarChar(256)
   byte_size   Int      @default(0)
   create_date DateTime @default(now()) @db.Timestamptz(6)
+  ancestor_id BigInt
+  file        file     @relation(fields: [ancestor_id], references: [id], onDelete: Cascade, map: "fk_ancestor_id")
   member      member   @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
 
   @@schema("temp_file")
