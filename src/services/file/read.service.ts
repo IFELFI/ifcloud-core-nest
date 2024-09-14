@@ -137,6 +137,9 @@ export class FileReadService {
         descendant_id: fileId,
         depth: 1,
       },
+      select: {
+        ancestor_id: true,
+      },
     });
 
     if (!parentClosure) {
@@ -167,6 +170,9 @@ export class FileReadService {
         ancestor_id: fileId,
         depth: 1,
       },
+      select: {
+        descendant_id: true,
+      },
     });
 
     return this.prisma.file.findMany({
@@ -191,6 +197,9 @@ export class FileReadService {
       where: {
         ancestor_id: fileId,
       },
+      select: {
+        descendant_id: true,
+      },
     });
 
     return this.prisma.file.findMany({
@@ -214,6 +223,9 @@ export class FileReadService {
     const ancestorClosures = await this.prisma.file_closure.findMany({
       where: {
         descendant_id: fileId,
+      },
+      select: {
+        ancestor_id: true,
       },
     });
 
@@ -256,6 +268,10 @@ export class FileReadService {
       const currentFileClosures = await this.prisma.file_closure.findMany({
         where: {
           ancestor_id: currentFileId,
+        },
+        select: {
+          descendant_id: true,
+          depth: true,
         },
       });
 
