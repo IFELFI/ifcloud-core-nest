@@ -10,17 +10,17 @@ datasource db {
 }
 
 model file {
-  id                                            BigInt         @id(map: "pk_file") @default(autoincrement())
-  file_key                                      String         @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type                                          file_type      @default(block)
-  file_name                                     String         @db.VarChar(256)
-  owner_id                                      Int
-  member                                        member         @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
-  file_closure_file_closure_ancestor_idTofile   file_closure[] @relation("file_closure_ancestor_idTofile")
-  file_closure_file_closure_descendant_idTofile file_closure[] @relation("file_closure_descendant_idTofile")
-  file_info                                     file_info?
-  file_role                                     file_role[]
-  temp_file                                     temp_file[]
+  id                                        BigInt         @id(map: "pk_file") @default(autoincrement())
+  file_key                                  String         @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                                      file_type      @default(block)
+  file_name                                 String         @db.VarChar(256)
+  owner_id                                  Int
+  member                                    member         @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
+  file_closure_file_closure_child_idTofile  file_closure[] @relation("file_closure_child_idTofile")
+  file_closure_file_closure_parent_idTofile file_closure[] @relation("file_closure_parent_idTofile")
+  file_info                                 file_info?
+  file_role                                 file_role[]
+  temp_file                                 temp_file[]
 
   @@schema("file")
 }
@@ -69,13 +69,12 @@ model service_status {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model file_closure {
-  ancestor_id                           BigInt
-  descendant_id                         BigInt
-  depth                                 Int    @db.SmallInt
-  file_file_closure_ancestor_idTofile   file   @relation("file_closure_ancestor_idTofile", fields: [ancestor_id], references: [id], onDelete: Cascade, map: "fk_ancestor_id")
-  file_file_closure_descendant_idTofile file   @relation("file_closure_descendant_idTofile", fields: [descendant_id], references: [id], onDelete: Cascade, map: "fk_descendant_id")
+  parent_id                         BigInt
+  child_id                          BigInt
+  file_file_closure_child_idTofile  file   @relation("file_closure_child_idTofile", fields: [child_id], references: [id], onDelete: Cascade, map: "fk_child_id")
+  file_file_closure_parent_idTofile file   @relation("file_closure_parent_idTofile", fields: [parent_id], references: [id], onDelete: Cascade, map: "fk_parent_id")
 
-  @@id([ancestor_id, descendant_id], map: "pk_file_closure")
+  @@id([parent_id, child_id], map: "pk_file_closure")
   @@schema("file")
 }
 

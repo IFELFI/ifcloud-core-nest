@@ -1,12 +1,6 @@
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { FileReadService } from './read.service';
-import {
-  file,
-  file_closure,
-  file_info,
-  file_type,
-  PrismaClient,
-} from '@prisma/client';
+import { file, file_info, file_type, PrismaClient } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma.service';
 import { SpecialContainerNameSchema } from '../../../src/schemas/file.schema';
@@ -29,11 +23,6 @@ describe('ReadService', () => {
     create_date: new Date(),
     update_date: new Date(),
     byte_size: 100,
-  };
-  const fileClosure: file_closure = {
-    ancestor_id: file.id,
-    descendant_id: file.id,
-    depth: 0,
   };
 
   beforeEach(async () => {
