@@ -90,7 +90,7 @@ export class FileReadService {
    * Get root file of a member
    * @param memberId - The ID of the member
    * @returns The root file of the member
-   * @throws NotFoundException - If the root file is not found
+   * @throws InternalServerErrorException - If the root file is not found
    * @throws InternalServerErrorException - If multiple root files are found
    * @example
    * getRootFile(1);
@@ -106,7 +106,7 @@ export class FileReadService {
     });
 
     if (!rootFile) {
-      throw new NotFoundException('Root file not found');
+      throw new InternalServerErrorException('Root file not found');
     }
     if (rootFile.length > 1) {
       throw new InternalServerErrorException('Multiple root files found');
