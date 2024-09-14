@@ -40,7 +40,7 @@ export class TokenService {
   }
 
   /**
-   * Issue a read token
+   * Issue a read token and save it in Redis
    * @param uuidKey - The UUID key of the file
    * @returns The issued read token
    * @example
@@ -57,7 +57,7 @@ export class TokenService {
   }
 
   /**
-   * Issue a write token
+   * Issue a write token and save it in Redis
    * @param uuidKey - The UUID key of the file
    * @returns The issued write token
    * @example

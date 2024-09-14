@@ -20,6 +20,9 @@ export class FileRoleService {
       where: {
         file_key: fileKey,
       },
+      select: {
+        id: true,
+      },
     });
 
     const role = await this.prisma.file_role.findUnique({
@@ -28,6 +31,9 @@ export class FileRoleService {
           file_id: file.id,
           member_id: memberId,
         },
+      },
+      select: {
+        role: true,
       },
     });
 
