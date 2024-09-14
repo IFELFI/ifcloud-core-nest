@@ -85,9 +85,9 @@ model temp_file {
   file_name   String   @db.VarChar(256)
   byte_size   Int      @default(0)
   create_date DateTime @default(now()) @db.Timestamptz(6)
-  ancestor_id BigInt
-  file        file     @relation(fields: [ancestor_id], references: [id], onDelete: Cascade, map: "fk_ancestor_id")
+  parent_id   BigInt
   member      member   @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
+  file        file     @relation(fields: [parent_id], references: [id], onDelete: Cascade, map: "fk_parent_id")
 
   @@schema("temp_file")
 }
