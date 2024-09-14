@@ -66,11 +66,10 @@ CREATE TABLE "member"."service_status" (
 
 -- CreateTable
 CREATE TABLE "file"."file_closure" (
-    "ancestor_id" BIGINT NOT NULL,
-    "descendant_id" BIGINT NOT NULL,
-    "depth" SMALLINT NOT NULL,
+    "parent_id" BIGINT NOT NULL,
+    "child_id" BIGINT NOT NULL,
 
-    CONSTRAINT "pk_file_closure" PRIMARY KEY ("ancestor_id","descendant_id")
+    CONSTRAINT "pk_file_closure" PRIMARY KEY ("parent_id","child_id")
 );
 
 -- CreateTable
@@ -81,7 +80,7 @@ CREATE TABLE "temp_file"."temp_file" (
     "file_name" VARCHAR(256) NOT NULL,
     "byte_size" INTEGER NOT NULL DEFAULT 0,
     "create_date" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "ancestor_id" BIGINT NOT NULL,
+    "parent_id" BIGINT NOT NULL,
 
     CONSTRAINT "pk_temp_file" PRIMARY KEY ("id")
 );
@@ -111,14 +110,14 @@ ALTER TABLE "file"."file_role" ADD CONSTRAINT "fk_member_id" FOREIGN KEY ("membe
 ALTER TABLE "member"."service_status" ADD CONSTRAINT "fk_member_id" FOREIGN KEY ("member_id") REFERENCES "member"."member"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_ancestor_id" FOREIGN KEY ("ancestor_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_child_id" FOREIGN KEY ("child_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_descendant_id" FOREIGN KEY ("descendant_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "temp_file"."temp_file" ADD CONSTRAINT "fk_ancestor_id" FOREIGN KEY ("ancestor_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_parent_id" FOREIGN KEY ("parent_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "temp_file"."temp_file" ADD CONSTRAINT "fk_owner_id" FOREIGN KEY ("owner_id") REFERENCES "member"."member"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "temp_file"."temp_file" ADD CONSTRAINT "fk_parent_id" FOREIGN KEY ("parent_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

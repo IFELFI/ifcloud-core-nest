@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RedisService } from './redis';
+import { RedisService } from './redis.service';
 import { TokenService } from './token.service';
 
 describe('TokenService', () => {

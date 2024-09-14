@@ -6,8 +6,6 @@ import {
 import { PrismaService } from '../prisma.service';
 import { file, file_info, file_type } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
-import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from 'src/schemas/env.schema';
 
 /**
  * File system explanation
@@ -20,10 +18,7 @@ import { EnvConfig } from 'src/schemas/env.schema';
 
 @Injectable()
 export class FileReadService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly config: ConfigService<EnvConfig, true>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get a file by key
@@ -95,7 +90,7 @@ export class FileReadService {
    * Get root file of a member
    * @param memberId - The ID of the member
    * @returns The root file of the member
-   * @throws NotFoundException - If the root file is not found
+   * @throws InternalServerErrorException - If the root file is not found
    * @throws InternalServerErrorException - If multiple root files are found
    * @example
    * getRootFile(1);
@@ -111,7 +106,7 @@ export class FileReadService {
     });
 
     if (!rootFile) {
-      throw new NotFoundException('Root file not found');
+      throw new InternalServerErrorException('Root file not found');
     }
     if (rootFile.length > 1) {
       throw new InternalServerErrorException('Multiple root files found');
@@ -134,11 +129,10 @@ export class FileReadService {
   async getParentFile(fileId: bigint): Promise<file> {
     const parentClosure = await this.prisma.file_closure.findMany({
       where: {
-        descendant_id: fileId,
-        depth: 1,
+        child_id: fileId,
       },
       select: {
-        ancestor_id: true,
+        parent_id: true,
       },
     });
 
@@ -151,7 +145,7 @@ export class FileReadService {
 
     return this.prisma.file.findUniqueOrThrow({
       where: {
-        id: parentClosure[0].ancestor_id,
+        id: parentClosure[0].parent_id,
       },
     });
   }
@@ -167,72 +161,17 @@ export class FileReadService {
   async getChildFiles(fileId: bigint): Promise<file[]> {
     const childClosures = await this.prisma.file_closure.findMany({
       where: {
-        ancestor_id: fileId,
-        depth: 1,
+        parent_id: fileId,
       },
       select: {
-        descendant_id: true,
+        child_id: true,
       },
     });
 
     return this.prisma.file.findMany({
       where: {
         id: {
-          in: childClosures.map((closure) => closure.descendant_id),
-        },
-      },
-    });
-  }
-
-  /**
-   * Get the descendant files of a file
-   * @param fileId - The ID of the file
-   * @returns The descendant files of the file
-   * @example
-   * getFileClosure('123e4567-e89b-12d3-a456-426614174000');
-   * Returns the descendant files of the file
-   */
-  async getFileDescendants(fileId: bigint): Promise<file[]> {
-    const descendantClosures = await this.prisma.file_closure.findMany({
-      where: {
-        ancestor_id: fileId,
-      },
-      select: {
-        descendant_id: true,
-      },
-    });
-
-    return this.prisma.file.findMany({
-      where: {
-        id: {
-          in: descendantClosures.map((closure) => closure.descendant_id),
-        },
-      },
-    });
-  }
-
-  /**
-   * Get the ancestor files of a file
-   * @param fileId - The ID of the file
-   * @returns The ancestor files of the file
-   * @example
-   * getFileAncestor('123e4567-e89b-12d3-a456-426614174000');
-   * Returns the ancestor files of the file
-   */
-  async getFileAncestors(fileId: bigint): Promise<file[]> {
-    const ancestorClosures = await this.prisma.file_closure.findMany({
-      where: {
-        descendant_id: fileId,
-      },
-      select: {
-        ancestor_id: true,
-      },
-    });
-
-    return this.prisma.file.findMany({
-      where: {
-        id: {
-          in: ancestorClosures.map((closure) => closure.ancestor_id),
+          in: childClosures.map((closure) => closure.child_id),
         },
       },
     });
@@ -253,7 +192,6 @@ export class FileReadService {
     fileName: string,
     maxDepth: number = 20,
   ): Promise<file[] | null> {
-    const depthRange = this.config.get<EnvConfig['closure']>('closure').depth;
     const queue: bigint[] = [fileId];
     let currentDepth = 0;
 
@@ -267,24 +205,19 @@ export class FileReadService {
       // Get the current file closures
       const currentFileClosures = await this.prisma.file_closure.findMany({
         where: {
-          ancestor_id: currentFileId,
+          parent_id: currentFileId,
         },
         select: {
-          descendant_id: true,
-          depth: true,
+          child_id: true,
         },
       });
 
       // Add the descendant files to search list
-      const targetFileIds = currentFileClosures
-        .filter((closure) => closure.depth <= depthRange)
-        .map((closure) => closure.descendant_id);
-
-      if (targetFileIds.length !== 0) {
+      if (currentFileClosures.length !== 0) {
         const targetFile = await this.prisma.file.findMany({
           where: {
             id: {
-              in: targetFileIds,
+              in: currentFileClosures.map((closure) => closure.child_id),
             },
             file_name: fileName,
           },
@@ -295,13 +228,10 @@ export class FileReadService {
       }
 
       // Add the descendant files to the queue
-      const queueFileIds = currentFileClosures
-        .filter((closure) => closure.depth === depthRange)
-        .map((closure) => closure.descendant_id);
+      queue.push(...currentFileClosures.map((closure) => closure.child_id));
 
-      queue.push(...queueFileIds);
-
-      currentDepth += depthRange;
+      // Increase the depth
+      currentDepth += 1;
     }
 
     return null;

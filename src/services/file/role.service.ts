@@ -15,7 +15,10 @@ export class FileRoleService {
    * getRole(1, '123e4567-e89b-12d3-a456-426614174000');
    * Returns the role of the member for the file
    */
-  async getRole(memberId: number, fileKey: string) {
+  async getRole(
+    memberId: number,
+    fileKey: string,
+  ): Promise<{ role: access_role[] } | null> {
     const file = await this.prisma.file.findUniqueOrThrow({
       where: {
         file_key: fileKey,

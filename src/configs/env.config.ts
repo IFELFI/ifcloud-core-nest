@@ -28,12 +28,6 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
     test: {
       uuid: raw.TEST_UUID as EnvConfig['test']['uuid'],
     },
-    closure: {
-      depth: parseInt(
-        raw.CLOSURE_DEPTH as string,
-        10,
-      ) as EnvConfig['closure']['depth'],
-    },
   };
 
   const result = EnvConfigSchema.safeParse(config);
