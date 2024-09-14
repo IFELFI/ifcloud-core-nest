@@ -14,6 +14,8 @@ export class FileWriteService {
    * Issue a write token to create a file
    * @param memberId - The ID of the member
    * @param parentKey - The key of the ancestor file
+   * @param fileName - The name of the file
+   * @param byteSize - The size of the file in bytes
    * @returns The issued write token
    * @example
    * issueWrite('123e4567-e89b-12d3-a456-426614174000', 1);

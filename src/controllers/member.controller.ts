@@ -55,7 +55,10 @@ export class MemberController {
 
   @Get('status')
   @HttpCode(200)
-  async getAllMembers(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
+  @UseGuards(MemberGuard)
+  async getServiceStatus(
+    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
+  ) {
     const data = await this.memberService.getMemberServiceStatus(uuidKey);
     const response: CustomResponse<typeof data> = {
       status: 200,
