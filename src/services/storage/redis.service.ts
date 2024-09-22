@@ -8,10 +8,9 @@ export class RedisService {
   private readonly redisClient: Redis;
 
   constructor(private readonly config: ConfigService<EnvConfig, true>) {
-    this.redisClient = new Redis({
-      host: this.config.get<EnvConfig['redis']>('redis').host,
-      port: this.config.get<EnvConfig['redis']>('redis').port,
-    });
+    this.redisClient = new Redis(
+      this.config.get<EnvConfig['redis']>('redis').url,
+    );
   }
 
   async get(key: string): Promise<string | null> {

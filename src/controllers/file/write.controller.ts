@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   HttpCode,
   Param,
   Post,
@@ -7,15 +8,20 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { access_role } from '@prisma/client';
+import { lastValueFrom } from 'rxjs';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileWriteService } from 'src/services/file/write.service';
+import { StorageService } from 'src/services/storage/storage.service';
 
 @Controller('file/write')
-@UseGuards(MemberGuard)
+//@UseGuards(MemberGuard)
 export class FileWriteController {
-  constructor(private readonly fileWriteService: FileWriteService) {}
+  constructor(
+    private readonly fileWriteService: FileWriteService,
+    private readonly storageService: StorageService,
+  ) {}
 
   @Post('container/:fileKey')
   @HttpCode(201)
@@ -57,6 +63,21 @@ export class FileWriteController {
     const response: CustomResponse<typeof data> = {
       status: 201,
       message: 'Block file created',
+      data: data,
+    };
+
+    return response;
+  }
+
+  @Get('block/:fileKey/merge')
+  @HttpCode(201)
+  //@UseGuards(RoleGuard(access_role.create))
+  async mergeBlockFile(@Param('fileKey') fileKey: string) {
+    const obs = this.storageService.mergeChunks(fileKey);
+    const data = await lastValueFrom(obs);
+    const response: CustomResponse<typeof data> = {
+      status: 201,
+      message: 'Block file merged',
       data: data,
     };
 
