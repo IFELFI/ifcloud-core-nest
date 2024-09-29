@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { join } from 'path';
 import { FileWriteController } from 'src/controllers/file/write.controller';
 import { FileRoleService } from 'src/services/file/role.service';
 import { FileWriteService } from 'src/services/file/write.service';
@@ -14,13 +15,11 @@ import { TokenService } from 'src/services/storage/token.service';
     ClientsModule.register([
       {
         name: 'STORAGE_SERVICE',
-        transport: Transport.RMQ,
+        transport: Transport.GRPC,
         options: {
-          urls: ['amqp://localhost:5672'],
-          queue: 'receiver_queue',
-          queueOptions: {
-            durable: false,
-          },
+          package: 'storage_manager',
+          protoPath: join(__dirname, '../../proto/storage_manager.proto'),
+          url: '127.0.0.1:3001',
         },
       },
     ]),

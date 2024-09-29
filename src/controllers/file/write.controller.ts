@@ -73,7 +73,7 @@ export class FileWriteController {
   @HttpCode(201)
   //@UseGuards(RoleGuard(access_role.create))
   async mergeBlockFile(@Param('fileKey') fileKey: string) {
-    const obs = this.storageService.mergeChunks(fileKey);
+    const obs = this.storageService.mergeChunks(fileKey, 1);
     const data = await lastValueFrom(obs);
     const response: CustomResponse<typeof data> = {
       status: 201,
