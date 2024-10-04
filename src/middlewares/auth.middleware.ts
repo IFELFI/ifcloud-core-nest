@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NextFunction, Request, Response } from 'express';
-import { EnvConfig } from 'src/schemas/env.schema';
+import { EnvConfig } from '../schemas/env.schema';
 
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {

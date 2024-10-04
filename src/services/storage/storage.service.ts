@@ -1,21 +1,24 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ClientGrpc } from '@nestjs/microservices';
-import { Observable } from 'rxjs';
 import {
   DeleteRequest,
   MergeRequest,
-  StorageManagerService,
+  STORAGE_MANAGE_SERVICE_NAME,
+  StorageManageClient,
   StorageManageReply,
-} from 'src/interfaces/grpc/storage_service';
+} from '../../proto/storage_manager';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class StorageService implements OnModuleInit {
-  private storageManagerService: StorageManagerService;
-  constructor(@Inject('STORAGE_SERVICE') private readonly client: ClientGrpc) {}
+  private storageManagerService: StorageManageClient;
+
+  constructor(@Inject('STORAGE_SERVICE') private client: ClientGrpc) {}
 
   onModuleInit() {
-    this.storageManagerService =
-      this.client.getService<StorageManagerService>('StorageManage');
+    this.storageManagerService = this.client.getService<StorageManageClient>(
+      STORAGE_MANAGE_SERVICE_NAME,
+    );
   }
 
   /**
@@ -28,8 +31,8 @@ export class StorageService implements OnModuleInit {
     total_chunk_count: number = 1,
   ): Observable<StorageManageReply> {
     const mergeRequest: MergeRequest = {
-      file_key: uuidKey,
-      total_chunk_count: total_chunk_count,
+      fileKey: uuidKey,
+      totalChunkCount: total_chunk_count,
     };
 
     return this.storageManagerService.merge(mergeRequest);
@@ -42,7 +45,7 @@ export class StorageService implements OnModuleInit {
    */
   deleteFile(uuidKey: string): Observable<StorageManageReply> {
     const requestData: DeleteRequest = {
-      file_key: uuidKey,
+      fileKey: uuidKey,
     };
 
     return this.storageManagerService.delete(requestData);
