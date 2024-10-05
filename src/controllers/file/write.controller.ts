@@ -16,7 +16,7 @@ import { FileWriteService } from 'src/services/file/write.service';
 import { StorageService } from 'src/services/storage/storage.service';
 
 @Controller('file/write')
-//@UseGuards(MemberGuard)
+@UseGuards(MemberGuard)
 export class FileWriteController {
   constructor(
     private readonly fileWriteService: FileWriteService,
@@ -71,9 +71,12 @@ export class FileWriteController {
 
   @Get('block/:fileKey/merge')
   @HttpCode(201)
-  //@UseGuards(RoleGuard(access_role.create))
-  async mergeBlockFile(@Param('fileKey') fileKey: string) {
-    const obs = this.storageService.mergeChunks(fileKey, 1);
+  @UseGuards(RoleGuard(access_role.create))
+  async mergeBlockFile(
+    @Param('fileKey') fileKey: string,
+    @Query('totalChunks') totalChunks: number,
+  ) {
+    const obs = this.storageService.mergeChunks(fileKey, totalChunks);
     const data = await lastValueFrom(obs);
     const response: CustomResponse<typeof data> = {
       status: 201,
