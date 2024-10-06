@@ -200,7 +200,7 @@ export class FileReadService {
     fileId: bigint,
     fileName: string,
     maxDepth: number = 20,
-  ): Promise<file[] | null> {
+  ): Promise<file[]> {
     const queue: bigint[] = [fileId];
     let currentDepth = 0;
 
@@ -243,7 +243,7 @@ export class FileReadService {
       currentDepth += 1;
     }
 
-    return null;
+    return [];
   }
 
   /**

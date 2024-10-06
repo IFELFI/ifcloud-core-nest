@@ -24,10 +24,14 @@ export class MemberController {
   @HttpCode(200)
   async getMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
     const data = await this.memberService.getMember(uuidKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      uuidKey: string;
+    }> = {
       status: 200,
       message: 'Member found',
-      data: data,
+      data: {
+        uuidKey: data.uuid_key,
+      },
     };
     return response;
   }
@@ -36,10 +40,14 @@ export class MemberController {
   @HttpCode(201)
   async createMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
     const data = await this.signupService.signup(uuidKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      uuidKey: string;
+    }> = {
       status: 201,
       message: 'Member created',
-      data: data,
+      data: {
+        uuidKey: data.uuid_key,
+      },
     };
     return response;
   }
@@ -49,10 +57,14 @@ export class MemberController {
   @UseGuards(MemberGuard)
   async deleteMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
     const data = await this.memberService.deleteMember(uuidKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      uuidKey: string;
+    }> = {
       status: 200,
       message: 'Member deleted',
-      data: data,
+      data: {
+        uuidKey: data.uuid_key,
+      },
     };
     return response;
   }
@@ -64,10 +76,18 @@ export class MemberController {
     @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
   ) {
     const data = await this.memberService.getMemberServiceStatus(uuidKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      available: boolean;
+      joinDate: Date;
+      updateDate: Date;
+    }> = {
       status: 200,
       message: 'Service status found',
-      data: data,
+      data: {
+        available: data.available,
+        joinDate: data.join_date,
+        updateDate: data.update_date,
+      },
     };
     return response;
   }

@@ -30,10 +30,18 @@ export class FileUpdateController {
     @Query('fileName') fileName: string,
   ) {
     const data = await this.fileUpdateService.updateFileName(fileKey, fileName);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: string;
+    }> = {
       status: 200,
       message: 'File name updated',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
 
     return response;
@@ -60,10 +68,14 @@ export class FileUpdateController {
       fileKey,
       parentKey,
     );
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      success: boolean;
+    }> = {
       status: 200,
       message: 'File parent updated',
-      data: data,
+      data: {
+        success: data,
+      },
     };
 
     return response;

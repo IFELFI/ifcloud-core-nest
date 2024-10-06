@@ -6,7 +6,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { access_role } from '@prisma/client';
+import { access_role, file_type } from '@prisma/client';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { UploadService } from 'src/services/upload.service';
@@ -30,10 +30,16 @@ export class FileUploadController {
       fileName,
       byteSize,
     );
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      token: string;
+      fileKey: string;
+    }> = {
       status: 201,
       message: 'Block file created',
-      data: data,
+      data: {
+        token: data.token,
+        fileKey: data.fileKey,
+      },
     };
 
     return response;
@@ -47,10 +53,18 @@ export class FileUploadController {
     @Query('totalChunks') totalChunks: number,
   ) {
     const data = await this.uploadService.completeUpload(blockKey, totalChunks);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
       status: 201,
       message: 'Block file merged',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
 
     return response;

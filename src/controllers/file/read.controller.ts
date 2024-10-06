@@ -26,10 +26,14 @@ export class FileReadController {
   @UseGuards(RoleGuard(access_role.read))
   async getFile(@Param('fileKey') fileKey: string) {
     const data = await this.tokenService.issueReadToken(fileKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      token: string;
+    }> = {
       status: 200,
       message: 'Token issued',
-      data: data,
+      data: {
+        token: data,
+      },
     };
     return response;
   }
@@ -38,10 +42,18 @@ export class FileReadController {
   @HttpCode(200)
   async getRootContainer(@Query('memberId') memberId: number) {
     const data = await this.fileReadService.getRootContainer(memberId);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: string;
+    }> = {
       status: 200,
       message: 'Root file found',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
     return response;
   }
@@ -51,11 +63,21 @@ export class FileReadController {
   @UseGuards(RoleGuard(access_role.read))
   async getFileInfo(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
-    const data = await this.fileReadService.getFileInfo(file.id);
-    const response: CustomResponse<typeof data> = {
+    const fileInfo = await this.fileReadService.getFileInfo(file.id);
+    const response: CustomResponse<{
+      fileName: string;
+      createDate: Date;
+      updateDate: Date;
+      byteSize: number;
+    }> = {
       status: 200,
       message: 'File info found',
-      data: data,
+      data: {
+        fileName: file.file_name,
+        createDate: fileInfo.create_date,
+        updateDate: fileInfo.update_date,
+        byteSize: fileInfo.byte_size,
+      },
     };
     return response;
   }
@@ -66,10 +88,18 @@ export class FileReadController {
   async getParentFile(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getParentFile(file.id);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: string;
+    }> = {
       status: 200,
       message: 'File parent found',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
     return response;
   }
@@ -80,10 +110,20 @@ export class FileReadController {
   async getChildrenFiles(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getChildFiles(file.id);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<
+      {
+        fileKey: string;
+        fileName: string;
+        type: string;
+      }[]
+    > = {
       status: 200,
       message: 'File children found',
-      data: data,
+      data: data.map((child) => ({
+        fileKey: child.file_key,
+        fileName: child.file_name,
+        type: child.type,
+      })),
     };
     return response;
   }
@@ -100,10 +140,20 @@ export class FileReadController {
       file.id,
       fileName,
     );
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<
+      {
+        fileKey: string;
+        fileName: string;
+        type: string;
+      }[]
+    > = {
       status: 200,
       message: 'File found',
-      data: data,
+      data: data.map((file) => ({
+        fileKey: file.file_key,
+        fileName: file.file_name,
+        type: file.type,
+      })),
     };
     return response;
   }

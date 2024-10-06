@@ -30,10 +30,18 @@ export class FileWriteController {
       parentKey,
       fileName,
     );
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: string;
+    }> = {
       status: 201,
       message: 'Container file created',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
 
     return response;
