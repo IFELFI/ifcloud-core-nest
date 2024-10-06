@@ -3,7 +3,7 @@ import {
   ForbiddenException,
   HttpCode,
   Param,
-  Post,
+  Patch,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -14,7 +14,7 @@ import { CustomResponse } from 'src/interfaces/response';
 import { FileRoleService } from 'src/services/file/role.service';
 import { FileUpdateService } from 'src/services/file/update.service';
 
-@Controller('file/update')
+@Controller('file')
 @UseGuards(MemberGuard)
 export class FileUpdateController {
   constructor(
@@ -22,7 +22,7 @@ export class FileUpdateController {
     private readonly fileRoleService: FileRoleService,
   ) {}
 
-  @Post('name/:fileKey')
+  @Patch('name/:fileKey')
   @HttpCode(200)
   @UseGuards(RoleGuard(access_role.update))
   async updateFileName(
@@ -39,7 +39,7 @@ export class FileUpdateController {
     return response;
   }
 
-  @Post('parent/:fileKey')
+  @Patch('parent/:fileKey')
   @HttpCode(200)
   @UseGuards(RoleGuard(access_role.update))
   async updateFileParent(

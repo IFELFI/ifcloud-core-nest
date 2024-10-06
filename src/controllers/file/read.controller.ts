@@ -13,7 +13,7 @@ import { CustomResponse } from 'src/interfaces/response';
 import { FileReadService } from 'src/services/file/read.service';
 import { TokenService } from 'src/services/storage/token.service';
 
-@Controller('file/read')
+@Controller('file')
 @UseGuards(MemberGuard)
 export class FileReadController {
   constructor(
@@ -29,6 +29,18 @@ export class FileReadController {
     const response: CustomResponse<typeof data> = {
       status: 200,
       message: 'Token issued',
+      data: data,
+    };
+    return response;
+  }
+
+  @Get('root')
+  @HttpCode(200)
+  async getRootFile(@Query('memberId') memberId: number) {
+    const data = await this.fileReadService.getRootFile(memberId);
+    const response: CustomResponse<typeof data> = {
+      status: 200,
+      message: 'Root file found',
       data: data,
     };
     return response;

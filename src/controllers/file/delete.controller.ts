@@ -12,7 +12,7 @@ import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileDeleteService } from 'src/services/file/delete.service';
 
-@Controller('file/delete')
+@Controller('file')
 @UseGuards(MemberGuard)
 export class FileDeleteController {
   constructor(private readonly fileDeleteService: FileDeleteService) {}
