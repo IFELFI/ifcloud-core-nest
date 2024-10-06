@@ -1,5 +1,5 @@
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
-import { FileWriteService } from './write.service';
+import { FileCreateService } from './create.service';
 import {
   file,
   file_info,
@@ -14,7 +14,7 @@ import { RedisService } from '../storage/redis.service';
 import { ConfigService } from '@nestjs/config';
 
 describe('FileWriteService', () => {
-  let service: FileWriteService;
+  let service: FileCreateService;
   let prisma: DeepMockProxy<PrismaClient>;
 
   const memberId = 1;
@@ -51,7 +51,7 @@ describe('FileWriteService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        FileWriteService,
+        FileCreateService,
         TokenService,
         ConfigService,
         PrismaService,
@@ -65,7 +65,7 @@ describe('FileWriteService', () => {
       .useValue(mockDeep(PrismaClient))
       .compile();
 
-    service = module.get<FileWriteService>(FileWriteService);
+    service = module.get<FileCreateService>(FileCreateService);
     prisma = module.get<DeepMockProxy<PrismaClient>>(PrismaService);
     prisma.$transaction.mockImplementation((cb) => cb(prisma));
   });
