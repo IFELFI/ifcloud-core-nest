@@ -98,7 +98,7 @@ describe('FileReadService', () => {
     it('should return a root file', async () => {
       prisma.file.findMany.mockResolvedValue([file]);
 
-      expect(await service.getRootFile(memberId)).toBe(file);
+      expect(await service.getRootContainer(memberId)).toBe(file);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
           owner_id: memberId,
