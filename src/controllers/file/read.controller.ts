@@ -36,8 +36,8 @@ export class FileReadController {
 
   @Get('root')
   @HttpCode(200)
-  async getRootFile(@Query('memberId') memberId: number) {
-    const data = await this.fileReadService.getRootFile(memberId);
+  async getRootContainer(@Query('memberId') memberId: number) {
+    const data = await this.fileReadService.getRootContainer(memberId);
     const response: CustomResponse<typeof data> = {
       status: 200,
       message: 'Root file found',

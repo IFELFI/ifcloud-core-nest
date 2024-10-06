@@ -96,7 +96,7 @@ export class FileReadService {
    * getRootFile(1);
    * Returns the root file of the member
    */
-  async getRootFile(memberId: number): Promise<{
+  async getRootContainer(memberId: number): Promise<{
     file_key: string;
     file_name: string;
     type: file_type;
