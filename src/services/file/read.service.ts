@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { file, file_info, file_type } from '@prisma/client';
+import { file, file_info, file_type, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 /**
@@ -105,7 +105,7 @@ export class FileReadService {
       },
     });
 
-    if (!rootFile) {
+    if (!rootFile || rootFile.length === 0) {
       throw new InternalServerErrorException('Root file not found');
     }
     if (rootFile.length > 1) {
@@ -235,5 +235,21 @@ export class FileReadService {
     }
 
     return null;
+  }
+
+  /**
+   * Get temporary file by key
+   * @param fileKey - The key of the file
+   * @returns The temporary file
+   * @example
+   * getTemporaryFile('123e4567-e89b-12d3-a456-426614174000');
+   * Returns the temporary file
+   */
+  async getTemporaryFile(fileKey: string): Promise<temp_file> {
+    return this.prisma.temp_file.findUniqueOrThrow({
+      where: {
+        file_key: fileKey,
+      },
+    });
   }
 }

@@ -1,6 +1,6 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { file } from '@prisma/client';
+import { file, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 @Injectable()
@@ -19,6 +19,22 @@ export class FileDeleteService {
     return this.prisma.file.delete({
       where: {
         file_key: fileKey,
+      },
+    });
+  }
+
+  /**
+   * Delete a temporary file by ID
+   * @param fileId - The ID of the file
+   * @returns The deleted file
+   * @example
+   * deleteTemporaryFile(1);
+   * Returns the deleted file
+   */
+  async deleteTemporaryFile(fileId: bigint): Promise<temp_file> {
+    return this.prisma.temp_file.delete({
+      where: {
+        id: fileId,
       },
     });
   }
