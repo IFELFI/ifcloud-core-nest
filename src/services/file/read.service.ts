@@ -90,23 +90,32 @@ export class FileReadService {
    * Get root file of a member
    * @param memberId - The ID of the member
    * @returns The root file of the member
-   * @throws InternalServerErrorException - If the root file is not found
+   * @throws NotFoundException - If the root file is not found
    * @throws InternalServerErrorException - If multiple root files are found
    * @example
    * getRootFile(1);
    * Returns the root file of the member
    */
-  async getRootFile(memberId: number): Promise<file> {
+  async getRootFile(memberId: number): Promise<{
+    file_key: string;
+    file_name: string;
+    type: file_type;
+  }> {
     // Get the root file which has same ancestor and descendant id and depth 0
     const rootFile = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.root,
       },
+      select: {
+        file_key: true,
+        file_name: true,
+        type: true,
+      },
     });
 
     if (!rootFile || rootFile.length === 0) {
-      throw new InternalServerErrorException('Root file not found');
+      throw new NotFoundException('Root file not found');
     }
     if (rootFile.length > 1) {
       throw new InternalServerErrorException('Multiple root files found');
