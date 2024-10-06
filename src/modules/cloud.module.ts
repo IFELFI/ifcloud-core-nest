@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { FileDeleteModule } from './file/delete.module';
 import { FileReadModule } from './file/read.module';
-import { FileWriteModule } from './file/write.module';
+import { FileCreateModule } from './file/create.module';
 import { FileUpdateModule } from './file/update.module';
 
 @Module({
   imports: [
-    FileWriteModule,
+    FileCreateModule,
     FileReadModule,
     FileUpdateModule,
     FileDeleteModule,

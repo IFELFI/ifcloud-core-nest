@@ -2,7 +2,7 @@ import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { FileReadService } from './read.service';
 import { file, file_info, file_type, PrismaClient } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { SpecialContainerNameSchema } from '../../../src/schemas/file.schema';
 
 describe('FileReadService', () => {

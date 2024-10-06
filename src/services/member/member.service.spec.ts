@@ -2,7 +2,7 @@ import { member, PrismaClient, service_status } from '@prisma/client';
 import { MemberService } from './member.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('MemberService', () => {
   let service: MemberService;

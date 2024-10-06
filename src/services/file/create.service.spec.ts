@@ -8,7 +8,7 @@ import {
   temp_file,
 } from '@prisma/client';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { TokenService } from '../storage/token.service';
 import { RedisService } from '../storage/redis.service';
 import { ConfigService } from '@nestjs/config';

@@ -2,7 +2,7 @@ import { file, file_type, PrismaClient } from '@prisma/client';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { FileDeleteService } from './delete.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 describe('FileDeleteService', () => {

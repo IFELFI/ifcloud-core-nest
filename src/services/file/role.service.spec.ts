@@ -2,7 +2,7 @@ import { file, file_role, PrismaClient } from '@prisma/client';
 import { FileRoleService } from './role.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('FileRoleService', () => {
   let service: FileRoleService;

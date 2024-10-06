@@ -10,11 +10,15 @@ import {
 } from '@nestjs/common';
 import { MemberGuard } from 'src/guards/member.guard';
 import { CustomResponse } from 'src/interfaces/response';
-import { MemberService } from 'src/services/member.service';
+import { MemberService } from 'src/services/member/member.service';
+import { SignupService } from 'src/services/signup.service';
 
 @Controller('member')
 export class MemberController {
-  constructor(private memberService: MemberService) {}
+  constructor(
+    private memberService: MemberService,
+    private signupService: SignupService,
+  ) {}
 
   @Get()
   @HttpCode(200)
@@ -31,7 +35,7 @@ export class MemberController {
   @Post()
   @HttpCode(201)
   async createMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
-    const data = await this.memberService.createMember(uuidKey);
+    const data = await this.signupService.signup(uuidKey);
     const response: CustomResponse<typeof data> = {
       status: 201,
       message: 'Member created',

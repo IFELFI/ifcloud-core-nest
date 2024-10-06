@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { file, file_type, PrismaClient } from '@prisma/client';
 import { FileUpdateService } from './update.service';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 
 describe('FileUpdateService', () => {

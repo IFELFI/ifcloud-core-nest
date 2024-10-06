@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ValidRequestQuery } from 'src/interfaces/request';
-import { MemberService } from 'src/services/member.service';
+import { MemberService } from 'src/services/member/member.service';
 
 @Injectable()
 export class MemberGuard implements CanActivate {

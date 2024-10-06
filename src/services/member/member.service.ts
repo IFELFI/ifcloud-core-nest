@@ -1,14 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { member, service_status } from '@prisma/client';
-import { FileCreateService } from './file/create.service';
 
 @Injectable()
 export class MemberService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly fileWriteService: FileCreateService,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Create a new member
@@ -38,9 +34,6 @@ export class MemberService {
           update_date: new Date(),
         },
       });
-
-      await this.fileWriteService.createRootFile(member.id);
-
       return member;
     });
   }

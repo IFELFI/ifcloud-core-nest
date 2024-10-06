@@ -5,6 +5,7 @@ import { CustomLogger } from './modules/logger.module';
 import { AuthMiddleware } from './middlewares/auth.middleware';
 import { MemberModule } from './modules/member.module';
 import { CloudModule } from './modules/cloud.module';
+import { UploadModule } from './modules/upload.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CloudModule } from './modules/cloud.module';
     }),
     CustomLogger,
     MemberModule,
+    UploadModule,
     CloudModule,
   ],
 })
