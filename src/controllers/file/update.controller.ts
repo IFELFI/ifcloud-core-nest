@@ -7,7 +7,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { access_role } from '@prisma/client';
+import { access_role, file_type } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
@@ -33,7 +33,7 @@ export class FileUpdateController {
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;
-      type: string;
+      type: file_type;
     }> = {
       status: 200,
       message: 'File name updated',

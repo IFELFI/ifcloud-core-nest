@@ -6,7 +6,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { access_role } from '@prisma/client';
+import { access_role, file_type } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
@@ -45,7 +45,7 @@ export class FileReadController {
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;
-      type: string;
+      type: file_type;
     }> = {
       status: 200,
       message: 'Root file found',
@@ -91,7 +91,7 @@ export class FileReadController {
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;
-      type: string;
+      type: file_type;
     }> = {
       status: 200,
       message: 'File parent found',
@@ -114,7 +114,7 @@ export class FileReadController {
       {
         fileKey: string;
         fileName: string;
-        type: string;
+        type: file_type;
       }[]
     > = {
       status: 200,
@@ -144,7 +144,7 @@ export class FileReadController {
       {
         fileKey: string;
         fileName: string;
-        type: string;
+        type: file_type;
       }[]
     > = {
       status: 200,
