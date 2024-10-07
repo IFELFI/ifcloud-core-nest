@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { FileWriteController } from 'src/controllers/file/create.controller';
-import { FileRoleService } from 'src/services/file/role.service';
 import { FileCreateService } from 'src/services/file/create.service';
-import { MemberService } from 'src/services/member/member.service';
 import { PrismaService } from 'src/services/prisma/prisma.service';
+import { MemberGuardModule } from '../guard.module';
 
 @Module({
+  imports: [MemberGuardModule],
   controllers: [FileWriteController],
-  providers: [FileCreateService, PrismaService, MemberService, FileRoleService],
+  providers: [FileCreateService, PrismaService],
+  exports: [FileCreateService],
 })
 export class FileCreateModule {}
