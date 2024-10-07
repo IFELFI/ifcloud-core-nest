@@ -4,6 +4,7 @@ import { StorageService } from './storage/storage.service';
 import { FileReadService } from './file/read.service';
 import { FileDeleteService } from './file/delete.service';
 import { TokenService } from './storage/token.service';
+import { file } from '@prisma/client';
 
 @Injectable()
 export class UploadService {
@@ -58,7 +59,7 @@ export class UploadService {
    * mergeBlockFile('123e4567-e89b-12d3-a456-426614174000', 10);
    * Returns the created file
    */
-  async completeUpload(blockKey: string, totalChunks: number) {
+  async completeUpload(blockKey: string, totalChunks: number): Promise<file> {
     const tempFile = await this.fileReadService.getTemporaryFile(blockKey);
     const mergeResult = await this.storageService.mergeChunks(
       tempFile.file_key,
