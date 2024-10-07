@@ -3,6 +3,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { file, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
+/**
+ * File delete service
+ * Delete files from the database
+ * @category File
+ * @class FileDeleteService
+ * @param prisma - The Prisma service
+ */
+
 @Injectable()
 export class FileDeleteService {
   constructor(private readonly prisma: PrismaService) {}

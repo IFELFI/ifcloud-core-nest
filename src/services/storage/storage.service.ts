@@ -9,6 +9,14 @@ import {
 } from '../../proto/storage_manager';
 import { lastValueFrom } from 'rxjs';
 
+/**
+ * Storage service
+ * Service for storage operations
+ * @category Storage
+ * @class StorageService
+ * @param client - The client for the storage service
+ */
+
 @Injectable()
 export class StorageService implements OnModuleInit {
   private storageManagerService: StorageManageClient;
@@ -24,15 +32,19 @@ export class StorageService implements OnModuleInit {
   /**
    * Merge chunks of a file
    * @param uuidKey - The UUID key of the file
+   * @param totalChunkCount - The total number of chunks
    * @returns Status of the merge operation
+   * @example
+   * mergeChunks('123e4567-e89b-12d3-a456-426614174000', 2);
+   * Returns the status of the merge operation
    */
   mergeChunks(
     uuidKey: string,
-    total_chunk_count: number = 1,
+    totalChunkCount: number = 1,
   ): Promise<StorageManageReply> {
     const mergeRequest: MergeRequest = {
       fileKey: uuidKey,
-      totalChunkCount: total_chunk_count,
+      totalChunkCount: totalChunkCount,
     };
 
     const obs = this.storageManagerService.merge(mergeRequest);
@@ -44,6 +56,9 @@ export class StorageService implements OnModuleInit {
    * Delete file from storage
    * @param uuidKey - The UUID key of the file
    * @returns Status of the delete operation
+   * @example
+   * deleteFile('123e4567-e89b-12d3-a456-426614174000');
+   * Returns the status of the delete operation
    */
   deleteFile(uuidKey: string): Promise<StorageManageReply> {
     const requestData: DeleteRequest = {

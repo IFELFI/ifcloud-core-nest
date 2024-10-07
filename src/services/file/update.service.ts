@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file } from '@prisma/client';
 
+/**
+ * File update service
+ * Update files in the database
+ * @category File
+ * @class FileUpdateService
+ * @param prisma - The Prisma service
+ */
+
 @Injectable()
 export class FileUpdateService {
   constructor(private readonly prisma: PrismaService) {}

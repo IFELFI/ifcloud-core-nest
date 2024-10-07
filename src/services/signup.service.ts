@@ -2,6 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { FileCreateService } from './file/create.service';
 import { MemberService } from './member/member.service';
 
+/**
+ * Signup service
+ * Create a new member and root file
+ * @category Signup
+ * @class SignupService
+ * @param memberService - The member service
+ * @param fileCreateService - The file create service
+ */
+
 @Injectable()
 export class SignupService {
   constructor(

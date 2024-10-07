@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { RedisService } from './redis.service';
 
+/**
+ * Token service
+ * Service for generating and saving tokens
+ * @category Token
+ * @class TokenService
+ * @param redis - The Redis service
+ */
+
 @Injectable()
 export class TokenService {
   constructor(private readonly redis: RedisService) {}

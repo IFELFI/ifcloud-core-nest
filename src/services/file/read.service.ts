@@ -8,12 +8,11 @@ import { file, file_info, file_type, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 /**
- * File system explanation
- * Cloud is made up of files. Each file has type which are container, block, and link.
- * Also there are file closures which makes possible to create a tree structure.
- * If there is a closure with depth 0 and the ancestor and descendant are the same, then the file represents itself.
- * If there is a closure with depth 0 and the ancestor and descendant are different, then the file is a link.
- * If there is more than one closure with depth 1, then the file is a container.
+ * File read service
+ * Read files from the database
+ * @category File
+ * @class FileReadService
+ * @param prisma - The Prisma service
  */
 
 @Injectable()

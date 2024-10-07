@@ -11,6 +11,14 @@ import {
 } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../../src/schemas/file.schema';
 
+/**
+ * File create service
+ * Create files in the database
+ * @category File
+ * @class FileCreateService
+ * @param prisma - The Prisma service
+ */
+
 @Injectable()
 export class FileCreateService {
   constructor(private readonly prisma: PrismaService) {}

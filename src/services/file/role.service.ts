@@ -2,6 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { access_role } from '@prisma/client';
 
+/**
+ * File role service
+ * Service for file roles
+ * @category File
+ * @class FileRoleService
+ * @param prisma - The Prisma service
+ */
+
 @Injectable()
 export class FileRoleService {
   constructor(private readonly prisma: PrismaService) {}

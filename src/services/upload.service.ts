@@ -6,6 +6,18 @@ import { FileDeleteService } from './file/delete.service';
 import { TokenService } from './storage/token.service';
 import { file } from '@prisma/client';
 
+/**
+ * Upload service
+ * Upload files to the storage
+ * @category Upload
+ * @class UploadService
+ * @param fileCreateService - The file create service
+ * @param fileReadService - The file read service
+ * @param fileDeleteService - The file delete service
+ * @param storageService - The storage service
+ * @param tokenService - The token service
+ */
+
 @Injectable()
 export class UploadService {
   constructor(
