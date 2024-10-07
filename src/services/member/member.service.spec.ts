@@ -1,14 +1,13 @@
-import { member, PrismaClient, service_status } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { MemberService } from './member.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
+import mockValues from '../../../test/mockValues';
 
 describe('MemberService', () => {
   let service: MemberService;
   let prisma: DeepMockProxy<PrismaClient>;
-
-  const uuid = '123e4567-e89b-12d3-a456-426614174000';
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -29,20 +28,12 @@ describe('MemberService', () => {
 
   describe('createMember', () => {
     it('should create a new member', async () => {
-      const member: member = { id: 1, uuid_key: uuid };
-      const serviceStatus: service_status = {
-        member_id: member.id,
-        available: false,
-        join_date: new Date(),
-        update_date: new Date(),
-      };
+      prisma.member.create.mockResolvedValue(mockValues.member);
+      prisma.service_status.create.mockResolvedValue(mockValues.serviceStatus);
 
-      prisma.member.create.mockResolvedValue(member);
-      prisma.service_status.create.mockResolvedValue(serviceStatus);
+      const result = await service.createMember(mockValues.member.uuid_key);
 
-      const result = await service.createMember(uuid);
-
-      expect(result).toEqual(member);
+      expect(result).toEqual(mockValues.member);
     });
   });
 });

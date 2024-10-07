@@ -5,6 +5,7 @@ import {
   file_role,
   file_type,
   member as member_type,
+  service_status,
   temp_file,
 } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../src/schemas/file.schema';
@@ -12,6 +13,12 @@ import { SpecialContainerNameSchema } from '../src/schemas/file.schema';
 const member: member_type = {
   id: 1,
   uuid_key: '6dce7429-3e38-45b3-9262-9c571ac798de',
+};
+const serviceStatus: service_status = {
+  member_id: member.id,
+  available: false,
+  join_date: new Date(),
+  update_date: new Date(),
 };
 const root: file = {
   id: BigInt(1),
@@ -68,6 +75,7 @@ const fileClosure: file_closure = {
 
 const mockValues = {
   member,
+  serviceStatus,
   root,
   trash,
   container,
