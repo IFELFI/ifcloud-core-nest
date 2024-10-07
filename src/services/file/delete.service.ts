@@ -73,10 +73,7 @@ export class FileDeleteService {
 
     await this.prisma.file_closure.update({
       where: {
-        parent_id_child_id: {
-          parent_id: trash[0].id,
-          child_id: target.id,
-        },
+        child_id: target.id,
       },
       data: {
         parent_id: trash[0].id,

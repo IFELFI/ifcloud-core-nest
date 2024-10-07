@@ -9,7 +9,7 @@ import {
   file_type,
   temp_file,
 } from '@prisma/client';
-import { SpecialContainerNameSchema } from 'src/schemas/file.schema';
+import { SpecialContainerNameSchema } from '../../../src/schemas/file.schema';
 
 @Injectable()
 export class FileCreateService {

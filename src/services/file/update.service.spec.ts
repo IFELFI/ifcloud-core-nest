@@ -1,27 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { file, file_type, PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { FileUpdateService } from './update.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
+import mockValues from '../../../test/mockValues';
 
 describe('FileUpdateService', () => {
   let service: FileUpdateService;
   let prisma: DeepMockProxy<PrismaClient>;
-
-  const file: file = {
-    id: BigInt(1),
-    file_key: '123e4567-e89b-12d3-a456-426614174000',
-    type: file_type.container,
-    file_name: 'folder',
-    owner_id: 1,
-  };
-  const parent: file = {
-    id: BigInt(2),
-    file_key: '123e4567-e89b-12d3-a456-426614174001',
-    type: file_type.container,
-    file_name: 'folder',
-    owner_id: 1,
-  };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -42,30 +28,33 @@ describe('FileUpdateService', () => {
 
   describe('updateFileName', () => {
     it('should update file name', async () => {
-      const fileName = 'new_folder';
+      const newFileName = 'new_folder';
       prisma.file.update.mockResolvedValue({
-        ...file,
-        file_name: fileName,
+        ...mockValues.block,
+        file_name: newFileName,
       });
 
-      const result = await service.updateFileName(file.file_key, fileName);
+      const result = await service.updateFileName(
+        mockValues.block.file_key,
+        newFileName,
+      );
 
-      expect(result).toEqual({ ...file, file_name: fileName });
+      expect(result).toEqual({ ...mockValues.block, file_name: newFileName });
     });
   });
 
   describe('updateFileParent', () => {
     it('should update file parent', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(parent);
-      prisma.file.findUniqueOrThrow.mockResolvedValue(file);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.container);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
       prisma.file_closure.update.mockResolvedValue({
-        parent_id: parent.id,
-        child_id: file.id,
+        parent_id: mockValues.root.id,
+        child_id: mockValues.block.id,
       });
 
       const result = await service.updateFileParent(
-        file.file_key,
-        parent.file_key,
+        mockValues.block.file_key,
+        mockValues.root.file_key,
       );
 
       expect(result).toBeTruthy();

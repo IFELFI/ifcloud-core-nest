@@ -16,7 +16,7 @@ model file {
   file_name                                 String         @db.VarChar(256)
   owner_id                                  Int
   member                                    member         @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
-  file_closure_file_closure_child_idTofile  file_closure[] @relation("file_closure_child_idTofile")
+  file_closure_file_closure_child_idTofile  file_closure?  @relation("file_closure_child_idTofile")
   file_closure_file_closure_parent_idTofile file_closure[] @relation("file_closure_parent_idTofile")
   file_info                                 file_info?
   file_role                                 file_role[]
@@ -70,7 +70,7 @@ model service_status {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model file_closure {
   parent_id                         BigInt
-  child_id                          BigInt
+  child_id                          BigInt @unique(map: "uni_child_id")
   file_file_closure_child_idTofile  file   @relation("file_closure_child_idTofile", fields: [child_id], references: [id], onDelete: Cascade, map: "fk_child_id")
   file_file_closure_parent_idTofile file   @relation("file_closure_parent_idTofile", fields: [parent_id], references: [id], onDelete: Cascade, map: "fk_parent_id")
 

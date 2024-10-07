@@ -122,7 +122,11 @@ export class FileReadService {
     }
 
     // Return the root file
-    return rootFile[0];
+    return {
+      file_key: rootFile[0].file_key,
+      file_name: rootFile[0].file_name,
+      type: rootFile[0].type,
+    };
   }
 
   /**

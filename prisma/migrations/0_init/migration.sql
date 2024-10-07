@@ -92,6 +92,9 @@ CREATE UNIQUE INDEX "uni_file_file_key" ON "file"."file"("file_key");
 CREATE UNIQUE INDEX "uni_member_uuid_key" ON "member"."member"("uuid_key");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "uni_child_id" ON "file"."file_closure"("child_id");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "uni_file_key" ON "temp_file"."temp_file"("file_key");
 
 -- AddForeignKey
