@@ -14,7 +14,7 @@ import { join } from 'path';
         options: {
           package: STORAGE_MANAGER_PACKAGE_NAME,
           protoPath: join(__dirname, '../proto/storage_manager.proto'),
-          url: '127.0.0.1:3001',
+          url: process.env.STORAGE_MANAGER_URL || '127.0.0.1:50051',
         },
       },
     ]),
