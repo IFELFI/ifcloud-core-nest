@@ -22,7 +22,7 @@ export class MemberController {
 
   @Get()
   @HttpCode(200)
-  async getMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
+  async getMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.getMember(uuidKey);
     const response: CustomResponse<{
       uuidKey: string;
@@ -38,7 +38,7 @@ export class MemberController {
 
   @Post()
   @HttpCode(201)
-  async createMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
+  async createMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.signupService.signup(uuidKey);
     const response: CustomResponse<{
       uuidKey: string;
@@ -72,9 +72,7 @@ export class MemberController {
   @Get('status')
   @HttpCode(200)
   @UseGuards(MemberGuard)
-  async getServiceStatus(
-    @Query('uuidKey', new ParseUUIDPipe()) uuidKey: string,
-  ) {
+  async getServiceStatus(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.getMemberServiceStatus(uuidKey);
     const response: CustomResponse<{
       available: boolean;

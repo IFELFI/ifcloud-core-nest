@@ -1,32 +1,37 @@
 import {
   Controller,
+  Get,
   HttpCode,
   Param,
+  ParseIntPipe,
   Post,
   Query,
   UseGuards,
 } from '@nestjs/common';
 import { access_role, file_type } from '@prisma/client';
+import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
+import { StringLengthPipe } from 'src/pipes/string.pipe';
 import { UploadService } from 'src/services/upload.service';
 
 @Controller('file/upload')
-export class FileUploadController {
+@UseGuards(MemberGuard)
+export class UploadController {
   constructor(private readonly uploadService: UploadService) {}
 
-  @Post('write-token/:parentKey')
+  @Get('write-token/:fileKey')
   @HttpCode(201)
   @UseGuards(RoleGuard(access_role.create))
   async issueWriteToken(
-    @Param('parentKey') parentKey: string,
+    @Param('fileKey') fileKey: string,
     @Query('memberId') memberId: number,
-    @Query('fileName') fileName: string,
-    @Query('byteSize') byteSize: number,
+    @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
+    @Query('byte_size', ParseIntPipe) byteSize: number,
   ) {
     const data = await this.uploadService.issueWriteToken(
       memberId,
-      parentKey,
+      fileKey,
       fileName,
       byteSize,
     );
@@ -45,14 +50,14 @@ export class FileUploadController {
     return response;
   }
 
-  @Post('complete/:blockKey')
+  @Post('complete/:fileKey')
   @HttpCode(201)
   @UseGuards(RoleGuard(access_role.create))
   async completeUpload(
-    @Param('blockKey') blockKey: string,
-    @Query('totalChunks') totalChunks: number,
+    @Param('fileKey') fileKey: string,
+    @Query('totalChunks', ParseIntPipe) totalChunks: number,
   ) {
-    const data = await this.uploadService.completeUpload(blockKey, totalChunks);
+    const data = await this.uploadService.completeUpload(fileKey, totalChunks);
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;

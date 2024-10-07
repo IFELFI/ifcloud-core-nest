@@ -10,6 +10,7 @@ import { access_role, file_type } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
+import { StringLengthPipe } from 'src/pipes/string.pipe';
 import { FileReadService } from 'src/services/file/read.service';
 import { TokenService } from 'src/services/storage/token.service';
 
@@ -133,7 +134,7 @@ export class FileReadController {
   @UseGuards(RoleGuard(access_role.read))
   async findFile(
     @Param('fileKey') fileKey: string,
-    @Query('fileName') fileName: string,
+    @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
   ) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.findFileByFileName(
