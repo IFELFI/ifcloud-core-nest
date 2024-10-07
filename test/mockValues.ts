@@ -9,7 +9,9 @@ import {
   temp_file,
 } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../src/schemas/file.schema';
+import { StorageManageReply } from 'src/proto/storage_manager';
 
+const randomToken = 'random_token';
 const member: member_type = {
   id: 1,
   uuid_key: '6dce7429-3e38-45b3-9262-9c571ac798de',
@@ -72,8 +74,14 @@ const fileClosure: file_closure = {
   parent_id: container.id,
   child_id: block.id,
 };
+const storageSuccessReply: StorageManageReply = {
+  success: true,
+  message: 'Success',
+};
+const chunkCount = 10;
 
 const mockValues = {
+  randomToken,
   member,
   serviceStatus,
   root,
@@ -84,6 +92,8 @@ const mockValues = {
   fileRole,
   tempFile,
   fileClosure,
+  storageSuccessReply,
+  chunkCount,
 };
 
 export default mockValues;
