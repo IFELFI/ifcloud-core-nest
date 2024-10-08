@@ -1,5 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { RedisService } from './redis';
+import { RedisService } from './redis.service';
+
+/**
+ * Token service
+ * Service for generating and saving tokens
+ * @category Token
+ * @class TokenService
+ * @param redis - The Redis service
+ */
 
 @Injectable()
 export class TokenService {
@@ -35,12 +43,16 @@ export class TokenService {
    * saveToken('123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174000', 3600);
    * Returns the saved token
    */
-  async saveToken(token: string, uuidKey: string, expiration: number) {
+  async saveToken(
+    token: string,
+    uuidKey: string,
+    expiration: number,
+  ): Promise<string> {
     return await this.redis.setex(token, uuidKey, expiration);
   }
 
   /**
-   * Issue a read token
+   * Issue a read token and save it in Redis
    * @param uuidKey - The UUID key of the file
    * @returns The issued read token
    * @example
@@ -57,7 +69,7 @@ export class TokenService {
   }
 
   /**
-   * Issue a write token
+   * Issue a write token and save it in Redis
    * @param uuidKey - The UUID key of the file
    * @returns The issued write token
    * @example

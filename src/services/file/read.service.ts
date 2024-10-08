@@ -3,27 +3,21 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
-import { file, file_info, file_type } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import { file, file_info, file_type, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
-import { ConfigService } from '@nestjs/config';
-import { EnvConfig } from 'src/schemas/env.schema';
 
 /**
- * File system explanation
- * Cloud is made up of files. Each file has type which are container, block, and link.
- * Also there are file closures which makes possible to create a tree structure.
- * If there is a closure with depth 0 and the ancestor and descendant are the same, then the file represents itself.
- * If there is a closure with depth 0 and the ancestor and descendant are different, then the file is a link.
- * If there is more than one closure with depth 1, then the file is a container.
+ * File read service
+ * Read files from the database
+ * @category File
+ * @class FileReadService
+ * @param prisma - The Prisma service
  */
 
 @Injectable()
 export class FileReadService {
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly config: ConfigService<EnvConfig, true>,
-  ) {}
+  constructor(private readonly prisma: PrismaService) {}
 
   /**
    * Get a file by key
@@ -101,16 +95,25 @@ export class FileReadService {
    * getRootFile(1);
    * Returns the root file of the member
    */
-  async getRootFile(memberId: number): Promise<file> {
+  async getRootContainer(memberId: number): Promise<{
+    file_key: string;
+    file_name: string;
+    type: file_type;
+  }> {
     // Get the root file which has same ancestor and descendant id and depth 0
     const rootFile = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.root,
       },
+      select: {
+        file_key: true,
+        file_name: true,
+        type: true,
+      },
     });
 
-    if (!rootFile) {
+    if (!rootFile || rootFile.length === 0) {
       throw new NotFoundException('Root file not found');
     }
     if (rootFile.length > 1) {
@@ -118,7 +121,11 @@ export class FileReadService {
     }
 
     // Return the root file
-    return rootFile[0];
+    return {
+      file_key: rootFile[0].file_key,
+      file_name: rootFile[0].file_name,
+      type: rootFile[0].type,
+    };
   }
 
   /**
@@ -134,8 +141,10 @@ export class FileReadService {
   async getParentFile(fileId: bigint): Promise<file> {
     const parentClosure = await this.prisma.file_closure.findMany({
       where: {
-        descendant_id: fileId,
-        depth: 1,
+        child_id: fileId,
+      },
+      select: {
+        parent_id: true,
       },
     });
 
@@ -148,7 +157,7 @@ export class FileReadService {
 
     return this.prisma.file.findUniqueOrThrow({
       where: {
-        id: parentClosure[0].ancestor_id,
+        id: parentClosure[0].parent_id,
       },
     });
   }
@@ -164,63 +173,17 @@ export class FileReadService {
   async getChildFiles(fileId: bigint): Promise<file[]> {
     const childClosures = await this.prisma.file_closure.findMany({
       where: {
-        ancestor_id: fileId,
-        depth: 1,
+        parent_id: fileId,
+      },
+      select: {
+        child_id: true,
       },
     });
 
     return this.prisma.file.findMany({
       where: {
         id: {
-          in: childClosures.map((closure) => closure.descendant_id),
-        },
-      },
-    });
-  }
-
-  /**
-   * Get the descendant files of a file
-   * @param fileId - The ID of the file
-   * @returns The descendant files of the file
-   * @example
-   * getFileClosure('123e4567-e89b-12d3-a456-426614174000');
-   * Returns the descendant files of the file
-   */
-  async getFileDescendants(fileId: bigint): Promise<file[]> {
-    const descendantClosures = await this.prisma.file_closure.findMany({
-      where: {
-        ancestor_id: fileId,
-      },
-    });
-
-    return this.prisma.file.findMany({
-      where: {
-        id: {
-          in: descendantClosures.map((closure) => closure.descendant_id),
-        },
-      },
-    });
-  }
-
-  /**
-   * Get the ancestor files of a file
-   * @param fileId - The ID of the file
-   * @returns The ancestor files of the file
-   * @example
-   * getFileAncestor('123e4567-e89b-12d3-a456-426614174000');
-   * Returns the ancestor files of the file
-   */
-  async getFileAncestors(fileId: bigint): Promise<file[]> {
-    const ancestorClosures = await this.prisma.file_closure.findMany({
-      where: {
-        descendant_id: fileId,
-      },
-    });
-
-    return this.prisma.file.findMany({
-      where: {
-        id: {
-          in: ancestorClosures.map((closure) => closure.ancestor_id),
+          in: childClosures.map((closure) => closure.child_id),
         },
       },
     });
@@ -240,8 +203,7 @@ export class FileReadService {
     fileId: bigint,
     fileName: string,
     maxDepth: number = 20,
-  ): Promise<file[] | null> {
-    const depthRange = this.config.get<EnvConfig['closure']>('closure').depth;
+  ): Promise<file[]> {
     const queue: bigint[] = [fileId];
     let currentDepth = 0;
 
@@ -255,20 +217,19 @@ export class FileReadService {
       // Get the current file closures
       const currentFileClosures = await this.prisma.file_closure.findMany({
         where: {
-          ancestor_id: currentFileId,
+          parent_id: currentFileId,
+        },
+        select: {
+          child_id: true,
         },
       });
 
       // Add the descendant files to search list
-      const targetFileIds = currentFileClosures
-        .filter((closure) => closure.depth <= depthRange)
-        .map((closure) => closure.descendant_id);
-
-      if (targetFileIds.length !== 0) {
+      if (currentFileClosures.length !== 0) {
         const targetFile = await this.prisma.file.findMany({
           where: {
             id: {
-              in: targetFileIds,
+              in: currentFileClosures.map((closure) => closure.child_id),
             },
             file_name: fileName,
           },
@@ -279,15 +240,28 @@ export class FileReadService {
       }
 
       // Add the descendant files to the queue
-      const queueFileIds = currentFileClosures
-        .filter((closure) => closure.depth === depthRange)
-        .map((closure) => closure.descendant_id);
+      queue.push(...currentFileClosures.map((closure) => closure.child_id));
 
-      queue.push(...queueFileIds);
-
-      currentDepth += depthRange;
+      // Increase the depth
+      currentDepth += 1;
     }
 
-    return null;
+    return [];
+  }
+
+  /**
+   * Get temporary file by key
+   * @param fileKey - The key of the file
+   * @returns The temporary file
+   * @example
+   * getTemporaryFile('123e4567-e89b-12d3-a456-426614174000');
+   * Returns the temporary file
+   */
+  async getTemporaryFile(fileKey: string): Promise<temp_file> {
+    return this.prisma.temp_file.findUniqueOrThrow({
+      where: {
+        file_key: fileKey,
+      },
+    });
   }
 }

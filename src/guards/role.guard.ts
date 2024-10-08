@@ -1,10 +1,17 @@
-import { CanActivate, ExecutionContext, mixin, Type } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Injectable,
+  mixin,
+  Type,
+} from '@nestjs/common';
 import { access_role } from '@prisma/client';
 import { Request } from 'express';
 import { UserRequestQuery } from 'src/interfaces/request';
 import { FileRoleService } from 'src/services/file/role.service';
 
 export function RoleGuard(role: access_role): Type<CanActivate> {
+  @Injectable()
   class RoleGuard implements CanActivate {
     constructor(private readonly fileRoleService: FileRoleService) {}
 
@@ -13,8 +20,8 @@ export function RoleGuard(role: access_role): Type<CanActivate> {
         .switchToHttp()
         .getRequest<Request<any, any, any, UserRequestQuery>>();
 
-      const memberId = userRequest.query.memberId;
-      const fileKey = userRequest.params.fileKey;
+      const memberId = userRequest.query.memberId as number;
+      const fileKey = userRequest.params.fileKey as string;
 
       const hasRole = await this.fileRoleService.checkRole(
         memberId,

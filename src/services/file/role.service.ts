@@ -1,6 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { access_role } from '@prisma/client';
+
+/**
+ * File role service
+ * Service for file roles
+ * @category File
+ * @class FileRoleService
+ * @param prisma - The Prisma service
+ */
 
 @Injectable()
 export class FileRoleService {
@@ -15,10 +23,16 @@ export class FileRoleService {
    * getRole(1, '123e4567-e89b-12d3-a456-426614174000');
    * Returns the role of the member for the file
    */
-  async getRole(memberId: number, fileKey: string) {
+  async getRole(
+    memberId: number,
+    fileKey: string,
+  ): Promise<{ role: access_role[] } | null> {
     const file = await this.prisma.file.findUniqueOrThrow({
       where: {
         file_key: fileKey,
+      },
+      select: {
+        id: true,
       },
     });
 
@@ -28,6 +42,9 @@ export class FileRoleService {
           file_id: file.id,
           member_id: memberId,
         },
+      },
+      select: {
+        role: true,
       },
     });
 

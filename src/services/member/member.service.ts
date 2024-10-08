@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from './prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { member, service_status } from '@prisma/client';
 
 @Injectable()
@@ -34,7 +34,6 @@ export class MemberService {
           update_date: new Date(),
         },
       });
-
       return member;
     });
   }

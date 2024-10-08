@@ -7,6 +7,9 @@ CREATE SCHEMA IF NOT EXISTS "member";
 -- CreateSchema
 CREATE SCHEMA IF NOT EXISTS "public";
 
+-- CreateSchema
+CREATE SCHEMA IF NOT EXISTS "temp_file";
+
 -- CreateEnum
 CREATE TYPE "public"."access_role" AS ENUM ('create', 'read', 'update', 'delete');
 
@@ -63,11 +66,23 @@ CREATE TABLE "member"."service_status" (
 
 -- CreateTable
 CREATE TABLE "file"."file_closure" (
-    "ancestor_id" BIGINT NOT NULL,
-    "descendant_id" BIGINT NOT NULL,
-    "depth" SMALLINT NOT NULL,
+    "parent_id" BIGINT NOT NULL,
+    "child_id" BIGINT NOT NULL,
 
-    CONSTRAINT "pk_file_closure" PRIMARY KEY ("ancestor_id","descendant_id")
+    CONSTRAINT "pk_file_closure" PRIMARY KEY ("parent_id","child_id")
+);
+
+-- CreateTable
+CREATE TABLE "temp_file"."temp_file" (
+    "id" BIGSERIAL NOT NULL,
+    "owner_id" INTEGER NOT NULL,
+    "file_key" UUID NOT NULL DEFAULT gen_random_uuid(),
+    "file_name" VARCHAR(256) NOT NULL,
+    "byte_size" INTEGER NOT NULL DEFAULT 0,
+    "create_date" TIMESTAMPTZ(6) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "parent_id" BIGINT NOT NULL,
+
+    CONSTRAINT "pk_temp_file" PRIMARY KEY ("id")
 );
 
 -- CreateIndex
@@ -75,6 +90,12 @@ CREATE UNIQUE INDEX "uni_file_file_key" ON "file"."file"("file_key");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "uni_member_uuid_key" ON "member"."member"("uuid_key");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_child_id" ON "file"."file_closure"("child_id");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "uni_file_key" ON "temp_file"."temp_file"("file_key");
 
 -- AddForeignKey
 ALTER TABLE "file"."file" ADD CONSTRAINT "fk_owner_id" FOREIGN KEY ("owner_id") REFERENCES "member"."member"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -92,8 +113,14 @@ ALTER TABLE "file"."file_role" ADD CONSTRAINT "fk_member_id" FOREIGN KEY ("membe
 ALTER TABLE "member"."service_status" ADD CONSTRAINT "fk_member_id" FOREIGN KEY ("member_id") REFERENCES "member"."member"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_ancestor_id" FOREIGN KEY ("ancestor_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_child_id" FOREIGN KEY ("child_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_descendant_id" FOREIGN KEY ("descendant_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "file"."file_closure" ADD CONSTRAINT "fk_parent_id" FOREIGN KEY ("parent_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "temp_file"."temp_file" ADD CONSTRAINT "fk_owner_id" FOREIGN KEY ("owner_id") REFERENCES "member"."member"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "temp_file"."temp_file" ADD CONSTRAINT "fk_parent_id" FOREIGN KEY ("parent_id") REFERENCES "file"."file"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 

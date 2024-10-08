@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { RedisService } from './redis';
+import { RedisService } from './redis.service';
 import { TokenService } from './token.service';
+import mockValues from '../../../test/mockValues';
 
 describe('TokenService', () => {
   let service: TokenService;
@@ -38,15 +39,14 @@ describe('TokenService', () => {
 
   describe('saveToken', () => {
     it('should save a token in Redis', async () => {
-      const token = 'token';
-      const uuidKey = 'uuidKey';
+      const token = 'randomToken';
       const expiration = 3600;
 
-      await service.saveToken(token, uuidKey, expiration);
+      await service.saveToken(token, mockValues.member.uuid_key, expiration);
 
       expect(redisService.setex).toHaveBeenCalledWith(
         token,
-        uuidKey,
+        mockValues.member.uuid_key,
         expiration,
       );
     });
@@ -54,9 +54,7 @@ describe('TokenService', () => {
 
   describe('issueReadToken', () => {
     it('should issue a read token', async () => {
-      const uuidKey = 'uuidKey';
-
-      await service.issueReadToken(uuidKey);
+      await service.issueReadToken(mockValues.member.uuid_key);
 
       expect(redisService.setex).toHaveBeenCalled();
     });

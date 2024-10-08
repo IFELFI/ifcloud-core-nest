@@ -16,8 +16,7 @@ export const EnvConfigSchema = z.object({
     url: z.string(),
   }),
   redis: z.object({
-    host: z.string().default('localhost'),
-    port: z.number().default(6379),
+    url: z.string().default('redis://localhost:6379'),
   }),
   gateway: z.object({
     secret: z.string(),
@@ -28,9 +27,6 @@ export const EnvConfigSchema = z.object({
   }),
   test: z.object({
     uuid: z.optional(z.string()),
-  }),
-  closure: z.object({
-    depth: z.number().default(3),
   }),
 });
 

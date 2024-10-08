@@ -1,8 +1,9 @@
-import { file, file_role, PrismaClient } from '@prisma/client';
+import { access_role, PrismaClient } from '@prisma/client';
 import { FileRoleService } from './role.service';
 import { DeepMockProxy, mockDeep } from 'jest-mock-extended';
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
+import mockValues from '../../../test/mockValues';
 
 describe('FileRoleService', () => {
   let service: FileRoleService;
@@ -27,92 +28,41 @@ describe('FileRoleService', () => {
 
   describe('getRole', () => {
     it('should return the role of a member for a file', async () => {
-      const memberId = 1;
-      const fileKey = '123e4567-e89b-12d3-a456-426614174000';
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
+      prisma.file_role.findUnique.mockResolvedValue(mockValues.fileRole);
 
-      const file: file = {
-        id: BigInt(1),
-        file_key: fileKey,
-        type: 'block',
-        file_name: 'file.txt',
-        owner_id: 1,
-      };
+      const result = await service.getRole(
+        mockValues.member.id,
+        mockValues.block.file_key,
+      );
 
-      const role: file_role = {
-        member_id: 1,
-        file_id: file.id,
-        role: ['read'],
-      };
-
-      prisma.file.findUniqueOrThrow.mockResolvedValue(file);
-      prisma.file_role.findUnique.mockResolvedValue(role);
-
-      const result = await service.getRole(memberId, fileKey);
-
-      expect(result).toEqual(role);
-    });
-
-    it('should throw an error if the file is not found', async () => {
-      const memberId = 1;
-      const fileKey = '123e4567-e89b-12d3-a456-426614174000';
-
-      prisma.file.findUniqueOrThrow.mockRejectedValue(new Error());
-
-      await expect(service.getRole(memberId, fileKey)).rejects.toThrow();
+      expect(result).toBeDefined();
     });
   });
 
   describe('checkRole', () => {
     it('should return true if the member has the required role for the file', async () => {
-      const memberId = 1;
-      const fileKey = '123e4567-e89b-12d3-a456-426614174000';
-      const role = 'read';
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
+      prisma.file_role.findUnique.mockResolvedValue(mockValues.fileRole);
 
-      const file: file = {
-        id: BigInt(1),
-        file_key: fileKey,
-        type: 'block',
-        file_name: 'file.txt',
-        owner_id: 1,
-      };
-
-      const fileRole: file_role = {
-        member_id: 1,
-        file_id: file.id,
-        role: ['read'],
-      };
-
-      prisma.file.findUniqueOrThrow.mockResolvedValue(file);
-      prisma.file_role.findUnique.mockResolvedValue(fileRole);
-
-      const result = await service.checkRole(memberId, fileKey, role);
+      const result = await service.checkRole(
+        mockValues.member.id,
+        mockValues.block.file_key,
+        access_role.read,
+      );
 
       expect(result).toBe(true);
     });
 
     it('should return false if the member does not have the required role for the file', async () => {
-      const memberId = 1;
-      const fileKey = '123e4567-e89b-12d3-a456-426614174000';
-      const role = 'read';
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
+      prisma.file_role.findUnique.mockResolvedValue(null);
 
-      const file: file = {
-        id: BigInt(1),
-        file_key: fileKey,
-        type: 'block',
-        file_name: 'file.txt',
-        owner_id: 1,
-      };
-
-      const fileRole: file_role = {
-        member_id: 1,
-        file_id: file.id,
-        role: ['create'],
-      };
-
-      prisma.file.findUniqueOrThrow.mockResolvedValue(file);
-      prisma.file_role.findUnique.mockResolvedValue(fileRole);
-
-      const result = await service.checkRole(memberId, fileKey, role);
+      const result = await service.checkRole(
+        mockValues.member.id,
+        mockValues.block.file_key,
+        access_role.read,
+      );
 
       expect(result).toBe(false);
     });

@@ -6,13 +6,15 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
+import { access_role, file_type } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
+import { StringLengthPipe } from 'src/pipes/string.pipe';
 import { FileReadService } from 'src/services/file/read.service';
 import { TokenService } from 'src/services/storage/token.service';
 
-@Controller('file/read')
+@Controller('file')
 @UseGuards(MemberGuard)
 export class FileReadController {
   constructor(
@@ -22,27 +24,61 @@ export class FileReadController {
 
   @Get('storage/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getFile(@Param('fileKey') fileKey: string) {
     const data = await this.tokenService.issueReadToken(fileKey);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      token: string;
+    }> = {
       status: 200,
       message: 'Token issued',
-      data: data,
+      data: {
+        token: data,
+      },
+    };
+    return response;
+  }
+
+  @Get('root')
+  @HttpCode(200)
+  async getRootContainer(@Query('memberId') memberId: number) {
+    const data = await this.fileReadService.getRootContainer(memberId);
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
+      status: 200,
+      message: 'Root file found',
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
     return response;
   }
 
   @Get('info/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getFileInfo(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
-    const data = await this.fileReadService.getFileInfo(file.id);
-    const response: CustomResponse<typeof data> = {
+    const fileInfo = await this.fileReadService.getFileInfo(file.id);
+    const response: CustomResponse<{
+      fileName: string;
+      createDate: Date;
+      updateDate: Date;
+      byteSize: number;
+    }> = {
       status: 200,
       message: 'File info found',
-      data: data,
+      data: {
+        fileName: file.file_name,
+        createDate: fileInfo.create_date,
+        updateDate: fileInfo.update_date,
+        byteSize: fileInfo.byte_size,
+      },
     };
     return response;
   }
@@ -53,10 +89,18 @@ export class FileReadController {
   async getParentFile(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getParentFile(file.id);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
       status: 200,
       message: 'File parent found',
-      data: data,
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
     };
     return response;
   }
@@ -67,30 +111,50 @@ export class FileReadController {
   async getChildrenFiles(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getChildFiles(file.id);
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<
+      {
+        fileKey: string;
+        fileName: string;
+        type: file_type;
+      }[]
+    > = {
       status: 200,
       message: 'File children found',
-      data: data,
+      data: data.map((child) => ({
+        fileKey: child.file_key,
+        fileName: child.file_name,
+        type: child.type,
+      })),
     };
     return response;
   }
 
   @Get('find/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async findFile(
     @Param('fileKey') fileKey: string,
-    @Query('fileName') fileName: string,
+    @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
   ) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.findFileByFileName(
       file.id,
       fileName,
     );
-    const response: CustomResponse<typeof data> = {
+    const response: CustomResponse<
+      {
+        fileKey: string;
+        fileName: string;
+        type: file_type;
+      }[]
+    > = {
       status: 200,
       message: 'File found',
-      data: data,
+      data: data.map((file) => ({
+        fileKey: file.file_key,
+        fileName: file.file_name,
+        type: file.type,
+      })),
     };
     return response;
   }
