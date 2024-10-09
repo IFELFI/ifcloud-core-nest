@@ -29,7 +29,7 @@ export class FileUpdateController {
   @UseGuards(RoleGuard(access_role.update))
   async updateFileName(
     @Param('fileKey') fileKey: string,
-    @Query('fileName', new StringLengthPipe(1, 255)) fileName: string,
+    @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
   ) {
     const data = await this.fileUpdateService.updateFileName(fileKey, fileName);
     const response: CustomResponse<{
@@ -55,7 +55,7 @@ export class FileUpdateController {
   async updateFileParent(
     @Param('fileKey') fileKey: string,
     @Query('memberId') memberId: number,
-    @Query('parentKey', ParseUUIDPipe) parentKey: string,
+    @Query('parent_key', ParseUUIDPipe) parentKey: string,
   ) {
     const checkParentRole = await this.fileRoleService.checkRole(
       memberId,
