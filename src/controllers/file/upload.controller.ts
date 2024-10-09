@@ -55,7 +55,7 @@ export class UploadController {
   @UseGuards(RoleGuard(access_role.create))
   async completeUpload(
     @Param('fileKey') fileKey: string,
-    @Query('totalChunks', ParseIntPipe) totalChunks: number,
+    @Query('total_chunks', ParseIntPipe) totalChunks: number,
   ) {
     const data = await this.uploadService.completeUpload(fileKey, totalChunks);
     const response: CustomResponse<{
