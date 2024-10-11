@@ -34,24 +34,6 @@ export class TokenService {
   }
 
   /**
-   * Save a token in Redis
-   * @param token - The key of the token
-   * @param uuidKey - The UUID key of the file
-   * @param expiration - The expiration time of the token
-   * @returns The saved token
-   * @example
-   * saveToken('123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174000', 3600);
-   * Returns the saved token
-   */
-  async saveToken(
-    token: string,
-    uuidKey: string,
-    expiration: number,
-  ): Promise<string> {
-    return await this.redis.setex(token, uuidKey, expiration);
-  }
-
-  /**
    * Issue a read token and save it in Redis
    * @param uuidKey - The UUID key of the file
    * @returns The issued read token
@@ -60,10 +42,10 @@ export class TokenService {
    * Returns the issued read token
    */
   async issueReadToken(uuidKey: string): Promise<string> {
-    const prefix = 'read:';
+    const prefix = '';
     const token = await this.generateToken(32);
     const key = `${prefix}${token}`;
-    await this.saveToken(key, uuidKey, 60);
+    await this.redis.setex(key, uuidKey, 60);
 
     return token;
   }
@@ -77,10 +59,10 @@ export class TokenService {
    * Returns the issued write token
    */
   async issueWriteToken(uuidKey: string): Promise<string> {
-    const prefix = 'write:';
+    const prefix = '';
     const token = await this.generateToken(32);
     const key = `${prefix}${token}`;
-    await this.saveToken(key, uuidKey, 60);
+    await this.redis.setex(key, uuidKey, 60);
 
     return token;
   }

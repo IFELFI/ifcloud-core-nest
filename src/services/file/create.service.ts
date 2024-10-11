@@ -132,12 +132,14 @@ export class FileCreateService {
     parentId: bigint,
     fileName: string,
     byteSize: number,
+    fileKey?: string,
   ): Promise<file> {
     const file = await this.prisma.file.create({
       data: {
         owner_id: ownerId,
         file_name: fileName,
         type: file_type.block,
+        file_key: fileKey,
       },
     });
 
