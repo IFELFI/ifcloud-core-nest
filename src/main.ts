@@ -10,14 +10,6 @@ import { EnvConfig } from 'src/schemas/env.schema';
 async function bootstrap() {
   // Server configuration
   const options: NestApplicationOptions = {
-    cors: {
-      origin: '*',
-      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-      preflightContinue: false,
-      optionsSuccessStatus: 204,
-      credentials: true,
-      allowedHeaders: ['Content-Type', 'x-uuid', 'x-gateway-secret'],
-    },
     bufferLogs: true, // Buffer logs and flush them asynchronously
   };
   const app = await NestFactory.create(AppModule, options);
@@ -37,7 +29,19 @@ async function bootstrap() {
     app.enableCors({
       origin: config.get<EnvConfig['cors']>('cors').origin,
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
       credentials: true,
+      allowedHeaders: ['Content-Type', 'x-uuid', 'x-gateway-secret'],
+    });
+  } else {
+    app.enableCors({
+      origin: config.get<EnvConfig['cors']>('cors').origin,
+      methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+      preflightContinue: false,
+      optionsSuccessStatus: 204,
+      credentials: true,
+      allowedHeaders: ['Content-Type', 'x-uuid', 'x-gateway-secret'],
     });
   }
 
