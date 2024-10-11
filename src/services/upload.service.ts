@@ -89,6 +89,7 @@ export class UploadService {
         tempFile.parent_id,
         tempFile.file_name,
         tempFile.byte_size,
+        tempFile.file_key,
       );
       this.fileDeleteService.deleteTemporaryFile(tempFile.id);
       return file;
