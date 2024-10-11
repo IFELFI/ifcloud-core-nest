@@ -2,6 +2,7 @@ import { Controller, Get, HttpCode, Param, UseGuards } from '@nestjs/common';
 import { access_role } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
+import { CustomResponse } from 'src/interfaces/response';
 import { StreamService } from 'src/services/stream.service';
 
 @Controller('file/stream')
@@ -14,6 +15,15 @@ export class StreamController {
   @UseGuards(RoleGuard(access_role.read))
   async issueReadToken(@Param('fileKey') fileKey: string) {
     const token = await this.streamService.issueReadToken(fileKey);
-    return token;
+
+    const response: CustomResponse<{ token: string }> = {
+      status: 200,
+      message: 'Read token issued',
+      data: {
+        token,
+      },
+    };
+
+    return response;
   }
 }
