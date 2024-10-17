@@ -63,6 +63,25 @@ export class FileCreateService {
   }
 
   /**
+   * Create base files for a new member
+   * @param memberId - The ID of the member
+   * @returns The created files
+   * @example
+   * createBaseFiles(1);
+   * Returns the created files
+   */
+  async createBaseFiles(memberId: number): Promise<{
+    root: file;
+    home: file;
+    trash: file;
+  }> {
+    const root = await this.createRootFile(memberId);
+    const home = await this.createHome(memberId, root.id);
+    const trash = await this.createTrashFile(memberId, home.id);
+    return { root, home, trash };
+  }
+
+  /**
    * Create root file for a member
    * @param memberId - The ID of the member
    * @returns The created root file
@@ -87,6 +106,62 @@ export class FileCreateService {
     );
 
     return root;
+  }
+
+  /**
+   * Create a Home file
+   * @param memberId - The ID of the member
+   * @param rootId - The ID of the root file
+   * @returns The created user container file
+   * @example
+   * createUserContainer(1, 1);
+   * Returns the created user container file
+   */
+  async createHome(memberId: number, rootId: bigint): Promise<file> {
+    const userContainer = await this.prisma.file.create({
+      data: {
+        owner_id: memberId,
+        file_name: SpecialContainerNameSchema.enum.home,
+        type: file_type.container,
+      },
+    });
+    await this.generateBasicFileInfo(memberId, userContainer.id, rootId).catch(
+      async (error) => {
+        // Rollback the file creation
+        this.prisma.file.delete({ where: { id: userContainer.id } });
+        throw error;
+      },
+    );
+
+    return userContainer;
+  }
+
+  /**
+   * Create a trash file for a member
+   * @param memberId - The ID of the member
+   * @param homeId - The ID of the root folder
+   * @returns The created trash file
+   * @example
+   * createTrashFile(1, 1);
+   * Returns the created trash file
+   */
+  async createTrashFile(memberId: number, homeId: bigint): Promise<file> {
+    const trash = await this.prisma.file.create({
+      data: {
+        owner_id: memberId,
+        file_name: SpecialContainerNameSchema.enum.trash,
+        type: file_type.container,
+      },
+    });
+    await this.generateBasicFileInfo(memberId, trash.id, homeId).catch(
+      async (error) => {
+        // Rollback the file creation
+        this.prisma.file.delete({ where: { id: trash.id } });
+        throw error;
+      },
+    );
+
+    return trash;
   }
 
   /**
