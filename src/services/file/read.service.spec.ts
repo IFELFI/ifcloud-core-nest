@@ -115,4 +115,78 @@ describe('FileReadService', () => {
       });
     });
   });
+
+  describe('getParentFile', () => {
+    it('should return files by parent', async () => {
+      prisma.file_closure.findMany.mockResolvedValue([
+        {
+          parent_id: mockValues.container.id,
+          child_id: mockValues.block.id,
+        },
+      ]);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.container);
+
+      expect(await service.getParentFile(mockValues.block.id)).toEqual(
+        mockValues.container,
+      );
+    });
+  });
+
+  describe('getChildrenFiles', () => {
+    it('should return children files', async () => {
+      prisma.file_closure.findMany.mockResolvedValue([
+        {
+          parent_id: mockValues.container.id,
+          child_id: mockValues.block.id,
+        },
+      ]);
+      prisma.file.findMany.mockResolvedValue([mockValues.block]);
+
+      expect(await service.getChildFiles(mockValues.container.id)).toEqual([
+        mockValues.block,
+      ]);
+      expect(prisma.file.findMany).toHaveBeenCalledWith({
+        where: {
+          id: {
+            in: [mockValues.block.id],
+          },
+        },
+      });
+    });
+
+    it('should return children files without itself', async () => {
+      // root -> container, block
+      // In the closure table, root contains itself, container, and block
+      prisma.file_closure.findMany.mockResolvedValue([
+        {
+          parent_id: mockValues.root.id,
+          child_id: mockValues.root.id,
+        },
+        {
+          parent_id: mockValues.root.id,
+          child_id: mockValues.container.id,
+        },
+        {
+          parent_id: mockValues.root.id,
+          child_id: mockValues.block.id,
+        },
+      ]);
+      prisma.file.findMany.mockResolvedValue([
+        mockValues.container,
+        mockValues.block,
+      ]);
+
+      expect(await service.getChildFiles(mockValues.root.id)).toEqual([
+        mockValues.container,
+        mockValues.block,
+      ]);
+      expect(prisma.file.findMany).toHaveBeenCalledWith({
+        where: {
+          id: {
+            in: [mockValues.container.id, mockValues.block.id],
+          },
+        },
+      });
+    });
+  });
 });

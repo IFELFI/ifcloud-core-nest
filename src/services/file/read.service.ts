@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -154,6 +155,9 @@ export class FileReadService {
     if (parentClosure.length > 1) {
       throw new InternalServerErrorException('Multiple parent files found');
     }
+    if (parentClosure[0].parent_id === fileId) {
+      throw new BadRequestException('Current file is root file');
+    }
 
     return this.prisma.file.findUniqueOrThrow({
       where: {
@@ -171,14 +175,18 @@ export class FileReadService {
    * Returns the child files of the file
    */
   async getChildFiles(fileId: bigint): Promise<file[]> {
-    const childClosures = await this.prisma.file_closure.findMany({
-      where: {
-        parent_id: fileId,
-      },
-      select: {
-        child_id: true,
-      },
-    });
+    const childClosures = await this.prisma.file_closure
+      .findMany({
+        where: {
+          parent_id: fileId,
+        },
+        select: {
+          child_id: true,
+        },
+      })
+      .then((closures) => {
+        return closures.filter((closure) => closure.child_id !== fileId);
+      });
 
     return this.prisma.file.findMany({
       where: {
@@ -215,14 +223,20 @@ export class FileReadService {
       }
 
       // Get the current file closures
-      const currentFileClosures = await this.prisma.file_closure.findMany({
-        where: {
-          parent_id: currentFileId,
-        },
-        select: {
-          child_id: true,
-        },
-      });
+      const currentFileClosures = await this.prisma.file_closure
+        .findMany({
+          where: {
+            parent_id: currentFileId,
+          },
+          select: {
+            child_id: true,
+          },
+        })
+        .then((closures) => {
+          return closures.filter(
+            (closure) => closure.child_id !== currentFileId,
+          );
+        });
 
       // Add the descendant files to search list
       if (currentFileClosures.length !== 0) {
