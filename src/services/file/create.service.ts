@@ -169,42 +169,25 @@ export class FileCreateService {
    */
   async createContainer(
     memberId: number,
-    parentKey: string,
+    parentId: bigint,
     fileName: string,
   ): Promise<file> {
-    return this.prisma.$transaction(async (tx) => {
-      // Create a container file
-      const file = await tx.file.create({
-        data: {
-          owner_id: memberId,
-          file_name: fileName,
-          type: file_type.container,
-        },
-      });
-      // Create a file info
-      await tx.file_info.create({
-        data: {
-          file_id: file.id,
-        },
-      });
-
-      // Create a closure relationship
-      const parent = await tx.file.findUniqueOrThrow({
-        where: {
-          file_key: parentKey,
-        },
-        select: {
-          id: true,
-        },
-      });
-      await tx.file_closure.create({
-        data: {
-          parent_id: parent.id,
-          child_id: file.id,
-        },
-      });
-
-      return file;
+    const file = await this.prisma.file.create({
+      data: {
+        owner_id: memberId,
+        file_name: fileName,
+        type: file_type.container,
+      },
     });
+
+    await this.generateBasicFileInfo(memberId, file.id, parentId).catch(
+      async (error) => {
+        // Rollback the file creation
+        this.prisma.file.delete({ where: { id: file.id } });
+        throw error;
+      },
+    );
+
+    return file;
   }
 }

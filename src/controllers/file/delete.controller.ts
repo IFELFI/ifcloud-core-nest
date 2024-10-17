@@ -17,7 +17,7 @@ import { FileDeleteService } from 'src/services/file/delete.service';
 export class FileDeleteController {
   constructor(private readonly fileDeleteService: FileDeleteService) {}
 
-  @Delete('permanant/:fileKey')
+  @Delete('permanent/:fileKey')
   @HttpCode(200)
   @UseGuards(RoleGuard(access_role.delete))
   async deleteContainerFile(@Param('fileKey') fileKey: string) {

@@ -67,6 +67,7 @@ export class FileReadController {
     const fileInfo = await this.fileReadService.getFileInfo(file.id);
     const response: CustomResponse<{
       fileName: string;
+      type: file_type;
       createDate: Date;
       updateDate: Date;
       byteSize: number;
@@ -75,6 +76,7 @@ export class FileReadController {
       message: 'File info found',
       data: {
         fileName: file.file_name,
+        type: file.type,
         createDate: fileInfo.create_date,
         updateDate: fileInfo.update_date,
         byteSize: fileInfo.byte_size,
@@ -85,7 +87,7 @@ export class FileReadController {
 
   @Get('parent/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getParentFile(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getParentFile(file.id);
@@ -107,7 +109,7 @@ export class FileReadController {
 
   @Get('children/:fileKey')
   @HttpCode(200)
-  @UseGuards(RoleGuard('read'))
+  @UseGuards(RoleGuard(access_role.read))
   async getChildrenFiles(@Param('fileKey') fileKey: string) {
     const file = await this.fileReadService.getFile(fileKey);
     const data = await this.fileReadService.getChildFiles(file.id);

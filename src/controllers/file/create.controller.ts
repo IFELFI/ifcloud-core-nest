@@ -1,4 +1,5 @@
 import {
+    BadRequestException,
   Controller,
   HttpCode,
   Param,
@@ -12,11 +13,15 @@ import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { StringLengthPipe } from 'src/pipes/string.pipe';
 import { FileCreateService } from 'src/services/file/create.service';
+import { FileReadService } from 'src/services/file/read.service';
 
 @Controller('file')
 @UseGuards(MemberGuard)
 export class FileWriteController {
-  constructor(private readonly fileWriteService: FileCreateService) {}
+  constructor(
+    private readonly fileWriteService: FileCreateService,
+    private readonly fileReadService: FileReadService,
+  ) {}
 
   @Post('container/:fileKey')
   @HttpCode(201)
@@ -26,9 +31,13 @@ export class FileWriteController {
     @Query('memberId') memberId: number,
     @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
   ) {
+    const parentFile = await this.fileReadService.getFile(parentKey);
+    if (parentFile.type !== file_type.container) {
+      throw new BadRequestException('Parent file is not a container');
+    }
     const data = await this.fileWriteService.createContainer(
       memberId,
-      parentKey,
+      parentFile.id,
       fileName,
     );
     const response: CustomResponse<{
