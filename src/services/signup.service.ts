@@ -28,7 +28,7 @@ export class SignupService {
    */
   async signup(uuidKey: string) {
     const member = await this.memberService.createMember(uuidKey);
-    await this.fileCreateService.createRootFile(member.id);
+    await this.fileCreateService.createBaseFiles(member.id);
     return member;
   }
 }
