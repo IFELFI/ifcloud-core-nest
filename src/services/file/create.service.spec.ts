@@ -19,7 +19,6 @@ describe('FileWriteService', () => {
 
     service = module.get<FileCreateService>(FileCreateService);
     prisma = module.get<DeepMockProxy<PrismaClient>>(PrismaService);
-    prisma.$transaction.mockImplementation((cb) => cb(prisma));
   });
 
   it('should be defined', () => {
@@ -102,13 +101,17 @@ describe('FileWriteService', () => {
   describe('createContainer', () => {
     it('should create a container file', async () => {
       prisma.file.create.mockResolvedValue(mockValues.block);
-      prisma.file_info.create.mockResolvedValue(mockValues.fileInfo);
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.container);
-      prisma.file_closure.create.mockResolvedValue(mockValues.fileClosure);
+      service.generateBasicFileInfo = jest
+        .fn()
+        .mockResolvedValue([
+          mockValues.fileInfo,
+          mockValues.fileClosure,
+          mockValues.fileRole,
+        ]);
 
       const result = await service.createContainer(
         mockValues.member.id,
-        mockValues.container.file_key,
+        mockValues.container.id,
         mockValues.block.file_name,
       );
 

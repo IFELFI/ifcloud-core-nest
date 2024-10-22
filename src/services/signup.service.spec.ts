@@ -39,9 +39,11 @@ describe('SignupService', () => {
 
   it('should create a new member and root file', async () => {
     memberService.createMember = jest.fn().mockResolvedValue(mockValues.member);
-    fileCreateService.createRootFile = jest
-      .fn()
-      .mockResolvedValue(mockValues.root);
+    fileCreateService.createBaseFiles = jest.fn().mockResolvedValue({
+      root: mockValues.root,
+      home: mockValues.container,
+      trash: mockValues.trash,
+    });
     const result = await service.signup(mockValues.member.uuid_key);
 
     expect(result).toBeDefined();
