@@ -56,17 +56,18 @@ export class FileUpdateService {
       where: {
         file_key: fileKey,
       },
+      select: {
+        id: true,
+      },
     });
 
     await this.prisma.file_closure.update({
       where: {
-        parent_id_child_id: {
-          parent_id: target.id,
-          child_id: target.id,
-        },
+        child_id: target.id,
       },
       data: {
         parent_id: parent.id,
+        child_id: target.id,
       },
     });
 
