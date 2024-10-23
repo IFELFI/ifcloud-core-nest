@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file } from '@prisma/client';
 
@@ -44,6 +44,10 @@ export class FileUpdateService {
    * Returns true if the parent is updated successfully
    */
   async updateFileParent(fileKey: string, parentKey: string): Promise<boolean> {
+    if (fileKey === parentKey) {
+      throw new BadRequestException('Cannot set parent to itself');
+    }
+
     const parent = await this.prisma.file.findUniqueOrThrow({
       where: {
         file_key: parentKey,
