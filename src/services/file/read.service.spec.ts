@@ -107,6 +107,21 @@ describe('FileReadService', () => {
     });
   });
 
+  describe('getHomeContainer', () => {
+    it('should return a home file', async () => {
+      prisma.file.findMany.mockResolvedValue([mockValues.container]);
+
+      const result = await service.getHomeContainer(mockValues.member.id);
+      expect(result).toEqual(mockValues.container);
+      expect(prisma.file.findMany).toHaveBeenCalledWith({
+        where: {
+          owner_id: mockValues.member.id,
+          file_name: SpecialContainerNameSchema.enum.home,
+        },
+      });
+    });
+  });
+
   describe('getParentFile', () => {
     it('should return files by parent', async () => {
       prisma.file_closure.findMany.mockResolvedValue([
