@@ -41,6 +41,7 @@ export class FileReadController {
 
   @Get('root')
   @HttpCode(200)
+  @UseGuards(RoleGuard(access_role.read))
   async getRootContainer(@Query('memberId') memberId: number) {
     const data = await this.fileReadService.getRootContainer(memberId);
     const response: CustomResponse<{
@@ -50,6 +51,27 @@ export class FileReadController {
     }> = {
       status: 200,
       message: 'Root file found',
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
+    };
+    return response;
+  }
+
+  @Get('home')
+  @HttpCode(200)
+  @UseGuards(RoleGuard(access_role.read))
+  async getHomeContainer(@Query('memberId') memberId: number) {
+    const data = await this.fileReadService.getHomeContainer(memberId);
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
+      status: 200,
+      message: 'Home file found',
       data: {
         fileKey: data.file_key,
         fileName: data.file_name,

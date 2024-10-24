@@ -117,6 +117,36 @@ export class FileReadService {
   }
 
   /**
+   * Get home container of a member
+   * @param memberId - The ID of the member
+   * @returns The home container of the member
+   * @throws NotFoundException - If the home container is not found
+   * @throws InternalServerErrorException - If multiple home containers are found
+   * @example
+   * getHomeContainer(1);
+   * Returns the home container of the member
+   */
+  async getHomeContainer(memberId: number): Promise<file> {
+    // Get the home container which has same ancestor and descendant id and depth 0
+    const homeContainer = await this.prisma.file.findMany({
+      where: {
+        owner_id: memberId,
+        file_name: SpecialContainerNameSchema.enum.home,
+      },
+    });
+
+    if (!homeContainer || homeContainer.length === 0) {
+      throw new NotFoundException('Home container not found');
+    }
+    if (homeContainer.length > 1) {
+      throw new InternalServerErrorException('Multiple home containers found');
+    }
+
+    // Return the home container
+    return homeContainer[0];
+  }
+
+  /**
    * Get the parent file of a file
    * @param fileId - The ID of the file
    * @returns The parent file of the file
