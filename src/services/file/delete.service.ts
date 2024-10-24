@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
@@ -24,9 +28,19 @@ export class FileDeleteService {
    * Returns the deleted file
    */
   async deleteFile(fileKey: string): Promise<file> {
-    return this.prisma.file.delete({
+    const file = await this.prisma.file.findUniqueOrThrow({
       where: {
         file_key: fileKey,
+      },
+    });
+
+    if (file.file_name in SpecialContainerNameSchema.enum) {
+      throw new BadRequestException('Cannot remove special container');
+    }
+
+    return this.prisma.file.delete({
+      where: {
+        id: file.id,
       },
     });
   }
@@ -78,6 +92,10 @@ export class FileDeleteService {
         file_key: fileKey,
       },
     });
+
+    if (target.file_name in SpecialContainerNameSchema.enum) {
+      throw new BadRequestException('Cannot remove special container to trash');
+    }
 
     await this.prisma.file_closure.update({
       where: {

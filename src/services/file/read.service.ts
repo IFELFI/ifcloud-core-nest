@@ -96,23 +96,12 @@ export class FileReadService {
    * getRootFile(1);
    * Returns the root file of the member
    */
-  async getRootContainer(memberId: number): Promise<{
-    id: bigint;
-    file_key: string;
-    file_name: string;
-    type: file_type;
-  }> {
+  async getRootContainer(memberId: number): Promise<file> {
     // Get the root file which has same ancestor and descendant id and depth 0
     const rootFile = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.root,
-      },
-      select: {
-        id: true,
-        file_key: true,
-        file_name: true,
-        type: true,
       },
     });
 
@@ -124,12 +113,7 @@ export class FileReadService {
     }
 
     // Return the root file
-    return {
-      id: rootFile[0].id,
-      file_key: rootFile[0].file_key,
-      file_name: rootFile[0].file_name,
-      type: rootFile[0].type,
-    };
+    return rootFile[0];
   }
 
   /**
