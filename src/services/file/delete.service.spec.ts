@@ -29,13 +29,14 @@ describe('FileDeleteService', () => {
 
   describe('deleteFile', () => {
     it('should delete a file', async () => {
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
       prisma.file.delete.mockResolvedValue(mockValues.block);
 
       await service.deleteFile(mockValues.block.file_key);
 
       expect(prisma.file.delete).toHaveBeenCalledWith({
         where: {
-          file_key: mockValues.block.file_key,
+          id: mockValues.block.id,
         },
       });
     });

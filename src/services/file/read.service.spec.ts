@@ -97,20 +97,11 @@ describe('FileReadService', () => {
       prisma.file.findMany.mockResolvedValue([mockValues.root]);
 
       const result = await service.getRootContainer(mockValues.member.id);
-      expect(result).toEqual({
-        file_key: mockValues.root.file_key,
-        file_name: mockValues.root.file_name,
-        type: mockValues.root.type,
-      });
+      expect(result).toEqual(mockValues.root);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
           owner_id: mockValues.member.id,
           file_name: SpecialContainerNameSchema.enum.root,
-        },
-        select: {
-          file_key: true,
-          file_name: true,
-          type: true,
         },
       });
     });

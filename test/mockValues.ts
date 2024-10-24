@@ -38,14 +38,14 @@ const trash: file = {
 };
 const container: file = {
   id: BigInt(3),
-  file_key: '123e4567-e89b-12d3-a456-426614174000',
+  file_key: '123e4567-e89b-12d3-a456-426614174003',
   type: file_type.container,
   file_name: SpecialContainerNameSchema.enum.home,
   owner_id: 1,
 };
 const block: file = {
   id: BigInt(4),
-  file_key: '123e4567-e89b-12d3-a456-426614174001',
+  file_key: '123e4567-e89b-12d3-a456-426614174004',
   type: file_type.block,
   file_name: 'file.txt',
   owner_id: member.id,
