@@ -1,6 +1,7 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file } from '@prisma/client';
+import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 /**
  * File update service
@@ -48,17 +49,21 @@ export class FileUpdateService {
       throw new BadRequestException('Cannot set parent to itself');
     }
 
-    const parent = await this.prisma.file.findUniqueOrThrow({
-      where: {
-        file_key: parentKey,
-      },
-      select: {
-        id: true,
-      },
-    });
     const target = await this.prisma.file.findUniqueOrThrow({
       where: {
         file_key: fileKey,
+      },
+      select: {
+        id: true,
+        file_name: true,
+      },
+    });
+    if (target.file_name in SpecialContainerNameSchema.enum) {
+      throw new BadRequestException('Cannot move special container');
+    }
+    const parent = await this.prisma.file.findUniqueOrThrow({
+      where: {
+        file_key: parentKey,
       },
       select: {
         id: true,
