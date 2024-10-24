@@ -41,7 +41,6 @@ export class FileReadController {
 
   @Get('root')
   @HttpCode(200)
-  @UseGuards(RoleGuard(access_role.read))
   async getRootContainer(@Query('memberId') memberId: number) {
     const data = await this.fileReadService.getRootContainer(memberId);
     const response: CustomResponse<{
@@ -62,7 +61,6 @@ export class FileReadController {
 
   @Get('home')
   @HttpCode(200)
-  @UseGuards(RoleGuard(access_role.read))
   async getHomeContainer(@Query('memberId') memberId: number) {
     const data = await this.fileReadService.getHomeContainer(memberId);
     const response: CustomResponse<{
