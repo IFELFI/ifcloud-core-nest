@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { file, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * File delete service
@@ -17,7 +18,10 @@ import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 @Injectable()
 export class FileDeleteService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   /**
    * Delete a file by key
@@ -38,6 +42,10 @@ export class FileDeleteService {
       throw new BadRequestException('Cannot remove special container');
     }
 
+    if (file.type === 'block') {
+      this.storageService.deleteFile(file.file_key);
+    }
+
     return this.prisma.file.delete({
       where: {
         id: file.id,
@@ -54,11 +62,17 @@ export class FileDeleteService {
    * Returns the deleted file
    */
   async deleteTemporaryFile(fileId: bigint): Promise<temp_file> {
-    return this.prisma.temp_file.delete({
-      where: {
-        id: fileId,
-      },
-    });
+    return this.prisma.temp_file
+      .delete({
+        where: {
+          id: fileId,
+        },
+      })
+      .then(async (tempFile) => {
+        await this.storageService.deleteFile(tempFile.file_key);
+
+        return tempFile;
+      });
   }
 
   /**
