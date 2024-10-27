@@ -62,17 +62,11 @@ export class FileDeleteService {
    * Returns the deleted file
    */
   async deleteTemporaryFile(fileId: bigint): Promise<temp_file> {
-    return this.prisma.temp_file
-      .delete({
-        where: {
-          id: fileId,
-        },
-      })
-      .then(async (tempFile) => {
-        await this.storageService.deleteFile(tempFile.file_key);
-
-        return tempFile;
-      });
+    return this.prisma.temp_file.delete({
+      where: {
+        id: fileId,
+      },
+    });
   }
 
   /**

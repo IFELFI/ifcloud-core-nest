@@ -5,14 +5,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 import mockValues from '../../../test/mockValues';
+import { StorageService } from '../storage/storage.service';
 
 describe('FileDeleteService', () => {
   let service: FileDeleteService;
   let prisma: DeepMockProxy<PrismaClient>;
+  let storageService: StorageService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [FileDeleteService, PrismaService],
+      providers: [
+        FileDeleteService,
+        PrismaService,
+        {
+          provide: StorageService,
+          useValue: {
+            deleteFile: jest.fn(),
+          },
+        },
+      ],
     })
       .overrideProvider(PrismaService)
       .useValue(mockDeep(PrismaClient))
@@ -20,6 +31,7 @@ describe('FileDeleteService', () => {
 
     service = module.get<FileDeleteService>(FileDeleteService);
     prisma = module.get<DeepMockProxy<PrismaClient>>(PrismaService);
+    storageService = module.get<StorageService>(StorageService);
     prisma.$transaction.mockImplementation((cb) => cb(prisma));
   });
 
@@ -31,6 +43,9 @@ describe('FileDeleteService', () => {
     it('should delete a file', async () => {
       prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
       prisma.file.delete.mockResolvedValue(mockValues.block);
+      storageService.deleteFile = jest.fn().mockResolvedValue({
+        success: true,
+      });
 
       await service.deleteFile(mockValues.block.file_key);
 
