@@ -3,7 +3,7 @@ import { FileDeleteController } from 'src/controllers/file/delete.controller';
 import { FileDeleteService } from 'src/services/file/delete.service';
 import { PrismaService } from 'src/services/prisma/prisma.service';
 import { MemberGuardModule } from '../guard.module';
-import { StorageModule } from '../storage.module';
+import { StorageModule } from '../storage/storage.module';
 
 @Module({
   imports: [MemberGuardModule, StorageModule],

@@ -44,7 +44,11 @@ export class FileUpdateService {
    * updateFileParent('123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001');
    * Returns true if the parent is updated successfully
    */
-  async updateFileParent(fileKey: string, parentKey: string): Promise<boolean> {
+  async updateFileParent(
+    fileKey: string,
+    parentKey: string,
+    currentParentKey: string,
+  ): Promise<boolean> {
     if (fileKey === parentKey) {
       throw new BadRequestException('Cannot set parent to itself');
     }
@@ -70,8 +74,11 @@ export class FileUpdateService {
       },
     });
 
-    await this.prisma.file_closure.update({
+    await this.prisma.file_closure.updateMany({
       where: {
+        file_file_closure_parent_idTofile: {
+          file_key: currentParentKey,
+        },
         child_id: target.id,
       },
       data: {

@@ -1,6 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { FileCreateService } from './file/create.service';
 import { MemberService } from './member/member.service';
+import { FileReadService } from './file/read.service';
+import { SpecialContainerNameSchema } from 'src/schemas/file.schema';
 
 /**
  * Signup service
@@ -28,7 +30,41 @@ export class SignupService {
    */
   async signup(uuidKey: string) {
     const member = await this.memberService.createMember(uuidKey);
-    await this.fileCreateService.createBaseFiles(member.id);
+    const root = await this.fileCreateService
+      .createRootFile(member.id)
+      .catch((e) => {
+        this.memberService.deleteMember(member.uuid_key);
+        throw e;
+      });
+
+    const [home, trash] = await Promise.all([
+      this.fileCreateService.createContainer(
+        member.id,
+        root.id,
+        SpecialContainerNameSchema.enum.home,
+      ),
+      this.fileCreateService.createContainer(
+        member.id,
+        root.id,
+        SpecialContainerNameSchema.enum.trash,
+      ),
+    ]).catch((e) => {
+      this.memberService.deleteMember(member.uuid_key);
+      throw e;
+    });
+
+    await this.fileCreateService
+      .createLink(
+        member.id,
+        home.id,
+        SpecialContainerNameSchema.enum.trash,
+        trash.id,
+      )
+      .catch((e) => {
+        this.memberService.deleteMember(member.uuid_key);
+        throw e;
+      });
+
     return member;
   }
 }

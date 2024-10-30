@@ -72,7 +72,8 @@ export class FileDeleteService {
   /**
    * Move a file to trash
    * @param memberId - The ID of the member
-   * @param fileKey - The key of the file
+   * @param targetFileKey - The key of the file
+   * @param parentFileKey - The key of the parent file
    * @returns True if the file is moved to trash, false otherwise
    * @example
    * moveToTrash(1, '123e4567-e89b-12d3-a456-426614174000');
@@ -80,14 +81,17 @@ export class FileDeleteService {
    * @throws InternalServerErrorException - If the trash is not found or multiple trash are found
    * @throws InternalServerErrorException - If the target file is not found
    */
-  async moveToTrash(memberId: number, fileKey: string): Promise<boolean> {
+  async moveToTrash(
+    memberId: number,
+    targetFileKey: string,
+    parentFileKey: string,
+  ): Promise<boolean> {
     const trash = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.trash,
       },
     });
-
     if (trash.length === 0) {
       throw new InternalServerErrorException('Trash not found');
     }
@@ -95,9 +99,20 @@ export class FileDeleteService {
       throw new InternalServerErrorException('Multiple trash found');
     }
 
+    const parentFilePath = await this.prisma.file.findUniqueOrThrow({
+      select: {
+        file_path: true,
+      },
+      where: {
+        file_key: parentFileKey,
+      },
+    });
+    if (!parentFilePath) {
+      throw new InternalServerErrorException('Parent file path not found');
+    }
     const target = await this.prisma.file.findUniqueOrThrow({
       where: {
-        file_key: fileKey,
+        file_key: targetFileKey,
       },
     });
 
@@ -105,9 +120,14 @@ export class FileDeleteService {
       throw new BadRequestException('Cannot remove special container to trash');
     }
 
-    await this.prisma.file_closure.update({
+    await this.prisma.file_closure.updateMany({
       where: {
-        child_id: target.id,
+        file_file_closure_parent_idTofile: {
+          file_key: parentFileKey,
+        },
+        file_file_closure_child_idTofile: {
+          file_key: targetFileKey,
+        },
       },
       data: {
         parent_id: trash[0].id,

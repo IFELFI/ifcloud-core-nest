@@ -56,4 +56,41 @@ export class FileWriteController {
 
     return response;
   }
+
+  @Post('link/:fileKey')
+  @HttpCode(201)
+  @UseGuards(RoleGuard(access_role.create))
+  async createLinkFile(
+    @Param('fileKey') parentKey: string,
+    @Query('memberId') memberId: number,
+    @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
+    @Query('target_key') targetKey: string,
+  ) {
+    const parentFile = await this.fileReadService.getFile(parentKey);
+    if (parentFile.type !== file_type.container) {
+      throw new BadRequestException('Parent file is not a container');
+    }
+    const targetFile = await this.fileReadService.getFile(targetKey);
+    const data = await this.fileWriteService.createLink(
+      memberId,
+      parentFile.id,
+      fileName,
+      targetFile.id,
+    );
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
+      status: 201,
+      message: 'Link file created',
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
+    };
+
+    return response;
+  }
 }

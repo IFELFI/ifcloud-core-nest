@@ -128,10 +128,16 @@ export class FileReadService {
    */
   async getHomeContainer(memberId: number): Promise<file> {
     // Get the home container which has same ancestor and descendant id and depth 0
+    const root = await this.getRootContainer(memberId);
     const homeContainer = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.home,
+        file_closure_file_closure_child_idTofile: {
+          some: {
+            parent_id: root.id,
+          },
+        },
       },
     });
 
@@ -244,6 +250,16 @@ export class FileReadService {
         .findMany({
           where: {
             parent_id: currentFileId,
+            file_file_closure_child_idTofile: {
+              OR: [
+                {
+                  type: file_type.block,
+                },
+                {
+                  type: file_type.container,
+                },
+              ],
+            },
           },
           select: {
             child_id: true,
