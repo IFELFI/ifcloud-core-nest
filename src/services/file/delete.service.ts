@@ -116,6 +116,7 @@ export class FileDeleteService {
     if (trash.length > 1) {
       throw new InternalServerErrorException('Multiple trash found');
     }
+    const trashPath = trash[0].file_path.path.concat(trash[0].id);
 
     // Get the trash file
     const target = await this.prisma.file.findUniqueOrThrow({
@@ -137,15 +138,31 @@ export class FileDeleteService {
     ) {
       throw new BadRequestException('Cannot remove special container to trash');
     }
+    const targetPath = target.file_path.path.concat(target.id);
 
-    await this.prisma.file_path.update({
+    // Get the target ancestors
+    const targetAncestors = await this.prisma.file_path.findMany({
       where: {
-        file_id: target.id,
-      },
-      data: {
-        path: trash[0].file_path.path.concat(trash[0].id),
+        path: {
+          hasEvery: targetPath,
+        },
       },
     });
+    // combine the target ancestors and the target file
+    const targets = targetAncestors.concat(target.file_path);
+
+    await this.prisma.$transaction(
+      targets.map((ancestor) =>
+        this.prisma.file_path.update({
+          where: {
+            file_id: ancestor.file_id,
+          },
+          data: {
+            path: trashPath.concat(ancestor.path.slice(targetPath.length - 1)),
+          },
+        }),
+      ),
+    );
 
     return true;
   }

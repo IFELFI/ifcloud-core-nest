@@ -52,6 +52,21 @@ export class FileUpdateService {
     if (fileKey === parentKey) {
       throw new BadRequestException('Cannot set parent to itself');
     }
+    const parent = await this.prisma.file.findUniqueOrThrow({
+      select: {
+        id: true,
+        file_path: true,
+      },
+      where: {
+        file_key: parentKey,
+      },
+    });
+    // Check if the parent file path is not null
+    if (!parent.file_path) {
+      throw new NotFoundException('Parent file path not found');
+    }
+    // Create the new parent path
+    const parentPath = parent.file_path.path.concat(parent.id);
 
     const target = await this.prisma.file.findUniqueOrThrow({
       where: {
@@ -74,29 +89,34 @@ export class FileUpdateService {
     ) {
       throw new BadRequestException('Cannot move special container');
     }
+    // concat the target path with the target id to get the ancestors
+    const targetPath = target.file_path.path.concat(target.id);
 
-    const parent = await this.prisma.file.findUniqueOrThrow({
-      select: {
-        id: true,
-        file_path: true,
-      },
+    // Get the target ancestors
+    const targetAncestors = await this.prisma.file_path.findMany({
       where: {
-        file_key: parentKey,
+        path: {
+          hasEvery: targetPath,
+        },
       },
     });
-    // Check if the parent file path is not null
-    if (!parent.file_path) {
-      throw new NotFoundException('Parent file path not found');
-    }
 
-    await this.prisma.file_path.update({
-      where: {
-        file_id: target.id,
-      },
-      data: {
-        path: parent.file_path.path.concat(parent.id),
-      },
-    });
+    // Combine the target ancestors and the target file
+    const targets = targetAncestors.concat(target.file_path);
+
+    // Update the targets with the new parent path
+    await this.prisma.$transaction(
+      targets.map((ancestor) =>
+        this.prisma.file_path.update({
+          where: {
+            file_id: ancestor.file_id,
+          },
+          data: {
+            path: parentPath.concat(ancestor.path.slice(targetPath.length - 1)),
+          },
+        }),
+      ),
+    );
 
     return true;
   }
