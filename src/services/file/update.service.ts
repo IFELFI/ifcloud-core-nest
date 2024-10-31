@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
@@ -44,11 +48,7 @@ export class FileUpdateService {
    * updateFileParent('123e4567-e89b-12d3-a456-426614174000', '123e4567-e89b-12d3-a456-426614174001');
    * Returns true if the parent is updated successfully
    */
-  async updateFileParent(
-    fileKey: string,
-    parentKey: string,
-    currentParentKey: string,
-  ): Promise<boolean> {
+  async updateFileParent(fileKey: string, parentKey: string): Promise<boolean> {
     if (fileKey === parentKey) {
       throw new BadRequestException('Cannot set parent to itself');
     }
@@ -60,30 +60,41 @@ export class FileUpdateService {
       select: {
         id: true,
         file_name: true,
+        file_path: true,
       },
     });
-    if (target.file_name in SpecialContainerNameSchema.enum) {
+    // Check if the file path is not null
+    if (!target.file_path) {
+      throw new NotFoundException('File path not found');
+    }
+    // Check if the file is a special container
+    if (
+      target.file_name in SpecialContainerNameSchema.enum &&
+      target.file_path.path.length <= 1
+    ) {
       throw new BadRequestException('Cannot move special container');
     }
+
     const parent = await this.prisma.file.findUniqueOrThrow({
+      select: {
+        id: true,
+        file_path: true,
+      },
       where: {
         file_key: parentKey,
       },
-      select: {
-        id: true,
-      },
     });
+    // Check if the parent file path is not null
+    if (!parent.file_path) {
+      throw new NotFoundException('Parent file path not found');
+    }
 
-    await this.prisma.file_closure.updateMany({
+    await this.prisma.file_path.update({
       where: {
-        file_file_closure_parent_idTofile: {
-          file_key: currentParentKey,
-        },
-        child_id: target.id,
+        file_id: target.id,
       },
       data: {
-        parent_id: parent.id,
-        child_id: target.id,
+        path: parent.file_path.path.concat(parent.id),
       },
     });
 

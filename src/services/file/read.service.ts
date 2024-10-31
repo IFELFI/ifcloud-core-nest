@@ -98,22 +98,27 @@ export class FileReadService {
    */
   async getRootContainer(memberId: number): Promise<file> {
     // Get the root file which has same ancestor and descendant id and depth 0
-    const rootFile = await this.prisma.file.findMany({
+    const root = await this.prisma.file.findMany({
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.root,
+        file_path: {
+          path: {
+            equals: [],
+          },
+        },
       },
     });
 
-    if (!rootFile || rootFile.length === 0) {
+    if (!root || root.length === 0) {
       throw new NotFoundException('Root file not found');
     }
-    if (rootFile.length > 1) {
+    if (root.length > 1) {
       throw new InternalServerErrorException('Multiple root files found');
     }
 
     // Return the root file
-    return rootFile[0];
+    return root[0];
   }
 
   /**
@@ -133,9 +138,9 @@ export class FileReadService {
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.home,
-        file_closure_file_closure_child_idTofile: {
-          some: {
-            parent_id: root.id,
+        file_path: {
+          path: {
+            equals: [root.id],
           },
         },
       },
@@ -156,35 +161,25 @@ export class FileReadService {
    * Get the parent file of a file
    * @param fileId - The ID of the file
    * @returns The parent file of the file
-   * @throws NotFoundException - If the parent file is not found
-   * @throws InternalServerErrorException - If multiple parent files are found
    * @example
    * getParentFile('123e4567-e89b-12d3-a456-426614174000');
    * Returns the parent file of the file
    */
   async getParentFile(fileId: bigint): Promise<file> {
-    const parentClosure = await this.prisma.file_closure.findMany({
+    const filePath = await this.prisma.file_path.findUniqueOrThrow({
       where: {
-        child_id: fileId,
-      },
-      select: {
-        parent_id: true,
+        file_id: fileId,
       },
     });
-
-    if (!parentClosure) {
-      throw new NotFoundException('Parent file not found');
+    // Check if the file has no parent
+    if (filePath.path.length === 0) {
+      throw new BadRequestException('File has no parent');
     }
-    if (parentClosure.length > 1) {
-      throw new InternalServerErrorException('Multiple parent files found');
-    }
-    if (parentClosure[0].parent_id === fileId) {
-      throw new BadRequestException('Current file is root file');
-    }
-
+    // Get the parent file
+    const parentFileId = filePath.path[filePath.path.length - 1];
     return this.prisma.file.findUniqueOrThrow({
       where: {
-        id: parentClosure[0].parent_id,
+        id: parentFileId,
       },
     });
   }
@@ -198,23 +193,17 @@ export class FileReadService {
    * Returns the child files of the file
    */
   async getChildFiles(fileId: bigint): Promise<file[]> {
-    const childClosures = await this.prisma.file_closure
-      .findMany({
-        where: {
-          parent_id: fileId,
-        },
-        select: {
-          child_id: true,
-        },
-      })
-      .then((closures) => {
-        return closures.filter((closure) => closure.child_id !== fileId);
-      });
-
+    const filePath = await this.prisma.file_path.findUniqueOrThrow({
+      where: {
+        file_id: fileId,
+      },
+    });
     return this.prisma.file.findMany({
       where: {
-        id: {
-          in: childClosures.map((closure) => closure.child_id),
+        file_path: {
+          path: {
+            equals: [...filePath.path, fileId],
+          },
         },
       },
     });
@@ -224,76 +213,22 @@ export class FileReadService {
    * Find a file by file name
    * @param fileId - The ID of the file
    * @param fileName - The name of the file
-   * @param maxDepth - The maximum depth to search
    * @returns The files with the file name
    * @example
    * findFileByFileName('123e4567-e89b-12d3-a456-426614174000', 'file.txt');
    * Returns the files with the file
    */
-  async findFileByFileName(
-    fileId: bigint,
-    fileName: string,
-    maxDepth: number = 20,
-  ): Promise<file[]> {
-    const queue: bigint[] = [fileId];
-    let currentDepth = 0;
-
-    while (queue.length > 0 && currentDepth <= maxDepth) {
-      // Get the current file ID
-      const currentFileId = queue.shift();
-      if (!currentFileId) {
-        break;
-      }
-
-      // Get the current file closures
-      const currentFileClosures = await this.prisma.file_closure
-        .findMany({
-          where: {
-            parent_id: currentFileId,
-            file_file_closure_child_idTofile: {
-              OR: [
-                {
-                  type: file_type.block,
-                },
-                {
-                  type: file_type.container,
-                },
-              ],
-            },
+  async findFileByFileName(fileId: bigint, fileName: string): Promise<file[]> {
+    return this.prisma.file.findMany({
+      where: {
+        file_name: fileName,
+        file_path: {
+          path: {
+            hasSome: [fileId],
           },
-          select: {
-            child_id: true,
-          },
-        })
-        .then((closures) => {
-          return closures.filter(
-            (closure) => closure.child_id !== currentFileId,
-          );
-        });
-
-      // Add the descendant files to search list
-      if (currentFileClosures.length !== 0) {
-        const targetFile = await this.prisma.file.findMany({
-          where: {
-            id: {
-              in: currentFileClosures.map((closure) => closure.child_id),
-            },
-            file_name: fileName,
-          },
-        });
-        if (targetFile.length !== 0) {
-          return targetFile;
-        }
-      }
-
-      // Add the descendant files to the queue
-      queue.push(...currentFileClosures.map((closure) => closure.child_id));
-
-      // Increase the depth
-      currentDepth += 1;
-    }
-
-    return [];
+        },
+      },
+    });
   }
 
   /**
@@ -310,5 +245,41 @@ export class FileReadService {
         file_key: fileKey,
       },
     });
+  }
+
+  /**
+   * Get the link target file
+   * @param fileId - The ID of the file
+   * @returns The link target file
+   * @throws NotFoundException - If the link target file is not found
+   * @throws InternalServerErrorException - If multiple link target files are found
+   * @example
+   * getLinkTargetFile(1);
+   * Returns the link target file
+   */
+  async getLinkTargetFile(fileId: bigint): Promise<file> {
+    return this.prisma.file
+      .findMany({
+        where: {
+          file_link_file_link_target_idTofile: {
+            some: {
+              file_file_link_file_idTofile: {
+                id: fileId,
+              },
+            },
+          },
+        },
+      })
+      .then((files) => {
+        if (files.length === 0) {
+          throw new NotFoundException('Link target file not found');
+        }
+        if (files.length > 1) {
+          throw new InternalServerErrorException(
+            'Multiple link target files found',
+          );
+        }
+        return files[0];
+      });
   }
 }

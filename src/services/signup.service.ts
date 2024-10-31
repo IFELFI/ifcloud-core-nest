@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { FileCreateService } from './file/create.service';
 import { MemberService } from './member/member.service';
-import { FileReadService } from './file/read.service';
-import { SpecialContainerNameSchema } from 'src/schemas/file.schema';
+import { SpecialContainerNameSchema } from '../schemas/file.schema';
 
 /**
  * Signup service

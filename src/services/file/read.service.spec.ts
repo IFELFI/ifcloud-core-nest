@@ -29,14 +29,14 @@ describe('FileReadService', () => {
 
   describe('getFile', () => {
     it('should return a file', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block.file);
 
-      expect(await service.getFile(mockValues.block.file_key)).toBe(
-        mockValues.block,
+      expect(await service.getFile(mockValues.block.file.file_key)).toBe(
+        mockValues.block.file,
       );
       expect(prisma.file.findUniqueOrThrow).toHaveBeenCalledWith({
         where: {
-          file_key: mockValues.block.file_key,
+          file_key: mockValues.block.file.file_key,
         },
       });
     });
@@ -44,14 +44,16 @@ describe('FileReadService', () => {
 
   describe('getFileInfo', () => {
     it('should return a file info', async () => {
-      prisma.file_info.findUniqueOrThrow.mockResolvedValue(mockValues.fileInfo);
+      prisma.file_info.findUniqueOrThrow.mockResolvedValue(
+        mockValues.block.info,
+      );
 
-      expect(await service.getFileInfo(mockValues.block.id)).toBe(
-        mockValues.fileInfo,
+      expect(await service.getFileInfo(mockValues.block.file.id)).toBe(
+        mockValues.block.info,
       );
       expect(prisma.file_info.findUniqueOrThrow).toHaveBeenCalledWith({
         where: {
-          file_id: mockValues.block.id,
+          file_id: mockValues.block.file.id,
         },
       });
     });
@@ -60,13 +62,17 @@ describe('FileReadService', () => {
   describe('getFiles', () => {
     it('should return files', async () => {
       prisma.file.findMany.mockResolvedValue([
-        mockValues.block,
-        mockValues.container,
+        mockValues.root.file,
+        mockValues.home.file,
+        mockValues.container.file,
+        mockValues.block.file,
       ]);
 
       expect(await service.getFiles(mockValues.member.id)).toEqual([
-        mockValues.block,
-        mockValues.container,
+        mockValues.root.file,
+        mockValues.home.file,
+        mockValues.container.file,
+        mockValues.block.file,
       ]);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
@@ -78,11 +84,11 @@ describe('FileReadService', () => {
 
   describe('getFilesByType', () => {
     it('should return files by type', async () => {
-      prisma.file.findMany.mockResolvedValue([mockValues.block]);
+      prisma.file.findMany.mockResolvedValue([mockValues.block.file]);
 
       expect(
         await service.getFilesByType(mockValues.member.id, file_type.block),
-      ).toEqual([mockValues.block]);
+      ).toEqual([mockValues.block.file]);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
           owner_id: mockValues.member.id,
@@ -94,14 +100,19 @@ describe('FileReadService', () => {
 
   describe('getRootContainer', () => {
     it('should return a root file', async () => {
-      prisma.file.findMany.mockResolvedValue([mockValues.root]);
+      prisma.file.findMany.mockResolvedValue([mockValues.root.file]);
 
       const result = await service.getRootContainer(mockValues.member.id);
-      expect(result).toEqual(mockValues.root);
+      expect(result).toEqual(mockValues.root.file);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
           owner_id: mockValues.member.id,
           file_name: SpecialContainerNameSchema.enum.root,
+          file_path: {
+            path: {
+              equals: [],
+            },
+          },
         },
       });
     });
@@ -109,14 +120,22 @@ describe('FileReadService', () => {
 
   describe('getHomeContainer', () => {
     it('should return a home file', async () => {
-      prisma.file.findMany.mockResolvedValue([mockValues.container]);
+      service.getRootContainer = jest
+        .fn()
+        .mockResolvedValue(mockValues.root.file);
+      prisma.file.findMany.mockResolvedValue([mockValues.home.file]);
 
       const result = await service.getHomeContainer(mockValues.member.id);
-      expect(result).toEqual(mockValues.container);
+      expect(result).toEqual(mockValues.home.file);
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
           owner_id: mockValues.member.id,
           file_name: SpecialContainerNameSchema.enum.home,
+          file_path: {
+            path: {
+              equals: [mockValues.root.file.id],
+            },
+          },
         },
       });
     });
@@ -124,72 +143,38 @@ describe('FileReadService', () => {
 
   describe('getParentFile', () => {
     it('should return files by parent', async () => {
-      prisma.file_closure.findMany.mockResolvedValue([
-        {
-          parent_id: mockValues.container.id,
-          child_id: mockValues.block.id,
-        },
-      ]);
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.container);
+      prisma.file_path.findUniqueOrThrow.mockResolvedValue(
+        mockValues.block.path,
+      );
+      prisma.file.findUniqueOrThrow.mockResolvedValue(
+        mockValues.container.file,
+      );
 
-      expect(await service.getParentFile(mockValues.block.id)).toEqual(
-        mockValues.container,
+      expect(await service.getParentFile(mockValues.block.file.id)).toEqual(
+        mockValues.container.file,
       );
     });
   });
 
   describe('getChildrenFiles', () => {
     it('should return children files', async () => {
-      prisma.file_closure.findMany.mockResolvedValue([
-        {
-          parent_id: mockValues.container.id,
-          child_id: mockValues.block.id,
-        },
-      ]);
-      prisma.file.findMany.mockResolvedValue([mockValues.block]);
+      prisma.file_path.findUniqueOrThrow.mockResolvedValue(
+        mockValues.container.path,
+      );
+      prisma.file.findMany.mockResolvedValue([mockValues.block.file]);
 
-      expect(await service.getChildFiles(mockValues.container.id)).toEqual([
-        mockValues.block,
-      ]);
+      expect(await service.getChildFiles(mockValues.container.file.id)).toEqual(
+        [mockValues.block.file],
+      );
       expect(prisma.file.findMany).toHaveBeenCalledWith({
         where: {
-          id: {
-            in: [mockValues.block.id],
-          },
-        },
-      });
-    });
-
-    it('should return children files without itself', async () => {
-      // root -> container, block
-      // In the closure table, root contains itself, container, and block
-      prisma.file_closure.findMany.mockResolvedValue([
-        {
-          parent_id: mockValues.root.id,
-          child_id: mockValues.root.id,
-        },
-        {
-          parent_id: mockValues.root.id,
-          child_id: mockValues.container.id,
-        },
-        {
-          parent_id: mockValues.root.id,
-          child_id: mockValues.block.id,
-        },
-      ]);
-      prisma.file.findMany.mockResolvedValue([
-        mockValues.container,
-        mockValues.block,
-      ]);
-
-      expect(await service.getChildFiles(mockValues.root.id)).toEqual([
-        mockValues.container,
-        mockValues.block,
-      ]);
-      expect(prisma.file.findMany).toHaveBeenCalledWith({
-        where: {
-          id: {
-            in: [mockValues.container.id, mockValues.block.id],
+          file_path: {
+            path: {
+              equals: [
+                ...mockValues.container.path.path,
+                mockValues.container.file.id,
+              ],
+            },
           },
         },
       });

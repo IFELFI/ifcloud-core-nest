@@ -10,21 +10,18 @@ datasource db {
 }
 
 model file {
-  id                                        BigInt         @id(map: "pk_file") @default(autoincrement())
-  file_key                                  String         @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  type                                      file_type      @default(block)
-  file_name                                 String         @db.VarChar(256)
-  owner_id                                  Int
-  link_target_key                           String?        @db.Uuid
-  file                                      file?          @relation("fileTofile", fields: [link_target_key], references: [file_key], map: "fk_link_target_key")
-  other_file                                file[]         @relation("fileTofile")
-  member                                    member         @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
-  file_closure_file_closure_child_idTofile  file_closure[] @relation("file_closure_child_idTofile")
-  file_closure_file_closure_parent_idTofile file_closure[] @relation("file_closure_parent_idTofile")
-  file_info                                 file_info?
-  file_path                                 file_path?
-  file_role                                 file_role[]
-  temp_file                                 temp_file[]
+  id                                  BigInt      @id(map: "pk_file") @default(autoincrement())
+  file_key                            String      @unique(map: "uni_file_file_key") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  type                                file_type   @default(block)
+  file_name                           String      @db.VarChar(256)
+  owner_id                            Int
+  member                              member      @relation(fields: [owner_id], references: [id], onDelete: Cascade, map: "fk_owner_id")
+  file_info                           file_info?
+  file_link_file_link_file_idTofile   file_link?  @relation("file_link_file_idTofile")
+  file_link_file_link_target_idTofile file_link[] @relation("file_link_target_idTofile")
+  file_path                           file_path?
+  file_role                           file_role[]
+  temp_file                           temp_file[]
 
   @@schema("file")
 }
@@ -71,18 +68,6 @@ model service_status {
   @@schema("member")
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model file_closure {
-  parent_id                         BigInt
-  child_id                          BigInt
-  file_file_closure_child_idTofile  file   @relation("file_closure_child_idTofile", fields: [child_id], references: [id], onDelete: Cascade, map: "fk_child_id")
-  file_file_closure_parent_idTofile file   @relation("file_closure_parent_idTofile", fields: [parent_id], references: [id], onDelete: Cascade, map: "fk_parent_id")
-
-  @@id([parent_id, child_id], map: "pk_file_closure")
-  @@unique([parent_id, child_id], map: "uni_file_closure")
-  @@schema("file")
-}
-
 model temp_file {
   id          BigInt   @id(map: "pk_temp_file") @default(autoincrement())
   owner_id    Int
@@ -101,6 +86,15 @@ model file_path {
   file_id BigInt   @id(map: "pk_file_path")
   path    BigInt[] @default([])
   file    file     @relation(fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+
+  @@schema("file")
+}
+
+model file_link {
+  file_id                        BigInt @id(map: "pk_file_link")
+  target_id                      BigInt
+  file_file_link_file_idTofile   file   @relation("file_link_file_idTofile", fields: [file_id], references: [id], onDelete: Cascade, map: "fk_file_id")
+  file_file_link_target_idTofile file   @relation("file_link_target_idTofile", fields: [target_id], references: [id], onDelete: Cascade, map: "fk_target_file_id")
 
   @@schema("file")
 }

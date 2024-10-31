@@ -180,4 +180,26 @@ export class FileReadController {
     };
     return response;
   }
+
+  @Get('link_target/:fileKey')
+  @HttpCode(200)
+  @UseGuards(RoleGuard(access_role.read))
+  async getLinkTarget(@Param('fileKey') fileKey: string) {
+    const file = await this.fileReadService.getFile(fileKey);
+    const data = await this.fileReadService.getLinkTargetFile(file.id);
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
+      status: 200,
+      message: 'Link target found',
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
+    };
+    return response;
+  }
 }

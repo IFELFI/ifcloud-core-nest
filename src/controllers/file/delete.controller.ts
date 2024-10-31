@@ -11,11 +11,15 @@ import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileDeleteService } from 'src/services/file/delete.service';
+import { FileReadService } from 'src/services/file/read.service';
 
 @Controller('file')
 @UseGuards(MemberGuard)
 export class FileDeleteController {
-  constructor(private readonly fileDeleteService: FileDeleteService) {}
+  constructor(
+    private readonly fileDeleteService: FileDeleteService,
+    private readonly fileReadService: FileReadService,
+  ) {}
 
   @Delete('permanent/:fileKey')
   @HttpCode(200)
@@ -46,7 +50,12 @@ export class FileDeleteController {
     @Param('fileKey') fileKey: string,
     @Query('memberId') memberId: number,
   ) {
-    const data = await this.fileDeleteService.moveToTrash(memberId, fileKey);
+    const root = await this.fileReadService.getRootContainer(memberId);
+    const data = await this.fileDeleteService.moveToTrash(
+      memberId,
+      root.id,
+      fileKey,
+    );
     const response: CustomResponse<{
       success: boolean;
     }> = {

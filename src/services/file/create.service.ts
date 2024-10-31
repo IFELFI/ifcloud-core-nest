@@ -40,6 +40,10 @@ export class FileCreateService {
     parentId: bigint,
     byteSize: number = 0,
   ): Promise<[file_info, file_path, file_role]> {
+    if (parentId === fileId) {
+      throw new Error('Cannot set parent to itself');
+    }
+
     const parentFilePath = await this.prisma.file_path.findUniqueOrThrow({
       where: { file_id: parentId },
       select: { path: true },
@@ -85,13 +89,36 @@ export class FileCreateService {
         type: file_type.container,
       },
     });
-    await this.generateBasicFileInfo(memberId, root.id, root.id).catch(
-      async (error) => {
-        // Rollback the file creation
-        this.prisma.file.delete({ where: { id: root.id } });
-        throw error;
-      },
-    );
+    await Promise.all([
+      this.prisma.file_info.create({
+        data: {
+          file_id: root.id,
+          byte_size: 0,
+        },
+      }),
+      this.prisma.file_path.create({
+        data: {
+          file_id: root.id,
+          path: [],
+        },
+      }),
+      this.prisma.file_role.create({
+        data: {
+          file_id: root.id,
+          member_id: memberId,
+          role: [
+            access_role.read,
+            access_role.create,
+            access_role.update,
+            access_role.delete,
+          ],
+        },
+      }),
+    ]).catch(async (error) => {
+      // Rollback the file creation
+      this.prisma.file.delete({ where: { id: root.id } });
+      throw error;
+    });
 
     return root;
   }
@@ -129,6 +156,7 @@ export class FileCreateService {
    * @param parentId - The ID of the parent
    * @param fileName - The name of the file
    * @param byteSize - The size of the file in bytes
+   * @param fileKey - The key of the file
    * @returns The created file
    * @example
    * createBlockFile(1, 1, 'file.txt', 1024);
@@ -198,6 +226,17 @@ export class FileCreateService {
     return file;
   }
 
+  /**
+   * Create a link file
+   * @param memberId - The ID of the member
+   * @param parentId - The ID of the parent file
+   * @param fileName - The name of the file
+   * @param targetId - The ID of the target file
+   * @returns The created file
+   * @example
+   * createLink(1, 1, 'file.txt', 2);
+   * Returns the created file
+   */
   async createLink(
     memberId: number,
     parentId: bigint,
@@ -214,8 +253,11 @@ export class FileCreateService {
 
     await Promise.all([
       this.generateBasicFileInfo(memberId, file.id, parentId),
-      this.prisma.file_closure.create({
-        data: { parent_id: parentId, child_id: targetId },
+      this.prisma.file_link.create({
+        data: {
+          file_id: file.id,
+          target_id: targetId,
+        },
       }),
     ]).catch(async (error) => {
       // Rollback the file creation

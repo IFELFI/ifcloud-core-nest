@@ -34,7 +34,9 @@ describe('StreamService', () => {
 
   describe('issueReadToken', () => {
     it('should issue a read token', async () => {
-      const result = await service.issueReadToken(mockValues.block.file_key);
+      const result = await service.issueReadToken(
+        mockValues.block.file.file_key,
+      );
 
       expect(result).toBe(mockValues.randomToken);
     });
