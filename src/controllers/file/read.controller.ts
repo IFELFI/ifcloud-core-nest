@@ -181,7 +181,7 @@ export class FileReadController {
     return response;
   }
 
-  @Get('link_target/:fileKey')
+  @Get('link-target/:fileKey')
   @HttpCode(200)
   @UseGuards(RoleGuard(access_role.read))
   async getLinkTarget(@Param('fileKey') fileKey: string) {
