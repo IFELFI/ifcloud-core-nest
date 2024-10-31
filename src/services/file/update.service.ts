@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
@@ -48,6 +52,21 @@ export class FileUpdateService {
     if (fileKey === parentKey) {
       throw new BadRequestException('Cannot set parent to itself');
     }
+    const parent = await this.prisma.file.findUniqueOrThrow({
+      select: {
+        id: true,
+        file_path: true,
+      },
+      where: {
+        file_key: parentKey,
+      },
+    });
+    // Check if the parent file path is not null
+    if (!parent.file_path) {
+      throw new NotFoundException('Parent file path not found');
+    }
+    // Create the new parent path
+    const parentPath = parent.file_path.path.concat(parent.id);
 
     const target = await this.prisma.file.findUniqueOrThrow({
       where: {
@@ -56,29 +75,48 @@ export class FileUpdateService {
       select: {
         id: true,
         file_name: true,
+        file_path: true,
       },
     });
-    if (target.file_name in SpecialContainerNameSchema.enum) {
+    // Check if the file path is not null
+    if (!target.file_path) {
+      throw new NotFoundException('File path not found');
+    }
+    // Check if the file is a special container
+    if (
+      target.file_name in SpecialContainerNameSchema.enum &&
+      target.file_path.path.length <= 1
+    ) {
       throw new BadRequestException('Cannot move special container');
     }
-    const parent = await this.prisma.file.findUniqueOrThrow({
+    // concat the target path with the target id to get the ancestors
+    const targetPath = target.file_path.path.concat(target.id);
+
+    // Get the target ancestors
+    const targetAncestors = await this.prisma.file_path.findMany({
       where: {
-        file_key: parentKey,
-      },
-      select: {
-        id: true,
+        path: {
+          hasEvery: targetPath,
+        },
       },
     });
 
-    await this.prisma.file_closure.update({
-      where: {
-        child_id: target.id,
-      },
-      data: {
-        parent_id: parent.id,
-        child_id: target.id,
-      },
-    });
+    // Combine the target ancestors and the target file
+    const targets = targetAncestors.concat(target.file_path);
+
+    // Update the targets with the new parent path
+    await this.prisma.$transaction(
+      targets.map((ancestor) =>
+        this.prisma.file_path.update({
+          where: {
+            file_id: ancestor.file_id,
+          },
+          data: {
+            path: parentPath.concat(ancestor.path.slice(targetPath.length - 1)),
+          },
+        }),
+      ),
+    );
 
     return true;
   }

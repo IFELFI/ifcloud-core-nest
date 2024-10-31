@@ -77,13 +77,7 @@ export class UploadService {
       tempFile.file_key,
       totalChunks,
     );
-    if (mergeResult.success !== true) {
-      this.storageService.deleteFile(tempFile.file_key);
-      this.fileDeleteService.deleteTemporaryFile(tempFile.id);
-      throw new InternalServerErrorException(
-        mergeResult.message || 'Failed to merge chunks',
-      );
-    } else {
+    if (mergeResult.success === true) {
       const file = await this.fileCreateService.createBlock(
         tempFile.owner_id,
         tempFile.parent_id,
@@ -93,6 +87,12 @@ export class UploadService {
       );
       this.fileDeleteService.deleteTemporaryFile(tempFile.id);
       return file;
+    } else {
+      this.storageService.deleteFile(tempFile.file_key);
+      this.fileDeleteService.deleteTemporaryFile(tempFile.id);
+      throw new InternalServerErrorException(
+        mergeResult.message || 'Failed to merge chunks',
+      );
     }
   }
 }

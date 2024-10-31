@@ -5,7 +5,7 @@ import { Module } from '@nestjs/common';
 import { UploadController } from 'src/controllers/file/upload.controller';
 import { UploadService } from 'src/services/upload.service';
 import { PrismaService } from 'src/services/prisma/prisma.service';
-import { StorageModule } from './storage.module';
+import { StorageModule } from './storage/storage.module';
 import { TokenModule } from './token.module';
 import { MemberGuardModule } from './guard.module';
 

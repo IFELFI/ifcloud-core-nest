@@ -2,10 +2,12 @@ import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
+  NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { file, temp_file } from '@prisma/client';
+import { file, file_type, temp_file } from '@prisma/client';
 import { SpecialContainerNameSchema } from '../../schemas/file.schema';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * File delete service
@@ -17,7 +19,10 @@ import { SpecialContainerNameSchema } from '../../schemas/file.schema';
 
 @Injectable()
 export class FileDeleteService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly storageService: StorageService,
+  ) {}
 
   /**
    * Delete a file by key
@@ -29,13 +34,26 @@ export class FileDeleteService {
    */
   async deleteFile(fileKey: string): Promise<file> {
     const file = await this.prisma.file.findUniqueOrThrow({
+      include: {
+        file_path: true,
+      },
       where: {
         file_key: fileKey,
       },
     });
 
-    if (file.file_name in SpecialContainerNameSchema.enum) {
+    if (!file.file_path) {
+      throw new InternalServerErrorException('File path not found');
+    }
+    if (
+      file.file_name in SpecialContainerNameSchema.enum &&
+      file.file_path.path.length <= 1
+    ) {
       throw new BadRequestException('Cannot remove special container');
+    }
+
+    if (file.type === file_type.block) {
+      this.storageService.deleteFile(file.file_key);
     }
 
     return this.prisma.file.delete({
@@ -64,47 +82,87 @@ export class FileDeleteService {
   /**
    * Move a file to trash
    * @param memberId - The ID of the member
-   * @param fileKey - The key of the file
+   * @param rootFileId - The ID of the root file
+   * @param targetFileKey - The key of the file
    * @returns True if the file is moved to trash, false otherwise
    * @example
-   * moveToTrash(1, '123e4567-e89b-12d3-a456-426614174000');
+   * moveToTrash(1, 1, '123e4567-e89b-12d3-a456-426614174000');
    * Returns true if the file is moved to trash
-   * @throws InternalServerErrorException - If the trash is not found or multiple trash are found
-   * @throws InternalServerErrorException - If the target file is not found
    */
-  async moveToTrash(memberId: number, fileKey: string): Promise<boolean> {
+  async moveToTrash(
+    memberId: number,
+    rootFileId: bigint,
+    targetFileKey: string,
+  ): Promise<boolean> {
     const trash = await this.prisma.file.findMany({
+      select: {
+        id: true,
+        file_path: true,
+      },
       where: {
         owner_id: memberId,
         file_name: SpecialContainerNameSchema.enum.trash,
+        file_path: {
+          path: {
+            equals: [rootFileId],
+          },
+        },
       },
     });
-
-    if (trash.length === 0) {
-      throw new InternalServerErrorException('Trash not found');
+    // Check if trash is found
+    if (!trash || trash.length === 0 || !trash[0].file_path) {
+      throw new NotFoundException('Trash not found');
     }
     if (trash.length > 1) {
       throw new InternalServerErrorException('Multiple trash found');
     }
+    const trashPath = trash[0].file_path.path.concat(trash[0].id);
 
+    // Get the trash file
     const target = await this.prisma.file.findUniqueOrThrow({
+      include: {
+        file_path: true,
+      },
       where: {
-        file_key: fileKey,
+        file_key: targetFileKey,
       },
     });
-
-    if (target.file_name in SpecialContainerNameSchema.enum) {
+    // Check if the target file is found
+    if (!target.file_path) {
+      throw new InternalServerErrorException('Target file path not found');
+    }
+    // Check if the target file is special container
+    if (
+      target.file_name in SpecialContainerNameSchema.enum &&
+      target.file_path.path.length <= 1
+    ) {
       throw new BadRequestException('Cannot remove special container to trash');
     }
+    const targetPath = target.file_path.path.concat(target.id);
 
-    await this.prisma.file_closure.update({
+    // Get the target ancestors
+    const targetAncestors = await this.prisma.file_path.findMany({
       where: {
-        child_id: target.id,
-      },
-      data: {
-        parent_id: trash[0].id,
+        path: {
+          hasEvery: targetPath,
+        },
       },
     });
+    // combine the target ancestors and the target file
+    const targets = targetAncestors.concat(target.file_path);
+
+    await this.prisma.$transaction(
+      targets.map((ancestor) =>
+        this.prisma.file_path.update({
+          where: {
+            file_id: ancestor.file_id,
+          },
+          data: {
+            path: trashPath.concat(ancestor.path.slice(targetPath.length - 1)),
+          },
+        }),
+      ),
+    );
 
     return true;
   }
