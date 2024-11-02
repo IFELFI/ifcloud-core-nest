@@ -41,7 +41,14 @@ describe('SignupService', () => {
     memberService.createMember = jest.fn().mockResolvedValue(mockValues.member);
     fileCreateService.createRootFile = jest
       .fn()
-      .mockResolvedValue(mockValues.root);
+      .mockResolvedValue(mockValues.root.file);
+    fileCreateService.createContainer = jest
+      .fn()
+      .mockResolvedValueOnce(mockValues.home.file)
+      .mockResolvedValueOnce(mockValues.trash.file);
+    fileCreateService.createLink = jest
+      .fn()
+      .mockResolvedValue(mockValues.link.file);
     const result = await service.signup(mockValues.member.uuid_key);
 
     expect(result).toBeDefined();

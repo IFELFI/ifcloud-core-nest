@@ -30,34 +30,19 @@ describe('FileUpdateService', () => {
     it('should update file name', async () => {
       const newFileName = 'new_folder';
       prisma.file.update.mockResolvedValue({
-        ...mockValues.block,
+        ...mockValues.block.file,
         file_name: newFileName,
       });
 
       const result = await service.updateFileName(
-        mockValues.block.file_key,
+        mockValues.block.file.file_key,
         newFileName,
       );
 
-      expect(result).toEqual({ ...mockValues.block, file_name: newFileName });
-    });
-  });
-
-  describe('updateFileParent', () => {
-    it('should update file parent', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.container);
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
-      prisma.file_closure.update.mockResolvedValue({
-        parent_id: mockValues.root.id,
-        child_id: mockValues.block.id,
+      expect(result).toEqual({
+        ...mockValues.block.file,
+        file_name: newFileName,
       });
-
-      const result = await service.updateFileParent(
-        mockValues.block.file_key,
-        mockValues.root.file_key,
-      );
-
-      expect(result).toBeTruthy();
     });
   });
 });

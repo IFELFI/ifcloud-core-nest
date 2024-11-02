@@ -37,26 +37,35 @@ describe('TokenService', () => {
     });
   });
 
-  describe('saveToken', () => {
-    it('should save a token in Redis', async () => {
-      const token = 'randomToken';
-      const expiration = 3600;
+  describe('issueToken', () => {
+    it('should issue a token', async () => {
+      await service.isseToken(mockValues.member.uuid_key, 'read');
 
-      await service.saveToken(token, mockValues.member.uuid_key, expiration);
+      expect(redisService.setex).toHaveBeenCalled();
+    });
 
-      expect(redisService.setex).toHaveBeenCalledWith(
-        token,
-        mockValues.member.uuid_key,
-        expiration,
-      );
+    it('should issue a token', async () => {
+      await service.isseToken(mockValues.member.uuid_key, 'write');
+
+      expect(redisService.setex).toHaveBeenCalled();
     });
   });
 
   describe('issueReadToken', () => {
     it('should issue a read token', async () => {
+      service.isseToken = jest.fn().mockResolvedValue(mockValues.randomToken);
       await service.issueReadToken(mockValues.member.uuid_key);
 
-      expect(redisService.setex).toHaveBeenCalled();
+      expect(service.isseToken).toHaveBeenCalled();
+    });
+  });
+
+  describe('issueWriteToken', () => {
+    it('should issue a write token', async () => {
+      service.isseToken = jest.fn().mockResolvedValue(mockValues.randomToken);
+      await service.issueWriteToken(mockValues.member.uuid_key);
+
+      expect(service.isseToken).toHaveBeenCalled();
     });
   });
 });

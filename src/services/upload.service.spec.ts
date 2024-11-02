@@ -66,7 +66,7 @@ describe('UploadService', () => {
       .mockResolvedValue(mockValues.tempFile);
     fileCreateService.createBlock = jest
       .fn()
-      .mockResolvedValue(mockValues.block);
+      .mockResolvedValue(mockValues.block.file);
 
     // File Read Service
     fileReadService.getFile = jest.fn().mockResolvedValue(mockValues.block);
@@ -101,7 +101,7 @@ describe('UploadService', () => {
     it('should issue a write token', async () => {
       const result = await service.issueWriteToken(
         mockValues.member.id,
-        mockValues.container.file_key,
+        mockValues.container.file.file_key,
         mockValues.tempFile.file_name,
         mockValues.tempFile.byte_size,
       );
@@ -118,7 +118,7 @@ describe('UploadService', () => {
         mockValues.tempFile.file_key,
         mockValues.chunkCount,
       );
-      expect(result).toEqual(mockValues.block);
+      expect(result).toEqual(mockValues.block.file);
     });
   });
 });

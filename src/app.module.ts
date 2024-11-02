@@ -6,6 +6,7 @@ import { AuthMiddleware } from './middlewares/auth.middleware';
 import { MemberModule } from './modules/member.module';
 import { FileModule } from './modules/file/index.module';
 import { UploadModule } from './modules/upload.module';
+import { StreamModule } from './modules/stream.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { UploadModule } from './modules/upload.module';
     CustomLogger,
     MemberModule,
     UploadModule,
+    StreamModule,
     FileModule,
   ],
 })

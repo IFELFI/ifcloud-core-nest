@@ -28,12 +28,12 @@ describe('FileRoleService', () => {
 
   describe('getRole', () => {
     it('should return the role of a member for a file', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
-      prisma.file_role.findUnique.mockResolvedValue(mockValues.fileRole);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block.file);
+      prisma.file_role.findUnique.mockResolvedValue(mockValues.block.role);
 
       const result = await service.getRole(
         mockValues.member.id,
-        mockValues.block.file_key,
+        mockValues.block.file.file_key,
       );
 
       expect(result).toBeDefined();
@@ -42,12 +42,12 @@ describe('FileRoleService', () => {
 
   describe('checkRole', () => {
     it('should return true if the member has the required role for the file', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
-      prisma.file_role.findUnique.mockResolvedValue(mockValues.fileRole);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block.file);
+      prisma.file_role.findUnique.mockResolvedValue(mockValues.block.role);
 
       const result = await service.checkRole(
         mockValues.member.id,
-        mockValues.block.file_key,
+        mockValues.block.file.file_key,
         access_role.read,
       );
 
@@ -55,12 +55,12 @@ describe('FileRoleService', () => {
     });
 
     it('should return false if the member does not have the required role for the file', async () => {
-      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block);
+      prisma.file.findUniqueOrThrow.mockResolvedValue(mockValues.block.file);
       prisma.file_role.findUnique.mockResolvedValue(null);
 
       const result = await service.checkRole(
         mockValues.member.id,
-        mockValues.block.file_key,
+        mockValues.block.file.file_key,
         access_role.read,
       );
 

@@ -42,12 +42,7 @@ export class TokenService {
    * Returns the issued read token
    */
   async issueReadToken(uuidKey: string): Promise<string> {
-    const prefix = '';
-    const token = await this.generateToken(32);
-    const key = `${prefix}${token}`;
-    await this.redis.setex(key, uuidKey, 60);
-
-    return token;
+    return this.isseToken(uuidKey, 'read');
   }
 
   /**
@@ -59,10 +54,23 @@ export class TokenService {
    * Returns the issued write token
    */
   async issueWriteToken(uuidKey: string): Promise<string> {
-    const prefix = '';
+    return this.isseToken(uuidKey, 'write');
+  }
+
+  /**
+   * Issue a token and save it in Redis
+   * @param uuidKey - The UUID key of the file
+   * @param type - The type of the token
+   * @returns The issued token
+   * @example
+   * isseToken('123e4567-e89b-12d3-a456-426614174000', 'read');
+   * Returns the issued token
+   */
+  async isseToken(uuidKey: string, type: 'read' | 'write'): Promise<string> {
+    const prefix = type;
     const token = await this.generateToken(32);
-    const key = `${prefix}${token}`;
-    await this.redis.setex(key, uuidKey, 60);
+    const value = `${prefix}:${uuidKey}`;
+    await this.redis.setex(token, value, 60);
 
     return token;
   }

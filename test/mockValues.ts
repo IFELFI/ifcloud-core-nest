@@ -1,7 +1,8 @@
 import {
   file,
-  file_closure,
   file_info,
+  file_link,
+  file_path,
   file_role,
   file_type,
   member as member_type,
@@ -22,58 +23,180 @@ const serviceStatus: service_status = {
   join_date: new Date(),
   update_date: new Date(),
 };
-const root: file = {
-  id: BigInt(1),
-  file_key: '123e4567-e89b-12d3-a456-426614174001',
-  type: file_type.container,
-  file_name: SpecialContainerNameSchema.enum.root,
-  owner_id: member.id,
+const root: { file: file; path: file_path; role: file_role; info: file_info } =
+  {
+    file: {
+      id: BigInt(1),
+      file_key: '123e4567-e89b-12d3-a456-426614174001',
+      type: file_type.container,
+      file_name: SpecialContainerNameSchema.enum.root,
+      owner_id: member.id,
+    },
+    path: {
+      file_id: BigInt(1),
+      path: [],
+    },
+    role: {
+      file_id: BigInt(1),
+      member_id: member.id,
+      role: ['create', 'read', 'update', 'delete'],
+    },
+    info: {
+      file_id: BigInt(1),
+      create_date: new Date(),
+      update_date: new Date(),
+      byte_size: 0,
+    },
+  };
+const trash: { file: file; path: file_path; role: file_role; info: file_info } =
+  {
+    file: {
+      id: BigInt(2),
+      file_key: '123e4567-e89b-12d3-a456-426614174002',
+      type: file_type.container,
+      file_name: SpecialContainerNameSchema.enum.trash,
+      owner_id: member.id,
+    },
+    path: {
+      file_id: BigInt(2),
+      path: [root.file.id],
+    },
+    role: {
+      file_id: BigInt(2),
+      member_id: member.id,
+      role: ['create', 'read', 'update', 'delete'],
+    },
+    info: {
+      file_id: BigInt(2),
+      create_date: new Date(),
+      update_date: new Date(),
+      byte_size: 0,
+    },
+  };
+const home: { file: file; path: file_path; role: file_role; info: file_info } =
+  {
+    file: {
+      id: BigInt(3),
+      file_key: '123e4567-e89b-12d3-a456-426614174003',
+      type: file_type.container,
+      file_name: SpecialContainerNameSchema.enum.home,
+      owner_id: member.id,
+    },
+    path: {
+      file_id: BigInt(3),
+      path: [root.file.id],
+    },
+    role: {
+      file_id: BigInt(3),
+      member_id: member.id,
+      role: ['create', 'read', 'update', 'delete'],
+    },
+    info: {
+      file_id: BigInt(3),
+      create_date: new Date(),
+      update_date: new Date(),
+      byte_size: 0,
+    },
+  };
+const container: {
+  file: file;
+  path: file_path;
+  role: file_role;
+  info: file_info;
+} = {
+  file: {
+    id: BigInt(4),
+    file_key: '123e4567-e89b-12d3-a456-426614174004',
+    type: file_type.container,
+    file_name: 'container',
+    owner_id: member.id,
+  },
+  path: {
+    file_id: BigInt(4),
+    path: [root.file.id, home.file.id],
+  },
+  role: {
+    file_id: BigInt(4),
+    member_id: member.id,
+    role: ['create', 'read', 'update', 'delete'],
+  },
+  info: {
+    file_id: BigInt(4),
+    create_date: new Date(),
+    update_date: new Date(),
+    byte_size: 0,
+  },
 };
-const trash: file = {
-  id: BigInt(2),
-  file_key: '123e4567-e89b-12d3-a456-426614174002',
-  type: file_type.container,
-  file_name: SpecialContainerNameSchema.enum.trash,
-  owner_id: member.id,
+const block: { file: file; path: file_path; role: file_role; info: file_info } =
+  {
+    file: {
+      id: BigInt(5),
+      file_key: '123e4567-e89b-12d3-a456-426614174005',
+      type: file_type.block,
+      file_name: 'file.txt',
+      owner_id: member.id,
+    },
+    path: {
+      file_id: BigInt(5),
+      path: [root.file.id, home.file.id],
+    },
+    role: {
+      file_id: BigInt(5),
+      member_id: member.id,
+      role: ['create', 'read', 'update', 'delete'],
+    },
+    info: {
+      file_id: BigInt(5),
+      create_date: new Date(),
+      update_date: new Date(),
+      byte_size: 100,
+    },
+  };
+const link: {
+  file: file;
+  path: file_path;
+  target: file_link;
+  role: file_role;
+  info: file_info;
+} = {
+  file: {
+    id: BigInt(6),
+    file_key: '123e4567-e89b-12d3-a456-426614174006',
+    type: file_type.link,
+    file_name: 'link.txt',
+    owner_id: member.id,
+  },
+  path: {
+    file_id: BigInt(6),
+    path: [root.file.id, home.file.id],
+  },
+  target: {
+    file_id: BigInt(6),
+    target_id: trash.file.id,
+  },
+  role: {
+    file_id: BigInt(6),
+    member_id: member.id,
+    role: ['create', 'read', 'update', 'delete'],
+  },
+  info: {
+    file_id: BigInt(6),
+    create_date: new Date(),
+    update_date: new Date(),
+    byte_size: 0,
+  },
 };
-const container: file = {
-  id: BigInt(3),
-  file_key: '123e4567-e89b-12d3-a456-426614174000',
-  type: file_type.container,
-  file_name: SpecialContainerNameSchema.enum.home,
-  owner_id: 1,
-};
-const block: file = {
-  id: BigInt(4),
-  file_key: '123e4567-e89b-12d3-a456-426614174001',
-  type: file_type.block,
-  file_name: 'file.txt',
-  owner_id: member.id,
-};
-const fileInfo: file_info = {
-  file_id: block.id,
-  create_date: new Date(),
-  update_date: new Date(),
-  byte_size: 1000,
-};
-const fileRole: file_role = {
-  file_id: block.id,
-  member_id: member.id,
-  role: ['create', 'read', 'update', 'delete'],
-};
+
 const tempFile: temp_file = {
   id: BigInt(1),
-  file_key: block.file_key,
-  file_name: block.file_name,
-  parent_id: container.id,
+  file_key: block.file.file_key,
+  file_name: block.file.file_name,
+  parent_id: container.file.id,
   owner_id: member.id,
-  byte_size: fileInfo.byte_size,
+  byte_size: block.info.byte_size,
   create_date: new Date(),
 };
-const fileClosure: file_closure = {
-  parent_id: container.id,
-  child_id: block.id,
-};
+
 const storageSuccessReply: StorageManageReply = {
   success: true,
   message: 'Success',
@@ -86,12 +209,11 @@ const mockValues = {
   serviceStatus,
   root,
   trash,
+  home,
   container,
   block,
-  fileInfo,
-  fileRole,
+  link,
   tempFile,
-  fileClosure,
   storageSuccessReply,
   chunkCount,
 };
