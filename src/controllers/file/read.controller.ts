@@ -42,7 +42,10 @@ export class FileReadController {
   @Get('root')
   @HttpCode(200)
   async getRootContainer(@Query('memberId') memberId: number) {
-    const data = await this.fileReadService.getRootContainer(memberId);
+    const data = await this.fileReadService.getSpecialContainer(
+      memberId,
+      'root',
+    );
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;
@@ -62,7 +65,10 @@ export class FileReadController {
   @Get('home')
   @HttpCode(200)
   async getHomeContainer(@Query('memberId') memberId: number) {
-    const data = await this.fileReadService.getHomeContainer(memberId);
+    const data = await this.fileReadService.getSpecialContainer(
+      memberId,
+      'home',
+    );
     const response: CustomResponse<{
       fileKey: string;
       fileName: string;
@@ -70,6 +76,29 @@ export class FileReadController {
     }> = {
       status: 200,
       message: 'Home file found',
+      data: {
+        fileKey: data.file_key,
+        fileName: data.file_name,
+        type: data.type,
+      },
+    };
+    return response;
+  }
+
+  @Get('trash')
+  @HttpCode(200)
+  async getTrashContainer(@Query('memberId') memberId: number) {
+    const data = await this.fileReadService.getSpecialContainer(
+      memberId,
+      'trash',
+    );
+    const response: CustomResponse<{
+      fileKey: string;
+      fileName: string;
+      type: file_type;
+    }> = {
+      status: 200,
+      message: 'Trash file found',
       data: {
         fileKey: data.file_key,
         fileName: data.file_name,

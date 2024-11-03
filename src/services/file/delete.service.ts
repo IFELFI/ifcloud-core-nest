@@ -25,7 +25,7 @@ export class FileDeleteService {
   ) {}
 
   /**
-   * Delete a file by key
+   * @async Delete a file by key
    * @param fileKey - The key of the file
    * @returns The deleted file
    * @example
@@ -52,10 +52,40 @@ export class FileDeleteService {
       throw new BadRequestException('Cannot remove special container');
     }
 
+    // Delete the file and its ancestors
     if (file.type === file_type.block) {
       this.storageService.deleteFile(file.file_key);
     }
 
+    // Get the ancestors of the file
+    const ancestors = await this.prisma.file_path.findMany({
+      select: {
+        file: true,
+      },
+      where: {
+        path: {
+          hasEvery: file.file_path.path.concat(file.id),
+        },
+      },
+    });
+    Promise.all(
+      ancestors
+        .filter((ancestors) => ancestors.file.type === file_type.block)
+        .map((ancestor) => {
+          this.storageService.deleteFile(ancestor.file.file_key);
+        }),
+    );
+
+    // Delete the ancestors
+    await this.prisma.file.deleteMany({
+      where: {
+        id: {
+          in: ancestors.map((ancestor) => ancestor.file.id),
+        },
+      },
+    });
+
+    // Delete the file
     return this.prisma.file.delete({
       where: {
         id: file.id,
@@ -64,7 +94,7 @@ export class FileDeleteService {
   }
 
   /**
-   * Delete a temporary file by ID
+   * @async Delete a temporary file by ID
    * @param fileId - The ID of the file
    * @returns The deleted file
    * @example
@@ -80,7 +110,9 @@ export class FileDeleteService {
   }
 
   /**
-   * Move a file to trash
+   * @deprecated Use update service instead
+   *
+   * @async Move a file to trash
    * @param memberId - The ID of the member
    * @param rootFileId - The ID of the root file
    * @param targetFileKey - The key of the file

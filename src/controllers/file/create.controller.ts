@@ -3,6 +3,7 @@ import {
   Controller,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Post,
   Query,
   UseGuards,
@@ -64,7 +65,7 @@ export class FileWriteController {
     @Param('fileKey') parentKey: string,
     @Query('memberId') memberId: number,
     @Query('file_name', new StringLengthPipe(1, 255)) fileName: string,
-    @Query('target_key') targetKey: string,
+    @Query('target_key', ParseUUIDPipe) targetKey: string,
   ) {
     const parentFile = await this.fileReadService.getFile(parentKey);
     if (parentFile.type !== file_type.container) {
