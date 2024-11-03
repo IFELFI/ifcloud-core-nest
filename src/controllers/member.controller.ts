@@ -55,7 +55,7 @@ export class MemberController {
   @Delete()
   @HttpCode(200)
   @UseGuards(MemberGuard)
-  async deleteMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
+  async deleteMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.deleteMember(uuidKey);
     const response: CustomResponse<{
       uuidKey: string;

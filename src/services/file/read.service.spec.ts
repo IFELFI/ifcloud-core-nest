@@ -141,6 +141,32 @@ describe('FileReadService', () => {
     });
   });
 
+  describe('getSpecialContainer', () => {
+    it('should return a special file', async () => {
+      service.getHomeContainer = jest
+        .fn()
+        .mockResolvedValue(mockValues.home.file);
+      prisma.file.findMany.mockResolvedValue([mockValues.container.file]);
+
+      const result = await service.getSpecialContainer(
+        mockValues.member.id,
+        SpecialContainerNameSchema.enum.trash,
+      );
+      expect(result).toEqual(mockValues.container.file);
+      expect(prisma.file.findMany).toHaveBeenCalledWith({
+        where: {
+          owner_id: mockValues.member.id,
+          file_name: SpecialContainerNameSchema.enum.trash,
+          file_path: {
+            path: {
+              equals: [mockValues.root.file.id],
+            },
+          },
+        },
+      });
+    });
+  });
+
   describe('getParentFile', () => {
     it('should return files by parent', async () => {
       prisma.file_path.findUniqueOrThrow.mockResolvedValue(
