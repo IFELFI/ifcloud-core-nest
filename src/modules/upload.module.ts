@@ -4,7 +4,6 @@ import { FileDeleteModule } from './file/delete.module';
 import { Module } from '@nestjs/common';
 import { UploadController } from 'src/controllers/file/upload.controller';
 import { UploadService } from 'src/services/upload.service';
-import { PrismaService } from 'src/services/prisma/prisma.service';
 import { StorageModule } from './storage/storage.module';
 import { TokenModule } from './token.module';
 import { MemberGuardModule } from './guard.module';
@@ -19,6 +18,6 @@ import { MemberGuardModule } from './guard.module';
     MemberGuardModule,
   ],
   controllers: [UploadController],
-  providers: [UploadService, PrismaService],
+  providers: [UploadService],
 })
 export class UploadModule {}
