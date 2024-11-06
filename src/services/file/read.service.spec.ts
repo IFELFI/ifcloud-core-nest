@@ -143,20 +143,18 @@ describe('FileReadService', () => {
 
   describe('getSpecialContainer', () => {
     it('should return a special file', async () => {
-      service.getHomeContainer = jest
-        .fn()
-        .mockResolvedValue(mockValues.home.file);
-      prisma.file.findMany.mockResolvedValue([mockValues.container.file]);
+      prisma.file.findMany.mockResolvedValueOnce([mockValues.root.file]);
+      prisma.file.findMany.mockResolvedValueOnce([mockValues.home.file]);
 
       const result = await service.getSpecialContainer(
         mockValues.member.id,
-        SpecialContainerNameSchema.enum.trash,
+        SpecialContainerNameSchema.enum.home,
       );
-      expect(result).toEqual(mockValues.container.file);
-      expect(prisma.file.findMany).toHaveBeenCalledWith({
+      expect(result).toEqual(mockValues.home.file);
+      expect(prisma.file.findMany).toHaveBeenLastCalledWith({
         where: {
           owner_id: mockValues.member.id,
-          file_name: SpecialContainerNameSchema.enum.trash,
+          file_name: SpecialContainerNameSchema.enum.home,
           file_path: {
             path: {
               equals: [mockValues.root.file.id],
