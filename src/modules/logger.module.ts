@@ -16,6 +16,7 @@ import pino from 'pino';
         stream: pino.destination({
           dest: config.get<EnvConfig['log']>('log').dest,
           sync: false,
+          mkdir: true,
         }),
       }),
     }),
