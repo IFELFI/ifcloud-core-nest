@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   ParseUUIDPipe,
   Post,
   Query,
@@ -24,6 +25,9 @@ export class MemberController {
   @HttpCode(200)
   async getMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.getMember(uuidKey);
+    if (!data) {
+      throw new NotFoundException('Member not found');
+    }
     const response: CustomResponse<{
       uuidKey: string;
     }> = {
@@ -73,7 +77,7 @@ export class MemberController {
   @HttpCode(200)
   @UseGuards(MemberGuard)
   async getServiceStatus(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
-    const data = await this.memberService.getMemberServiceStatus(uuidKey);
+    const data = await this.memberService.getServiceStatusByKey(uuidKey);
     const response: CustomResponse<{
       available: boolean;
       joinDate: Date;
