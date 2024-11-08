@@ -16,9 +16,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/package.json ./
 COPY --from=build /app/tsconfig.json ./
 
-EXPOSE 3000
-
-ENV PORT=3000
 ENV NODE_ENV=production
 
 ENTRYPOINT ["node", "dist/main.js"]
