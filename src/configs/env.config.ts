@@ -21,8 +21,8 @@ export function validate(raw: Record<string, unknown>): EnvConfig {
       secret: raw.GATEWAY_SECRET as EnvConfig['gateway']['secret'],
     },
     keyName: {
-      gateway: raw.KEY_NAME_GATEWAY as EnvConfig['keyName']['gateway'],
-      uuid: raw.KEY_NAME_UUID as EnvConfig['keyName']['uuid'],
+      gateway: raw.GATEWAY_KEY_NAME as EnvConfig['keyName']['gateway'],
+      uuid: raw.UUID_KEY_NAME as EnvConfig['keyName']['uuid'],
     },
     test: {
       uuid: raw.TEST_UUID as EnvConfig['test']['uuid'],
