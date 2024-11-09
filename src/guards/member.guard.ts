@@ -3,7 +3,6 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ValidRequestQuery } from 'src/interfaces/request';
@@ -32,11 +31,11 @@ export class MemberGuard implements CanActivate {
         };
         return true;
       } else {
-        throw new ForbiddenException('member not available');
+        throw new ForbiddenException('member is not available');
       }
     } else {
-      // If the member is not found, throw an UnauthorizedException
-      throw new UnauthorizedException('member not found');
+      // If the member is not found, throw an error
+      throw new ForbiddenException('member is not enrolled');
     }
   }
 }
