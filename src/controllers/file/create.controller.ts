@@ -46,7 +46,6 @@ export class FileWriteController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 201,
       message: 'Container file created',
       data: {
         fileKey: data.file_key,
@@ -83,7 +82,6 @@ export class FileWriteController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 201,
       message: 'Link file created',
       data: {
         fileKey: data.file_key,

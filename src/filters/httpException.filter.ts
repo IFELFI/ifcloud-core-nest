@@ -18,7 +18,6 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const name = exception.name;
 
     const errorResponse: CustomResponse<ErrorResponseData> = {
-      status: status,
       message: message,
       data: {
         name: name,
