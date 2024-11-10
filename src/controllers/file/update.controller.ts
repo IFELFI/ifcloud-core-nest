@@ -39,7 +39,6 @@ export class FileUpdateController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'File name updated',
       data: {
         fileKey: data.file_key,
@@ -75,7 +74,6 @@ export class FileUpdateController {
     const response: CustomResponse<{
       success: boolean;
     }> = {
-      status: 200,
       message: 'File parent updated',
       data: {
         success: data,
@@ -103,7 +101,6 @@ export class FileUpdateController {
     const response: CustomResponse<{
       success: boolean;
     }> = {
-      status: 200,
       message: 'File moved to trash',
       data: {
         success: data,

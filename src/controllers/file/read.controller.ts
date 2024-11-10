@@ -30,7 +30,6 @@ export class FileReadController {
     const response: CustomResponse<{
       token: string;
     }> = {
-      status: 200,
       message: 'Token issued',
       data: {
         token: data,
@@ -51,7 +50,6 @@ export class FileReadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Root file found',
       data: {
         fileKey: data.file_key,
@@ -74,7 +72,6 @@ export class FileReadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Home file found',
       data: {
         fileKey: data.file_key,
@@ -97,7 +94,6 @@ export class FileReadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Trash file found',
       data: {
         fileKey: data.file_key,
@@ -121,7 +117,6 @@ export class FileReadController {
       updateDate: Date;
       byteSize: number;
     }> = {
-      status: 200,
       message: 'File info found',
       data: {
         fileName: file.file_name,
@@ -145,7 +140,6 @@ export class FileReadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'File parent found',
       data: {
         fileKey: data.file_key,
@@ -169,7 +163,6 @@ export class FileReadController {
         type: file_type;
       }[]
     > = {
-      status: 200,
       message: 'File children found',
       data: data.map((child) => ({
         fileKey: child.file_key,
@@ -199,7 +192,6 @@ export class FileReadController {
         type: file_type;
       }[]
     > = {
-      status: 200,
       message: 'File found',
       data: data.map((file) => ({
         fileKey: file.file_key,
@@ -221,7 +213,6 @@ export class FileReadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Link target found',
       data: {
         fileKey: data.file_key,

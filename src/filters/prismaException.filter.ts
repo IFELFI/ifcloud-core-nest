@@ -31,7 +31,6 @@ export class PrismaExceptionFilter implements ExceptionFilter {
     }
 
     const errorResponse: CustomResponse<ErrorResponseData> = {
-      status: status,
       message: message,
       data: {
         name: name,

@@ -20,7 +20,6 @@ export class FileDeleteController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Container file deleted',
       data: {
         fileKey: data.file_key,

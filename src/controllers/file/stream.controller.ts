@@ -17,7 +17,6 @@ export class StreamController {
     const token = await this.streamService.issueReadToken(fileKey);
 
     const response: CustomResponse<{ token: string }> = {
-      status: 200,
       message: 'Read token issued',
       data: {
         token,
