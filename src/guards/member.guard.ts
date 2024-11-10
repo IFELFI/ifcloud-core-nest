@@ -1,9 +1,8 @@
 import {
   CanActivate,
   ExecutionContext,
-  HttpException,
+  ForbiddenException,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { ValidRequestQuery } from 'src/interfaces/request';
@@ -14,22 +13,29 @@ export class MemberGuard implements CanActivate {
   constructor(private readonly memberService: MemberService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    try {
-      const request = context
-        .switchToHttp()
-        .getRequest<Request<any, any, any, ValidRequestQuery>>();
-      const uuidKey = request.query.uuidKey;
-      const member = await this.memberService.getMember(uuidKey);
-      request.query = {
-        ...request.query,
-        memberId: member.id,
-      };
-      return true;
-    } catch (error) {
-      if (error instanceof HttpException) {
-        throw error;
+    const request = context
+      .switchToHttp()
+      .getRequest<Request<any, any, any, ValidRequestQuery>>();
+    const uuidKey = request.query.uuidKey;
+    const member = await this.memberService.getMember(uuidKey);
+
+    // Check if the member is available
+    if (member) {
+      const serviceStatus = await this.memberService.getServiceStatusById(
+        member.id,
+      );
+      if (serviceStatus.available) {
+        request.query = {
+          ...request.query,
+          memberId: member.id,
+        };
+        return true;
+      } else {
+        throw new ForbiddenException('member is not available');
       }
-      throw new UnauthorizedException('Invalid token');
+    } else {
+      // If the member is not found, throw an error
+      throw new ForbiddenException('member is not enrolled');
     }
   }
 }
