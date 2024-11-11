@@ -7,6 +7,7 @@ import { MemberModule } from './modules/member.module';
 import { FileModule } from './modules/file/index.module';
 import { UploadModule } from './modules/upload.module';
 import { StreamModule } from './modules/stream.module';
+import { PrismaModule } from './modules/prisma.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { StreamModule } from './modules/stream.module';
       validate: validate,
       isGlobal: true,
     }),
+    PrismaModule,
     CustomLogger,
     MemberModule,
     UploadModule,

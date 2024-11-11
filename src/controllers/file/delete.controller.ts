@@ -1,25 +1,14 @@
-import {
-  Controller,
-  Delete,
-  HttpCode,
-  Param,
-  Query,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Delete, HttpCode, Param, UseGuards } from '@nestjs/common';
 import { access_role, file_type } from '@prisma/client';
 import { MemberGuard } from 'src/guards/member.guard';
 import { RoleGuard } from 'src/guards/role.guard';
 import { CustomResponse } from 'src/interfaces/response';
 import { FileDeleteService } from 'src/services/file/delete.service';
-import { FileReadService } from 'src/services/file/read.service';
 
 @Controller('file')
 @UseGuards(MemberGuard)
 export class FileDeleteController {
-  constructor(
-    private readonly fileDeleteService: FileDeleteService,
-    private readonly fileReadService: FileReadService,
-  ) {}
+  constructor(private readonly fileDeleteService: FileDeleteService) {}
 
   @Delete('permanent/:fileKey')
   @HttpCode(200)
@@ -31,38 +20,11 @@ export class FileDeleteController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 200,
       message: 'Container file deleted',
       data: {
         fileKey: data.file_key,
         fileName: data.file_name,
         type: data.type,
-      },
-    };
-
-    return response;
-  }
-
-  @Delete('trash/:fileKey')
-  @HttpCode(200)
-  @UseGuards(RoleGuard(access_role.delete))
-  async trashContainerFile(
-    @Param('fileKey') fileKey: string,
-    @Query('memberId') memberId: number,
-  ) {
-    const root = await this.fileReadService.getRootContainer(memberId);
-    const data = await this.fileDeleteService.moveToTrash(
-      memberId,
-      root.id,
-      fileKey,
-    );
-    const response: CustomResponse<{
-      success: boolean;
-    }> = {
-      status: 200,
-      message: 'Container file trashed',
-      data: {
-        success: data,
       },
     };
 

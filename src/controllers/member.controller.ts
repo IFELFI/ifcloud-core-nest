@@ -3,6 +3,7 @@ import {
   Delete,
   Get,
   HttpCode,
+  NotFoundException,
   ParseUUIDPipe,
   Post,
   Query,
@@ -24,10 +25,12 @@ export class MemberController {
   @HttpCode(200)
   async getMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.getMember(uuidKey);
+    if (!data) {
+      throw new NotFoundException('Member not found');
+    }
     const response: CustomResponse<{
       uuidKey: string;
     }> = {
-      status: 200,
       message: 'Member found',
       data: {
         uuidKey: data.uuid_key,
@@ -43,7 +46,6 @@ export class MemberController {
     const response: CustomResponse<{
       uuidKey: string;
     }> = {
-      status: 201,
       message: 'Member created',
       data: {
         uuidKey: data.uuid_key,
@@ -55,12 +57,11 @@ export class MemberController {
   @Delete()
   @HttpCode(200)
   @UseGuards(MemberGuard)
-  async deleteMember(@Query('uuidKey', new ParseUUIDPipe()) uuidKey: string) {
+  async deleteMember(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
     const data = await this.memberService.deleteMember(uuidKey);
     const response: CustomResponse<{
       uuidKey: string;
     }> = {
-      status: 200,
       message: 'Member deleted',
       data: {
         uuidKey: data.uuid_key,
@@ -73,13 +74,12 @@ export class MemberController {
   @HttpCode(200)
   @UseGuards(MemberGuard)
   async getServiceStatus(@Query('uuidKey', ParseUUIDPipe) uuidKey: string) {
-    const data = await this.memberService.getMemberServiceStatus(uuidKey);
+    const data = await this.memberService.getServiceStatusByKey(uuidKey);
     const response: CustomResponse<{
       available: boolean;
       joinDate: Date;
       updateDate: Date;
     }> = {
-      status: 200,
       message: 'Service status found',
       data: {
         available: data.available,

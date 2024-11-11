@@ -39,7 +39,6 @@ export class UploadController {
       token: string;
       fileKey: string;
     }> = {
-      status: 201,
       message: 'Block file created',
       data: {
         token: data.token,
@@ -62,7 +61,6 @@ export class UploadController {
       fileName: string;
       type: file_type;
     }> = {
-      status: 201,
       message: 'Block file merged',
       data: {
         fileKey: data.file_key,

@@ -6,7 +6,10 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { file, file_info, file_type, temp_file } from '@prisma/client';
-import { SpecialContainerNameSchema } from '../../schemas/file.schema';
+import {
+  SpecialContainerName,
+  SpecialContainerNameSchema,
+} from '../../schemas/file.schema';
 
 /**
  * File read service
@@ -155,6 +158,70 @@ export class FileReadService {
 
     // Return the home container
     return homeContainer[0];
+  }
+
+  /**
+   * Get special container of a member
+   * @param memberId - The ID of the member
+   * @param containerName - The name of the container
+   * @returns The special container of the member
+   * @throws NotFoundException - If the container is not found
+   * @throws InternalServerErrorException - If multiple containers are found
+   * @example
+   * getSpecialContainer(1, 'trash');
+   * Returns the trash container of the member
+   */
+  async getSpecialContainer(
+    memberId: number,
+    containerName: SpecialContainerName,
+  ): Promise<file> {
+    const root = await this.prisma.file
+      .findMany({
+        where: {
+          owner_id: memberId,
+          file_name: SpecialContainerNameSchema.enum.root,
+          file_path: {
+            path: {
+              equals: [],
+            },
+          },
+        },
+      })
+      .then((files) => {
+        if (files.length === 0) {
+          throw new NotFoundException('Root file not found');
+        }
+        if (files.length > 1) {
+          throw new InternalServerErrorException('Multiple root files found');
+        }
+        return files[0];
+      });
+
+    if (containerName === SpecialContainerNameSchema.enum.root) {
+      return root;
+    } else {
+      return this.prisma.file
+        .findMany({
+          where: {
+            owner_id: memberId,
+            file_name: containerName,
+            file_path: {
+              path: {
+                equals: [root.id],
+              },
+            },
+          },
+        })
+        .then((files) => {
+          if (files.length === 0) {
+            throw new NotFoundException('Container not found');
+          }
+          if (files.length > 1) {
+            throw new InternalServerErrorException('Multiple containers found');
+          }
+          return files[0];
+        });
+    }
   }
 
   /**
