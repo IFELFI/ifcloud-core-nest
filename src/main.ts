@@ -27,7 +27,7 @@ async function bootstrap() {
   // CORS
   if (isProduction || isTest) {
     app.enableCors({
-      origin: config.get<EnvConfig['cors']>('cors').origin,
+      origin: new RegExp(config.get<EnvConfig['cors']>('cors').origin),
       methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
       preflightContinue: false,
       optionsSuccessStatus: 204,
